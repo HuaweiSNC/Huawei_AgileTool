@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="groupCreationCompleteHandler(event)"
+		 width="48" height="30" buttonMode="true">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			private var __label:String;
+			private var __btnId:String;
+			
+			public var __btnType:String = "";
+			
+			[Bindable]
+			/**按钮名称*/
+			public function get label():String
+			{
+				return __label;
+			}
+			/**按钮名称*/
+			public function set label(value:String):void
+			{
+				__label = value;
+			}
+			/**按钮id*/
+			public function get btnId():String
+			{
+				return __btnId;
+			}
+			/**按钮id*/
+			public function set btnId(value:String):void
+			{
+				__btnId = value;
+			}
+
+
+			protected function groupCreationCompleteHandler(event:FlexEvent):void
+			{
+				if(__btnType == "left"){
+					bg.top = 0;
+					lTop.visible = false;
+					bg.left = bg.bottom = 1;
+					bg.right = 2;
+					lLeft.visible = lBottom.visible = lRight.visible = true;
+				}else if(__btnType == "top"){
+					bg.top = 2;
+					bg.bottom = bg.right = 1;
+					lTop.visible = lRight.visible = lBottom.visible = true;
+					bg.left = 0;
+					lLeft.visible = false;
+				}else{
+					bg.top = bg.right = bg.left = bg.bottom = 0;
+					lLeft.visible = lBottom.visible = lTop.visible = lRight.visible = true;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="unselected"/>
+		<s:State name="selected"/>
+	</s:states>
+	<s:Line xFrom="0" yFrom="0" xTo="48" yTo="0" id="lTop">
+		<s:stroke>
+			<s:SolidColorStroke color="0x535d73" weight="1"/>
+		</s:stroke>
+	</s:Line>
+	<s:Line xFrom="0" yFrom="0" xTo="0" yTo="30" id="lLeft">
+		<s:stroke>
+			<s:SolidColorStroke color="0x535d73" weight="1"/>
+		</s:stroke>
+	</s:Line>
+	<s:Line xFrom="0" yFrom="29" xTo="48" yTo="29" id="lBottom">
+		<s:stroke>
+			<s:SolidColorStroke color="0x535d73" weight="1"/>
+		</s:stroke>
+	</s:Line>
+	<s:Line xFrom="47" yFrom="0" xTo="47" yTo="30" id="lRight">
+		<s:stroke>
+			<s:SolidColorStroke color="0x535d73" weight="1"/>
+		</s:stroke>
+	</s:Line>
+	<s:Rect id="bg" top="2" top.selected="0" left="0" right="1" bottom="0" right.selected="1">
+		<s:fill>
+			<s:SolidColor color="0x425472" alpha.unselected="0"/>
+		</s:fill>
+	</s:Rect>
+	<s:Label id="btnLabel" text="{label}"  verticalCenter="0" horizontalCenter="0" mouseEnabled="false" width="46" maxDisplayedLines="1" textAlign="center"/>
+</s:Group>

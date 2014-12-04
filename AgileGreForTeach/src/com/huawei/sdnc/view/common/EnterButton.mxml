@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" height="250"
+		 creationComplete="group1_creationCompleteHandler(event)" mouseOver="groupMouseOverHandler(event)" mouseOut="groupMouseOutHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenLite;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Label;
+			[Bindable]
+			private var __text:String;
+			[Bindable]
+			private var __image:Class;
+			[Bindable]
+			private var __tooltip:String;
+			private var __name:String;
+
+			public function get image():Class
+			{
+				return __image;
+			}
+			
+			public function set image(value:Class):void
+			{
+				__image = value;
+			}
+
+			public function get text():String
+			{
+				return __text;
+			}
+
+			public function set text(value:String):void
+			{
+				__text = value;
+			}
+			
+			public function get tooltip():String
+			{
+				return __tooltip;
+			}
+			
+			public function set tooltip(value:String):void
+			{
+				__tooltip = value;
+			}
+
+
+			protected function img_mouseOverHandler(event:MouseEvent):void
+			{
+				var img:Image=(event.currentTarget as Image);
+				img.filters=[shadow];
+			}
+			
+			protected function img_mouseOutHandler(event:MouseEvent):void
+			{
+				(event.currentTarget as Image).filters=null;
+				
+			}
+			
+			protected function img_mouseDownHandler(event:MouseEvent):void
+			{
+				var img:Image=event.currentTarget as Image;
+				img.filters=null;
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(__image)
+				{
+					img.source = __image;
+				}
+				
+			}
+
+			private var __isStart:Boolean = false;
+			
+			private function btnMoveDown():void{
+				if(__isStart) return;
+				TweenLite.to(ball,1.2,{x:0,y:0});
+				setTimeout(btnMoveUp,1200);
+			}
+			
+			private function btnMoveUp():void{
+				if(__isStart) return;
+				TweenLite.to(ball,1.6,{x:0,y:20});
+				setTimeout(btnMoveDown,1600);
+			}
+			
+			protected function groupMouseOverHandler(event:MouseEvent):void
+			{
+				__isStart = false;
+				btnMoveDown();
+			}
+			
+			protected function groupMouseOutHandler(event:MouseEvent):void
+			{
+				__isStart = true;
+				TweenLite.to(ball,1.5,{x:0,y:20});
+			}
+
+			[Bindable]
+			public function get _name():String
+			{
+				return __name;
+			}
+
+			public function set _name(value:String):void
+			{
+				__name = value;
+			}
+
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:DropShadowFilter id="shadow" blurX="4" blurY="4" color="0" angle="90"/>
+	</fx:Declarations>
+	<s:VGroup id="ball" width="100%"  horizontalAlign="center" y="20">
+		<s:Group toolTip="{__tooltip}">
+			<s:BitmapImage id="btnBg" source="@Embed('assets/imgs/loginImgs/button_entry_back.png')"/>
+			<s:Image id="img" mouseDown="img_mouseDownHandler(event)"
+					 mouseOut="img_mouseOutHandler(event)" mouseOver="img_mouseOverHandler(event)"
+					 verticalCenter="0" horizontalCenter="0"/>	
+		</s:Group>
+	</s:VGroup>
+	<s:VGroup bottom="0" width="100%"  horizontalAlign="center">
+		<s:Group>
+			<s:BitmapImage id="btnCircle" source="@Embed('assets/imgs/loginImgs/entry_circle.png')"/>
+			<s:Label id="label" fontSize="20" fontWeight="bold" text="{__text}" 
+					 textAlign="center" width="150" verticalCenter="5" horizontalCenter="0"
+					 color="0xffffff"/>	
+		</s:Group>
+	</s:VGroup>
+</s:Group>

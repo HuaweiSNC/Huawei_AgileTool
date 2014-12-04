@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="400" height="300"  creationComplete="initCreate(event)"
+		 xmlns:bussView="com.huawei.sdnc.view.gre.bussView.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.techschema.ServiceTool;
+			import com.huawei.sdnc.view.common.navpanel.CtrlVNameBtn;
+			import com.huawei.sdnc.view.gre.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			public var busArray:ArrayCollection = new ArrayCollection(["创建隧道","删除隧道","创建流","删除流"])
+			protected function initCreate(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				for (var o:int=0;o<busArray.length;o++ )
+				{
+					var dcNameBtn:CtrlVNameBtn = new CtrlVNameBtn();
+					dcNameBtn.label = busArray[o];
+					dcNameBtn.btnId = busArray[o];
+					dcNameBtn.addEventListener(MouseEvent.CLICK,dcNameBtnClickHandler);
+					dcNameBtn.toolTip = busArray[o];
+					if(o==0){
+						dcNameBtn.currentState = "selected"
+					}
+					ctrlVBtns.addElement(dcNameBtn); 
+				}	
+			}
+			protected function dcNameBtnClickHandler(event:MouseEvent):void
+			{
+				var dcNameBtn:CtrlVNameBtn = event.currentTarget as CtrlVNameBtn;
+				var len:int = ctrlVBtns.numElements;
+				for(var i:int = 0; i < len ; i++)
+				{
+					var btn:CtrlVNameBtn = ctrlVBtns.getElementAt(i) as CtrlVNameBtn;
+					var state:String = "unselected";
+					if(btn == dcNameBtn) 
+					{
+						state = "selected";
+						busView.selectedIndex = i
+					}
+					btn.currentState = state;
+				}
+				
+			} 
+			
+			protected function api_clickHandler(event:MouseEvent):void
+			{
+//				navigateToURL(new URLRequest("api/"+ServiceTool.api+".html"));
+			}
+			
+			protected function api_mouseOverHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				api.setStyle("textDecoration","underline")
+			}
+			
+			protected function api_mouseOutHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				api.setStyle("textDecoration","none")
+			}
+			var ctunnel:CreateTunnel
+			protected function busView_changeHandler(event:IndexChangedEvent):void
+			{
+//					var nav:NavigatorContent = event.relatedObject as NavigatorContent;
+//					if(nav.id == "createtunnel")
+//					{
+//						nav.removeAllElements();
+//						ctunnel = new CreateTunnel(); 
+//						ctunnel.ipcorebusiness = this
+//						nav.addElement(ctunnel);
+//					}
+
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace common "com.huawei.sdnc.view.common.*";
+		.customStyles
+		{
+			skin:ClassReference("com.huawei.sdnc.view.skins.NavHeaderSkin");
+			fontSize:17;
+			fontWeight:bold;
+			textAlign:center;
+		}
+	</fx:Style>
+	<mx:VDividedBox width="100%" height="100%">
+		
+	
+	<mx:Accordion id="nacAcc" top="0" width="100%" height="70%" borderAlpha="0" backgroundColor="0x2c3b59"
+				  contentBackgroundAlpha="0" headerHeight="35" headerStyleName="customStyles"
+				  horizontalCenter="0">
+		<s:NavigatorContent id="vdcAndDC" width="100%" height="100%" label="功能演示"  backgroundColor="#FFFFFF" color="#000000">
+			<s:Group id="ctrlVBtns" left="11" top="8" >
+				<s:layout>
+					<s:TileLayout requestedColumnCount="4"/>
+				</s:layout>
+			</s:Group>
+			<mx:ViewStack id="busView" bottom="5" left="10" right="10" top="{ctrlVBtns.height+20}" width="100%"
+						  height="100%" backgroundColor="#FFFFFF" borderVisible="false" change="busView_changeHandler(event)">
+				
+					<bussView:CreateTunnel label="创建隧道" ipcorebusiness="{this}"/>
+				
+				<!--s:NavigatorContent width="100%" height="100%" id="createtunnel"></s:NavigatorContent>
+				<s:NavigatorContent width="100%" height="100%" id="deletetunnel"></s:NavigatorContent>
+				<s:NavigatorContent width="100%" height="100%" id="createflow"></s:NavigatorContent>
+				<s:NavigatorContent width="100%" height="100%" id="deleteflow"></s:NavigatorContent-->
+					<bussView:TunnelListView label="删除隧道" ipcorebusiness="{this}"/>
+					
+				
+					<bussView:CreateFlow label="创建流" ipcorebusiness="{this}"/>
+				
+				
+					<bussView:FlowListView label="删除流"/>
+				
+			</mx:ViewStack>
+		</s:NavigatorContent>
+		
+	</mx:Accordion>
+
+	<mx:Accordion id="logAcc" top="{nacAcc.height}" width="100%" height="30%" borderAlpha="0" backgroundColor="0x2c3b59"
+				  contentBackgroundAlpha="0.0" headerHeight="35" headerStyleName="customStyles"
+				  horizontalCenter="0">
+		<s:NavigatorContent id="logNav" label="代码示例" width="100%" height="100%"  backgroundColor="#CCCCCC" color="#000000">
+			<s:VGroup left="8" right="8" height="100%">
+				<mx:Canvas height="5"/>
+				<mx:HBox left="8" top="5" width="100%" height="50" backgroundColor="#FFFFFF"
+						 borderColor="#FF0000" contentBackgroundAlpha="1.0"
+						 contentBackgroundColor="#FFFFFF" dropShadowVisible="false">
+					<!--mx:Label color="#000000" text="{ServiceTool.curtime}"/-->
+					<mx:Label id="api" buttonMode="true" color="#000000"
+							  mouseOut="api_mouseOutHandler(event)" click="api_clickHandler(event)"
+							  mouseOver="api_mouseOverHandler(event)" text="API：   {ServiceTool.schema}"/>
+					<!--mx:Label color="#000000" text="{ServiceTool.code}"/-->
+					<!--mx:Label color="#000000" text="{ServiceTool.usetime}"/-->
+					
+				</mx:HBox>
+				<mx:HBox left="8" top="35" width="100%"  backgroundColor="#FFFFFF">
+					<mx:Label text="Method :"/>
+					<mx:Label text="{ServiceTool.Method}"/>
+					<mx:Label text="   URL :"/>
+					<s:TextInput text="{ServiceTool.url}" width="100%"/>
+					<!--mx:Button color="#000000" buttonMode="true" label="查看详情" 
+					visible="{api.text.search('=')==-1?false:true}"/-->
+				</mx:HBox>
+				<mx:TabNavigator left="8" top="65" bottom="8" width="100%" height="100%"
+								 backgroundAlpha="0.0">
+					<s:NavigatorContent width="100%" height="100%" label="Request Body " backgroundAlpha="0.0">
+						<mx:TextArea left="0" right="0" top="0" bottom="0" borderVisible="false"
+									 color="#000000" contentBackgroundAlpha="0.5" editable="false"
+									 fontSize="14" text="{new XML(ServiceTool.body)}"/>
+					</s:NavigatorContent>
+					<s:NavigatorContent width="100%" height="100%" label="Response Body " backgroundAlpha="0.0">
+						<mx:TextArea left="0" right="0" top="0" bottom="0" borderAlpha="0.5"
+									 borderVisible="false" color="#000000" contentBackgroundAlpha="0.5"
+									 editable="false" fontSize="14" text="{ServiceTool.message}"/>
+					</s:NavigatorContent>
+				</mx:TabNavigator>
+			</s:VGroup>
+		</s:NavigatorContent>
+	</mx:Accordion>
+		
+	</mx:VDividedBox>
+</s:Group>

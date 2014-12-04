@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vrpsdnoffice>
+	<softwarename>Agile GRE 教学演示</softwarename>
+	<copyright>Copyright (C) Huawei Technologies Co.,  Ltd. 2012~2013.  All rights reserved.</copyright>
+	<logo>assets/imgs/huawei_logo.png</logo>
+	<company>HUAWEI</company> 
+	<opsip>172.19.39.100:8080</opsip>
+	<serviceip>172.19.39.100:9000</serviceip>
+	<webadr>file:///D:/Study/HTML5/html1.html</webadr>
+	<roleTypes>
+		<roleType>
+			<name>CORE</name>
+			<logo>AGGNode</logo>
+		</roleType>
+		<roleType>
+			<name>AGG</name>
+			<logo>agg.png</logo>
+		</roleType>
+	</roleTypes>
+	<servicetypes>
+		<servicetype>
+			<name>ipcore</name>
+			<desc>AgileGreTeach</desc>
+			<viewtypes>
+				<viewtype>
+					<name>physics_view</name>
+					<desc>Physical View</desc>
+					<type/>
+				</viewtype>
+<!-- 				<viewtype> -->
+<!-- 					<name>netManage_view</name> -->
+<!-- 					<desc>Planning View</desc> -->
+<!-- 					<type/> -->
+<!-- 				</viewtype> -->
+			</viewtypes>
+		</servicetype>
+	</servicetypes>
+	
+	<project name='sdn_office_ipcore_interop' servicetype='dc' projecttype='normal'>
+		<controllers>
+			<defaultpolltime>10</defaultpolltime>   <!--second-->		
+			<controller>
+				<name>dc_controller_1</name>
+				<ip>192.168.1.10</ip>
+				<ncfport>22</ncfport>
+				<opsport>8080</opsport>
+				<user>root</user>
+				<passwd>root123</passwd>
+			</controller>
+			<controller>
+				<name>dc_controller_2</name>
+				<ip>192.168.1.11</ip>
+				<ncfport>22</ncfport>
+				<opsport>8080</opsport>
+				<user>root</user>
+				<passwd>root123</passwd>
+			</controller>
+		</controllers>
+		<openstack>
+			<name>openstack</name>
+			<ip>10.137.210.215</ip>
+			<port>5000</port>
+			<tenantName>admin</tenantName>
+			<user>admin</user>
+			<passwd>stack</passwd>
+ 			<tokenURL>/v2.0/tokens</tokenURL> <!--token获取地址-->
+		</openstack>
+		<dcs>
+			<dc>
+				<id>1</id>
+				<name>dc1</name>
+				<desc>BeiJing Data Center</desc>
+				<controller>dc_controller_1</controller>
+				<areas>
+					<area>
+						<id>1</id>
+						<name>area1</name>
+						<desc>area1</desc>
+						<shelfs>
+							<shelf>
+								<id>1</id>
+								<name>shelf1</name>
+								<desc>shelf1</desc>
+							</shelf>
+							<shelf>
+								<id>2</id>
+								<name>shelf2</name>
+								<desc>shelf2</desc>
+							</shelf>
+						</shelfs>
+					</area>
+					<area>
+						<id>2</id>
+						<name>area2</name>
+						<desc>area2</desc>
+						<shelfs>
+							<shelf>
+								<id>1</id>
+								<name>shelf1</name>
+								<desc>shelf1</desc>
+							</shelf>
+							<shelf>
+								<id>2</id>
+								<name>shelf2</name>
+								<desc>shelf2</desc>
+							</shelf>
+						</shelfs>
+					</area>
+				</areas>
+				<datafile>
+					<datasuite>
+						<name>dc1datasuite</name>              <!---->
+						<path>http://10.135.22.53:8080/devices/6/</path>           <!--数据所在的以project本文件为当前目录的相对目录--> 
+						<l2topo>sdn/sdnl2topo</l2topo>       <!--fabric内部TOPO-->
+						<vcluster>vcluster</vcluster>
+						<ifm>ifm</ifm>
+						<devm>devm</devm>
+						<vnm>sdn/networks</vnm>  
+						<lldp>lldp</lldp>              <!--外部TOPO-->
+						<vlantopo>trilltree</vlantopo>  <!--物理视图叠加虚拟视图信息-->
+						<host>/os-hosts</host> 					 <!--host-->
+						<servers>/servers/detail</servers>		 <!--vm instance-->
+					</datasuite>
+				</datafile>
+			</dc>
+		</dcs>
+	</project>
+	<project name='sdn_office_ipcore_test' servicetype='dc' projecttype='test'>
+		<controllers>
+			<defaultpolltime>5</defaultpolltime>   second		
+			<controller>
+				<name>dc_controller_1</name>
+				<ip>192.168.1.10</ip>
+				<ncfport>22</ncfport>
+				<opsport>8080</opsport>
+				<user>root</user>
+				<passwd>root123</passwd>
+			</controller>
+			<controller>
+				<name>dc_controller_2</name>
+				<ip>192.168.1.11</ip>
+				<ncfport>22</ncfport>
+				<opsport>8080</opsport>
+				<user>root</user>
+				<passwd>root123</passwd>
+			</controller>
+		</controllers>
+		<openstack>
+			<name>openstack</name>
+			<ip>192.168.1.11</ip>
+			<port>22</port>
+			<user>root</user>
+			<passwd>root123</passwd>
+		</openstack>
+		<dcs>
+			<dc>
+				<id>1</id>
+				<name>dc1</name>
+				<desc>BeiJing Data Center</desc>
+				<controller>dc_controller_1</controller>
+				<areas>
+					<area>
+						<id>1</id>
+						<name>area1</name>
+						<desc>area1</desc>
+						<shelfs>
+							<shelf>
+								<id>1</id>
+								<name>shelf1</name>
+								<desc>shelf1</desc>
+							</shelf>
+							<shelf>
+								<id>2</id>
+								<name>shelf2</name>
+								<desc>shelf2</desc>
+							</shelf>
+						</shelfs>
+					</area>
+					<area>
+						<id>2</id>
+						<name>area2</name>
+						<desc>area2</desc>
+						<shelfs>
+							<shelf>
+								<id>1</id>
+								<name>shelf1</name>
+								<desc>shelf1</desc>
+							</shelf>
+							<shelf>
+								<id>2</id>
+								<name>shelf2</name>
+								<desc>shelf2</desc>
+							</shelf>
+						</shelfs>
+					</area>
+				</areas>
+				<datafile>
+					<datasuite>
+						<name>dc1datasuite</name>              工程1数据中心1的测试数据套1
+						<path>assets/xml/dc1/</path>           数据所在的以project本文件为当前目录的相对目录 
+						<vcluster>dc1_vccluster.xml</vcluster> 转发节点的具体信息
+						<ifm>dc1_ifm.xml</ifm>                 接口信息流量统计
+						<devm>dc1_devm.xml</devm>              设备管理CPU、内存信息统计
+						<l2topo>dc1_l2topo.xml</l2topo>        fabric内部TOPO
+						<lldp>dc1_lldp.xml</lldp>              外部TOPO
+						<vlantopo>dc1_vlantopo.xml</vlantopo>  物理视图叠加虚拟视图信息
+						<vnm>dc1_vnm.xml</vnm>                 虚拟视图网络信息
+						<host>dc1_instance.xml</host>          服务器信息
+					</datasuite>
+				</datafile>
+			</dc>
+			<dc>
+				<id>2</id>
+				<name>dc2</name>
+				<desc>NanJing Data Center</desc>
+				<controller>dc_controller_1</controller>
+				<areas>
+					<area>
+						<id>1</id>
+						<name>area1</name>
+						<desc>area1</desc>
+						<shelfs>
+							<shelf>
+								<id>1</id>
+								<name>shelf1</name>
+								<desc>shelf1</desc>
+							</shelf>
+							<shelf>
+								<id>2</id>
+								<name>shelf2</name>
+								<desc>shelf2</desc>
+							</shelf>
+						</shelfs>
+					</area>
+					<area>
+						<id>2</id>
+						<name>area2</name>
+						<desc>area2</desc>
+						<shelfs>
+							<shelf>
+								<id>1</id>
+								<name>shelf1</name>
+								<desc>shelf1</desc>
+							</shelf>
+							<shelf>
+								<id>2</id>
+								<name>shelf2</name>
+								<desc>shelf2</desc>
+							</shelf>
+						</shelfs>
+					</area>
+				</areas>
+				<datafile>
+					<datasuite>
+						<name>dc2datasuite</name>              工程1数据中心1的测试数据套1
+						<path>assets/xml/dc2/</path>                     数据所在的以project本文件为当前目录的相对目录 
+						<vcluster>dc2_vccluster.xml</vcluster> 转发节点的具体信息
+						<ifm>dc2_ifm.xml</ifm>                 接口信息流量统计
+						<devm>dc2_devm.xml</devm>              设备管理CPU、内存信息统计
+						<l2topo>dc2_l2topo.xml</l2topo>        fabric内部TOPO
+						<lldp>dc2_lldp.xml</lldp>              外部TOPO
+						<vlantopo>dc2_vlantopo.xml</vlantopo>  物理视图叠加虚拟视图信息
+						<vnm>dc2_vnm.xml</vnm>                 虚拟视图网络信息
+						<host>dc2_instance.xml</host>          服务器信息
+					</datasuite>
+				</datafile>
+			</dc>
+			
+		</dcs>
+		<vdcs>
+			<vdc>
+				<vdcnetworkname>vnet1</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet2</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet3</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet4</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet5</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet6</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet7</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet8</vdcnetworkname>
+			</vdc>
+			<vdc>
+				<vdcnetworkname>vnet9</vdcnetworkname>
+			</vdc>
+		</vdcs>
+	</project>
+	
+</vrpsdnoffice>

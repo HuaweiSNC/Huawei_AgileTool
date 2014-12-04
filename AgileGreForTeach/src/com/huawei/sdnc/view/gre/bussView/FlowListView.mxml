@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="init()" fontFamily="微软雅黑"
+		 keyUp="onKeyUp(event)" width="400" height="300">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.model.acl.AclGroup;
+			import com.huawei.sdnc.model.acl.aclRuleBas4.AclRuleAdv4;
+			import com.huawei.sdnc.model.qos.QosBehavior;
+			import com.huawei.sdnc.model.qos.QosClassifier;
+			import com.huawei.sdnc.model.qos.QosPolicy;
+			import com.huawei.sdnc.model.qos.QosPolicyNode;
+			import com.huawei.sdnc.model.qos.QosRuleAcl;
+			import com.huawei.sdnc.techschema.ServiceTool;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.PopupManagerUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.gre.dataHandle.DataHandleTool;
+			import com.hurlant.math.bi_internal;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpErrorEvent;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			private var __app:sdncui2
+			public var element:IElement;
+			[Bindable]
+			public  var fileNameTypeDropDownList:ArrayCollection = new ArrayCollection([
+				{id:0,label:'设备1'}
+			]);
+			[Bindable]
+			public var flowPolicies:ArrayCollection=new ArrayCollection([{"policyName":"策略1","srcIp":"1.1.1.1","desIp":"1.1.1.2"}]);
+			private var devices:Array=[];
+			public function init():void
+			{
+				__app=SdncUtil.app;
+				devices= DataHandleTool.devices;
+				focusManager.setFocus(ddl);
+				fileNameTypeDropDownList=new ArrayCollection(devices);
+				if(element==null){
+					ddl.selectedIndex=0;
+					upDatePolicy();
+				}else{
+					if(element is StateNode){
+						var stateNode:StateNode=element as StateNode;
+						var deviceName:String=stateNode.name;
+						for(var i:int=0;i<devices.length;i++){
+							var d:Object=devices[i];
+							var devicename:String = d["devicename"];
+							if(deviceName==devicename){
+								ddl.selectedIndex=i;
+								break;
+							}
+						}
+					}
+					
+					if(SdncUtil.cuProjectType=="test"){
+						var policyes:Array=stateNode.getClient("policyes");
+						if(policyes!=null){
+							flowPolicies=new ArrayCollection(policyes);
+						}else{
+							flowPolicies=new ArrayCollection([]);
+						}
+					}else{
+						if(element is StateNode){
+							var stateNode:StateNode=element as StateNode;
+							var policyArr:Array=DataHandleTool.refreshPolicyList2(stateNode);
+						}
+						flowPolicies=new ArrayCollection(policyArr);
+					}
+				}
+			}
+			public function refreshPolicyList():void
+			{
+				if(element is StateNode){
+					var stateNode:StateNode=element as StateNode;
+				}
+				if(SdncUtil.cuProjectType=="test"){
+					var policyes:Array=stateNode.getClient("policyes");
+					if(policyes!=null){
+						flowPolicies=new ArrayCollection(policyes);
+					}else{
+						flowPolicies=new ArrayCollection([]);
+					}
+				}else{
+					var device:Device=stateNode.getClient("device");
+					device.getflow(false,function():void{
+						var policyArr:Array=DataHandleTool.refreshPolicyList2(stateNode);
+						flowPolicies=new ArrayCollection(policyArr);
+					});
+				}
+			}
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,Capabilities.screenResolutionX,Capabilities.screenResolutionY);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				this.stopDrag();
+			}
+			
+			
+			public function delPolicy():void
+			{
+				Alert.show("确认执行此操作吗？","提示框",Alert.OK | Alert.CANCEL,this,closeDelete);
+			}
+			
+			private var curDeviceNum:int=0;
+			private var hasHandledNum:int=0;
+			
+			public var o:Object;
+			public var v1:Number
+			public var v2:Number
+			public function closeDelete(e:CloseEvent):void
+			{
+				curDeviceNum=0;
+				hasHandledNum=0;
+				if(e.detail==Alert.OK){
+					if(SdncUtil.cuProjectType=="test"){
+						var policyes:Array=element.getClient("policyes");
+						var p:Object=g.selectedItem;
+						var srcIp1:String=p["srcIp"];
+						
+						var index:int;
+						for(var i:int=0;i<policyes.length;i++){
+							var policy:Object=policyes[i];
+							var ip:String=policy["srcIp"];
+							if(ip==srcIp1){
+								index=i;
+								break;
+							}
+						}
+						var poli:Object=g.selectedItem;
+						//流分类名字
+						var name:String=poli["policyName"];
+						
+						var body:String="<servicflow><flows><flow><flowName>gp</flowName></flow></flows><flowPolicys>" +
+							"<flowPolicy><policyName>"+name+"</policyName><flowName></flowName><actions>";
+						body+="<action><nodeId>1</nodeId><ifName>"+poli["tnlName"]+"</ifName></action>"
+						body+="</actions><tpType></tpType><tpId></tpId></flowPolicy></flowPolicys></servicflow>"
+							
+						ServiceTool.Method = "[PUT]"
+						ServiceTool.schema = "Boolean ret = servicflow.delete()"
+						ServiceTool.url = "http://127.0.0.1:8999/AgileGre/rest/servicflow?type=DELETE";
+						ServiceTool.code = "200"
+						ServiceTool.curtime = SdncUtil.getFormatStr("MM-DD  JJ:NN",new Date())
+						ServiceTool.body = body
+						ServiceTool.message = "<ok xmlns:nc='urn:ietf:params:xml:ns:netconf:base:1.0'/>"
+						policyes.splice(index,1);
+						refreshPolicyList();
+					}else{
+						var poli:Object=g.selectedItem;
+						//流分类名字
+						var name:String=poli["policyName"];
+						//五元组名字
+						var aclRuleName:String=poli["aclRuleName"];
+						//流行为名字
+						var behaviorName:String=poli["behaviorName"];
+						var networkX:NetworkX = __app.ipcore.physicsView.networkX;
+						curDeviceNum=0;
+						PopupManagerUtil.getInstence().popupLoading(this);
+						var url:String="actions=";
+						networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+							if(item is StateNode){
+								var stateNode:StateNode=item as StateNode;
+								var device:Device=stateNode.getClient("device");
+								var classifiers:Array=device.qos.qosClassifiers;
+								for each(var classifier:QosClassifier in classifiers){
+									var classifierName:String=classifier.classifierName;
+									if(classifierName==name){
+										hasHandledNum++;
+										for each(var qosbehaviors:QosBehavior in device.qos.qosBehaviors){
+											if(qosbehaviors.behaviorName==name+"_action"){
+												url += stateNode.getClient("id")+":"+qosbehaviors.qosActRdrIfs[0].ifName+","
+											}
+										}
+									}
+								}
+							}
+						});
+						delflow(name,url,whenRefresh);
+					}
+				}
+			}
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public function delflow(name:String,url:String,renFun:Function):void{
+				reFun = renFun
+				v1 = new Date().time
+				var opsIp:String=SdncUtil.serviceIp;
+				var urlX:String="http://"+opsIp+"/AgileGre/rest/serviceflow?flowName="+name+"&"+url.substring(0,url.length-1);
+				connUtil.clientQuery(urlX,ConnUtil.METHOD_DELETE,onDelPolicy,onDelPolicyfault,null,"application/XML","Boolean ret = servicflow.delete()");
+			}
+			private function onDelPolicy(e:HttpDataEvent):void
+			{
+				var message:String=e.bytes.toString();
+				v2 = new Date().time
+				ServiceTool.message = message
+				ServiceTool.usetime = (v2-v1)+"ms";
+				ServiceTool.api = "serviceflow";
+				ServiceTool.curtime = SdncUtil.getFormatStr("MM-DD  JJ:NN",new Date())
+				PopupManagerUtil.getInstence().closeLoading();
+				
+				var networkX:NetworkX = __app.ipcore.physicsView.networkX;
+				networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+					if(item is StateNode){
+						var stateNode:StateNode=item as StateNode;
+						var device:Device=stateNode.getClient("device");
+						device.getflow(false,reFun)
+					}
+				});
+			}
+			private var reFun:Function;
+			private function onDelPolicyfault(e:HttpErrorEvent):void
+			{
+				reFun();
+			}
+			private function whenRefresh():void
+			{
+				curDeviceNum++;
+				trace("curDeviceNum"+curDeviceNum+"hasHandledNum"+hasHandledNum)
+				if(curDeviceNum==hasHandledNum){
+					if(element is StateNode){
+//						var stateNode:StateNode=element as StateNode;
+//						var polist:Array=DataHandleTool.refreshPolicyList2(stateNode);
+						
+						var polist:Array=DataHandleTool.refreshPolicyList2(element as StateNode);
+						flowPolicies=new ArrayCollection(polist);
+					}
+//					flowPolicies=new ArrayCollection(polist);
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+			}
+			/**
+			 * 当更换设备时更新流策略
+			 */	
+			public function upDatePolicy():void
+			{
+				var networkX:NetworkX = __app.ipcore.physicsView.networkX;
+				var selectedDeviceIp:Object=ddl.selectedItem;
+				var ip:String=selectedDeviceIp["ip"];
+				var symbol:Boolean=true;
+				networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+					if(symbol){
+						if(item is StateNode){
+							var stateNode:StateNode=item as StateNode;
+							var ip1:String=stateNode.getClient("ip");
+							if(ip1==ip){
+								element=stateNode;
+								symbol=false;
+							}
+						}
+					}
+				});
+				if(SdncUtil.cuProjectType=="test"){
+					var devices:Array=element.getClient("policyes");
+					flowPolicies=new ArrayCollection(devices);
+				}else{
+					var polist:Array=DataHandleTool.refreshPolicyList2(element as StateNode);
+					flowPolicies=new ArrayCollection(polist);
+				}
+				
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.keyCode==Keyboard.ESCAPE){
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_FLOW_DEFINE));
+				}
+			}
+			/**
+			 * 查找流策略
+			 */
+			public function queryPolicy():void
+			{
+				var index:int=g.selectedIndex;
+				var beginPolicy:Object=g.selectedItem;
+				if(SdncUtil.cuProjectType=="test"){
+					DataHandleTool.drawLineByPolicyTnl(beginPolicy,__app.ipcore.physicsView.networkX);
+				}else{
+					DataHandleTool.drawLineByPolicyforReal(beginPolicy,__app.ipcore.physicsView.networkX);
+					//					__app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_FLOW_CHART));
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:VGroup width="100%" height="100%" gap="0">	
+		<s:VGroup id="content" width="100%" height="100%">
+			<s:Group width="100%" height="10%">
+				<s:Label x="21" text="导流入隧道" verticalCenter="0"/>
+				<s:Label right="170" text="选择设备" verticalCenter="0"/>
+				<mx:ComboBox id="ddl" right="11" width="150" change="upDatePolicy()"
+							  contentBackgroundAlpha="1.0"
+							 contentBackgroundColor="#FFFFFF"
+							 dataProvider="{fileNameTypeDropDownList}" labelField="devicename"
+							 verticalCenter="0"/>
+			</s:Group>
+			<s:Group width="100%" height="85%">
+				<s:DataGrid id="g" width="95%" height="95%" dataProvider="{flowPolicies}"
+							horizontalCenter="0" requestedRowCount="4" textAlign="center" 
+							verticalCenter="0">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn dataField="policyName"
+										  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="流策略">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer click="outerDocument.queryPolicy()" minWidth="60" height="25">
+											<s:Label text="{data.policyName}" verticalCenter="0" />
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							
+							</s:GridColumn>
+							<s:GridColumn dataField="srcIp"
+										  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="源IP地址">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer click="outerDocument.queryPolicy()" minWidth="60" height="25">
+											<s:Label text="{data.srcIp}" verticalCenter="0" />
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn dataField="desIp"
+										  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="目的IP地址">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer click="outerDocument.queryPolicy()" minWidth="60" height="25">
+											<s:Label text="{data.desIp}" verticalCenter="0" />
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn editable="false" visible="false"
+										  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="编辑">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<s:Button label="@Resource(bundle='zh_CN',key=edit)"
+													  horizontalCenter="0" verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn editable="false"
+										  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="删除">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<s:Button label="删除" click="outerDocument.delPolicy()"
+													  horizontalCenter="0" verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+		</s:VGroup>
+	</s:VGroup>
+</mx:Canvas>

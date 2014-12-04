@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vrpsdnoffice>
+<env>
+	<users>
+		<user>
+			<name>admin</name>
+			<passwd>admin123</passwd>
+		</user>
+		<user>
+			<name>test</name>
+			<passwd>test</passwd>
+		</user>
+	</users>
+	<langs>
+		<lang>
+			<name>en</name>
+			<desc>English</desc>
+		</lang>
+		<lang>
+			<name>cn</name>
+			<desc>中文</desc>
+		</lang>
+	</langs>
+	<logfile>
+		c:/hwsdnoffice.log
+	</logfile>
+</env>
+<topo>
+	<submaptypes>
+		<submaptype>
+			<name>dc</name>
+			<layouttypes>
+				<layouttype>
+					<name>defaluts</name>
+				</layouttype>
+				<layouttype>
+					<name>tower</name>
+				</layouttype>
+				<layouttype>
+					<name>flattree</name>
+				</layouttype>
+			</layouttypes>
+		</submaptype>
+		<submaptype>
+			<name>area</name>
+			<layouttypes>
+				<layouttype>
+					<name>defaluts</name>
+				</layouttype>
+			</layouttypes>
+		</submaptype>
+		<submaptype>
+			<name>shelf</name>
+			<layouttypes>
+				<layouttype>
+					<name>stack</name>
+				</layouttype>
+			</layouttypes>
+		</submaptype>
+	</submaptypes>
+</topo>
+</vrpsdnoffice>

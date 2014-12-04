@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.view.gre.PhysicsView;
+			public var page:PhysicsView;
+			public var show:Boolean = true;
+			public function changeState(boolean:Boolean):void{
+				if(boolean){
+					this.currentState = "withoutTopo";
+				}else{
+					this.currentState = "withTopo";
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="withTopo"/>
+		<s:State name="withoutTopo"/>
+	</s:states>
+	<s:Group horizontalCenter="0"
+			 width="100%">
+		<s:Image  source="@Embed('assets/imgs/ipran/openCore.png')" 
+				  source.withTopo="@Embed('assets/imgs/ipran/openCore.png')" 
+				  source.withoutTopo="@Embed('assets/imgs/ipran/closeCore.png')" 
+				  verticalCenter="0" horizontalCenter="0" buttonMode="true" 
+				  mouseOut="tiptopoGroup.visible=false" mouseOver="tiptopoGroup.visible=true"/>
+	</s:Group>
+	<s:Group id="tiptopoGroup" visible="false" left="0" top="41">
+		<s:Image id="tiptopo"  source="@Embed('assets/imgs/ipran/Close controller.png')" 
+				 source.withTopo="@Embed('assets/imgs/ipran/Close controller.png')" 
+				 source.withoutTopo="@Embed('assets/imgs/ipran/Open controller.png')"/>
+	</s:Group>
+</s:VGroup>

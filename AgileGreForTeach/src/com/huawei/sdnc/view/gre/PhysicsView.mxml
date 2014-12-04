@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ns="http://www.servasoftware.com/2009/twaver/flex"
+		 xmlns:physicsCtrl="com.huawei.sdnc.controller.ipCoreController.*"
+		 initialize="physicsCtrl.onInit()"
+		 creationComplete="physicsCtrl.creationComplete(event)"
+		 currentState="withoutMap"
+		 width="400" height="300"
+		 fontFamily="微软雅黑" xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*" xmlns:menu="com.huawei.sdnc.menu.*" xmlns:ipRanController="com.huawei.sdnc.controller.ipRanController.*" xmlns:common="com.huawei.sdnc.view.common.*"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.google.code.flexiframe.IFrame;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.MyPanel;
+			protected function mypancel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var dpane:MyPanel = new MyPanel()
+				dpane.width = 284;
+				dpane.height = 220;
+				dpane.top =0 ;
+				dpane.right =100;
+				var iframe:IFrame = new IFrame;
+				iframe.source=SdncUtil.webadr;
+				iframe.percentHeight = 100
+				iframe.percentWidth = 100
+				dpane.addElement(iframe);
+				this.addElement(dpane);
+			}
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="withoutMap"/>
+		<s:State name="withMap"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<fx:XML id="option_ipcore" source="assets/xml/option_ipcore.xml"/>
+		<physicsCtrl:IpCoreForPhysicsCtrl id="physicsCtrl" physicsView="{this}"/>
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" height="100%">
+		<navpanel:IpCorePanel id="navPanel" phy="{this}" width="500" height="100%" right="0" bottom="0" />
+		
+		<s:Group id="shownet" width="100%" height="100%" visible="true">
+			<s:BitmapImage id="mapbackground" source="@Embed('assets/imgs/map1.png')"  
+						   smooth="true" left="0" right="0" top="0" bottom="0" visible="false"/>
+			<ns:NetworkX id="networkX" width="100%" height="100%" />
+		</s:Group>
+	</s:HGroup>
+	<!--menu:CornerMenu left="30" bottom="30"/-->
+	<s:Group right="33" top="2">
+		<s:Group horizontalCenter="0">
+			<s:Image source="@Embed('assets/imgs/ipran/closemap_eye.png')" 
+					source.withMap="@Embed('assets/imgs/ipran/closemap_eye.png')" source.withoutMap="@Embed('assets/imgs/ipran/openmap_eye.png')" verticalCenter="0" horizontalCenter="0" buttonMode="true" 
+					 click="physicsCtrl.switchState()" mouseOut="tipGroup.visible=false" mouseOver="tipGroup.visible=true"/>
+		</s:Group>
+		<s:Image id="mypancel" source="@Embed('assets/imgs/ipran/addnode.png')"  top="50" buttonMode="true"  horizontalCenter="0" click="mypancel_clickHandler(event)"/>
+		<s:Group id="tipGroup" visible="false" left="0" top="41">
+			<s:Image id="tip" source="@Embed('assets/imgs/ipran/closemap_tip.png')" source.withMap="@Embed('assets/imgs/ipran/closemap_tip.png')" source.withoutMap="@Embed('assets/imgs/ipran/openmap_tip.png')"/>
+		</s:Group>
+	</s:Group>
+	<common:NetGroup id="netgroup" right="23" top="100" page="{this}" click="physicsCtrl.switchNet()"/>
+</s:Group>

@@ -1,0 +1,36 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+s|Application{
+	fontFamily : "Arial";
+}
+s|TitleWindow{
+	modalTransparency:0.25;
+	modalTransparencyBlur:0;
+	modalTransparencyColor:"0x000000";
+}
+mx|Alert
+{
+	borderSkin:ClassReference("com.huawei.sdnc.view.skins.AlertSkin");
+	fontSize: 16;
+	color:#ffffff;
+	headerHeight: 33;
+	buttonStyleName: "alertButton";
+	modalTransparency:0.25;
+	modalTransparencyBlur:0;
+	modalTransparencyColor:"0x000000";
+}
+
+.alertButton {
+	fontSize:12;
+	upSkin: ClassReference("com.huawei.sdnc.view.skins.AlertButtonSkin");
+	downSkin: ClassReference("com.huawei.sdnc.view.skins.AlertButtonSkin");
+	overSkin: ClassReference("com.huawei.sdnc.view.skins.AlertButtonSkin");
+	disabledSkin: ClassReference("com.huawei.sdnc.view.skins.AlertButtonSkin");
+} 
+
+.popupStyle {
+	modalTransparency:0.35;
+	modalTransparencyBlur:1;
+	modalTransparencyColor:"0x000000";
+} 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vrpsdnoffice>
+	<project name='sdn_office_ipcore_test' servicetype='dc' projecttype='test'>
+		<controllers>
+			<controller>
+				<name>Service Flow</name>
+			</controller>
+			<controller>
+				<name>uTunnel</name>
+			</controller>
+		</controllers>
+	</project>
+</vrpsdnoffice>

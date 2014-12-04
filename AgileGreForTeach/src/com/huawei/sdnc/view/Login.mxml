@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:view="com.huawei.sdnc.view.*"
+					  creationComplete="init(event)" transitions="{[transition]}" 
+					  xmlns:common="com.huawei.sdnc.view.common.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.ErrorCodeUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.EnterButton;
+			import com.huawei.sdnc.view.gre.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			
+			import org.httpclient.HttpResponse;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.components.Image;
+			import spark.components.Label;
+			[Bindable]
+			[Embed(source="assets/imgs/loginImgs/button_DCentry.png")]
+			private var __DCImg:Class;
+			[Embed(source="assets/imgs/loginImgs/button_ipranEntry.png")]
+			private var __IPRanImg:Class;
+			[Embed(source="assets/imgs/loginImgs/button_ipcoreEntry.png")]
+			private var __IPCoreImg:Class;
+			private var __isRightUser:Boolean;
+			/**存放所有注册用户信息*/
+			private var __userInfos:ArrayCollection;
+			/*
+			图标点击响应
+			*/
+			private var __app:sdncui2;
+			
+			protected function imgClickHandler(event:MouseEvent):void
+			{
+				this.currentState="login";
+				SdncUtil.curEntry = (event.currentTarget as EnterButton).name;
+			}
+			/*
+			登录框关闭按钮响应
+			*/
+			protected function login_closeHandler(event:CloseEvent):void
+			{
+				this.currentState="choiceEntry";
+			}
+			/*
+			登录按钮响应
+			*/
+			public var opsIp:String=SdncUtil.opsIp;
+			protected function loginButton_clickHandler(event:MouseEvent):void
+			{
+				if(SdncUtil.cuProjectType=="test"){
+					__app.currentState = "ipcore_state";
+					__app.header.currentState = "login";
+					this.currentState = "choiceEntry";
+					__app.header.username = login.username.text;
+					initLoginPanel();
+				}else{
+					opsIp = SdncUtil.opsIp;
+					var url:String = "http://"+opsIp+"/database/agilegre/checkresult?username="+login.username.text+"&infoname=checkpassword&data="+login.password.text;
+					ConnUtil.getInstence().clientQuery(url,ConnUtil.METHOD_GET,postReslut,postFault);	
+				}
+							
+				
+			}
+			private function postReslut(e:HttpResponseEvent,data:ByteArray):void
+			{
+				// TODO Auto Generated method stub
+				if(e.response.code=="200")
+				{
+					if(data.toString().search("ok")!=-1)
+					{
+						__app.currentState = "ipcore_state";
+						__app.header.currentState = "login";
+						this.currentState = "choiceEntry";
+						__app.header.username = login.username.text;
+						initLoginPanel();
+					}
+					else
+					{
+						Alert.show("登录失败！请检查用户名密码！","提示");
+					}
+				}
+				else if(e.response.code=="500")
+				{
+					Alert.show("Errorcode:500,"+data.toString())
+				}
+				
+			}
+			
+			private function postFault(e:Event):void
+			{
+				// TODO Auto Generated method stub
+				Alert.show("连接失败！当前IP地址:"+opsIp+"  错误信息："+e.toString(),"提示")
+			}
+			protected function init(event:FlexEvent):void
+			{
+				__app = SdncUtil.app;
+				SdncUtil.curEntry = "ipcore"
+				var myContextMenu:ContextMenu=new ContextMenu();  
+				var GoUrl1:ContextMenuItem=new ContextMenuItem("Enter");  	
+				GoUrl1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,imgClickHandler);  
+				myContextMenu.customItems.push(GoUrl1);  
+				myContextMenu.hideBuiltInItems();  
+				this.contextMenu=myContextMenu; 
+//				for each(var xml:XML in __app.sdnproject.servicetypes.servicetype)
+//				{
+//					var enterButton:EnterButton = new EnterButton();
+//					enterButton.text = xml.desc;
+//					enterButton.image = setEnterBtnImg(xml.name);
+//					enterButton.addEventListener(MouseEvent.CLICK,imgClickHandler);
+//					enterButton.tooltip = xml.desc;
+//					enterButton.name = xml.name;
+//					entry.addElement(enterButton);
+//					 if(xml.name == "ipcore")
+//					{
+//						
+//						enterButton.left = 20;
+//						enterButton.top = 30;
+//						
+//					}
+//					if(xml.hasOwnProperty("viewtypes"))
+//					{
+//						var arr:Array = [];
+//						for each(var viewType:XML in xml.viewtypes.viewtype)
+//						{
+//							arr.push(viewType);
+//						}
+//						SdncUtil.viewTypes[xml.name] = arr;
+//					}
+//				}
+//				__userInfos = new ArrayCollection();
+//				for each(var user:XML in __app.sdnconf.env.users.user)
+//				{
+//					__userInfos.addItem(user);
+//				}
+				
+			}
+			
+			private function setEnterBtnImg(type:String):Class
+			{
+				switch(type)
+				{
+					case "ipcore":
+						return __IPCoreImg;
+					case "ipran":
+						return __IPRanImg; 
+					case "dc":
+						return __DCImg;
+				}
+				return null;
+			}
+			
+			public function initLoginPanel():void
+			{
+				login.username.text = "";
+				login.password.text = "";
+				/* 	login.verificationCode.text = ""; */
+				login.username.setStyle("fontSize","11");
+				login.password.setStyle("fontSize","11");
+			}
+			
+			protected function loginViewCreated(event:FlexEvent):void
+			{
+				login.loginBtn.addEventListener(MouseEvent.CLICK,loginButton_clickHandler);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Transition id="transition">
+			<s:Fade alphaFrom="0" alphaTo="1" target="{this}" duration="1600"/>
+		</s:Transition>
+		<s:DropShadowFilter id="shadow" angle="150" blurX="16" blurY="16" alpha=".8"/>
+	</fx:Declarations>
+	<s:states>
+		<!--s:State name="choiceEntry"/-->
+		<s:State name="login"/>
+	</s:states>
+	<!--三个图标入口-->
+	<!--s:Group id="entry"  horizontalCenter="0" includeIn="choiceEntry" width="100%"-->
+		<!--<s:layout>
+		<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center" gap="50"/>
+		</s:layout>-->
+		<!--<common:EnterButton id="enterButton1" image="{DCImg}" text="DC" click="imgClickHandler(event)"/>
+		<common:EnterButton id="enterButton2" image="{IPCoreImg}" text="IPCore" click="imgClickHandler(event)"/>
+		<common:EnterButton id="enterButton3" image="{IPRanImg}" text="IPRan" click="imgClickHandler(event)"/>-->
+	<!--/s:Group-->
+	<!--用户登录界面-->
+	<view:LoginPanel id="login" creationComplete="loginViewCreated(event)" verticalCenter="-40" horizontalCenter="0" includeIn="login"/>
+</s:SkinnableContainer>

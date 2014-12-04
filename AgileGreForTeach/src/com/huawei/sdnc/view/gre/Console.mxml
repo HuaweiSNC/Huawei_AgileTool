@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300"
+		 creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.events.FlexEvent;
+			 private var __app:sdncui2;
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				__app=SdncUtil.app;
+			}
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,Capabilities.screenResolutionX,Capabilities.screenResolutionY);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				this.stopDrag();
+			}
+			
+			protected function clearConsole(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				console.text="";
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:LinearGradient>
+				<s:GradientEntry color="0xcccccc"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	<s:VGroup width="100%" height="100%" gap="0" >
+		<s:Group width="100%" height="10%" mouseDown="beginDrag(event)" mouseUp="endDrag(event)">
+			<s:Rect width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient>
+						<s:GradientEntry color="0x3276b7"/>
+						<s:GradientEntry color="0x4489ca"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Label left="10" color="0xf9f3f3" fontFamily="微软雅黑" fontSize="12" fontWeight="bold"
+					 text="控制台" verticalCenter="0"/>
+			<s:Image id="cbtn" right="15" buttonMode="true"
+					 click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_CONSOLE))"
+					 mouseOut="cbtn.filters=null" mouseOver="cbtn.filters=[glow]"
+					 source="@Embed('assets/imgs/ipran/close.png')" verticalCenter="0"/>
+		</s:Group>
+		<s:Group width="100%" height="90%">
+			<s:TextArea id="console" width="95%" height="235" borderVisible="false" horizontalCenter="0"/>
+			<s:Button bottom="10" label="清空" horizontalCenter="0" click="clearConsole(event)"/>
+		</s:Group>
+	</s:VGroup>
+	
+	
+</s:Group>

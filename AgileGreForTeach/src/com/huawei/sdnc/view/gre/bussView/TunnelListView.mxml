@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="400" height="300"
+		 xmlns:btn="com.huawei.sdnc.view.ipRan.physics.*"
+		 creationComplete="init()"
+		 keyUp="onKeyUp(event)"
+		 fontFamily="微软雅黑">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.model.Gre;
+			import com.huawei.sdnc.model.GreTunnel;
+			import com.huawei.sdnc.model.ifm.Interface;
+			import com.huawei.sdnc.model.ifm.ifmAm4.am4CfgAddr.Am4CfgAddr;
+			import com.huawei.sdnc.model.qos.QosActRdrIf;
+			import com.huawei.sdnc.model.qos.QosBehavior;
+			import com.huawei.sdnc.model.qos.QosPolicy;
+			import com.huawei.sdnc.model.qos.QosPolicyNode;
+			import com.huawei.sdnc.service.SdnService;
+			import com.huawei.sdnc.service.SdnUIService;
+			import com.huawei.sdnc.techschema.ServiceTool;
+			import com.huawei.sdnc.tools.PopupManagerUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.gre.GreBussiness;
+			import com.huawei.sdnc.view.gre.MyLink;
+			import com.huawei.sdnc.view.gre.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpErrorEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			private var __app:sdncui2
+			private var devices:Array=[];
+			[Bindable]
+			public  var fileNameTypeDropDownList:ArrayCollection = new ArrayCollection([]);
+			[Bindable]
+			public var pipeline:ArrayCollection;
+			private var sdnService:SdnUIService = new SdnUIService();
+			[Bindable]
+			public var tnlList:ArrayCollection=new ArrayCollection([]);
+			public var element:IElement;
+			public var ipcorebusiness:GreBussiness
+			public function init():void
+			{
+				__app=SdncUtil.app;
+				focusManager.setFocus(ddl);
+				pipeline = DataHandleTool.pipe;
+				devices=DataHandleTool.devices;
+				fileNameTypeDropDownList=new ArrayCollection(devices);
+				
+				if(element == null){
+					ddl.selectedIndex=0;
+					upDateTnlList();
+				}else{
+					if(element is StateNode){
+						var stateNode:StateNode=element as StateNode;
+						var deviceName:String=stateNode.name;
+						for(var i:int=0;i<devices.length;i++){
+							var d:Object=devices[i];
+							var devicename:String = d["devicename"];
+							//					var srcIp:String=d["ip"];
+							if(deviceName==devicename){
+								ddl.selectedIndex=i;
+								break;
+							}
+						}
+					}
+				}
+				if(SdncUtil.cuProjectType=="test"){
+					var tnls:Array=element.getClient("tnls");
+					var tnlArr:Array=tnls==null?[]:tnls;
+					tnlList=new ArrayCollection(tnlArr);
+				}else{
+					if(element is StateNode){
+						var device:Device=element.getClient("device");
+						var greTunnels:Array=device.gre.greTunnels;
+						var interfArr:Array = device.ifm.interfaces;
+						if(greTunnels!=null){
+							var tnls1:Array=[];
+							for each(var greTunnel:GreTunnel in greTunnels){
+								var tnlName:String=greTunnel.tnlName;
+								var tnlType:String=greTunnel.tnlType;
+								var srcType:String=greTunnel.srcType;
+								var srcIpAddr:String=greTunnel.srcIpAddr;
+								var srcIfName:String=greTunnel.srcIfName;
+								var dstIpAddr:String=greTunnel.dstIpAddr;
+								var dstVpnName:String=greTunnel.dstVpnName;
+								var ifIp:String; 
+								for each(var inter:Interface in interfArr){
+									var ifName:String = inter.ifName;
+									if(ifName == tnlName){
+										var am4CfgAddrs:Array = inter.ifmAm4.am4CfgAddrs;
+										for each(var am4:Am4CfgAddr in am4CfgAddrs){
+											ifIp = am4.ifIpAddr;
+											trace("======"+ifIp)
+										}
+										break;
+									}
+								}
+								var tnl:Object=new Object;
+								tnl["tnlName"]=tnlName;
+								tnl["tnlType"]=tnlType;
+								tnl["srcType"]=srcType;
+								tnl["src_value"]=srcType=="ip_address"?srcIpAddr:srcIfName;
+								tnl["srcIpAddr"]=srcIpAddr;
+								tnl["srcIfName"]=srcIfName;
+								tnl["dstIpAddr"]=dstIpAddr;
+								tnl["dstVpnName"]=dstVpnName;
+								tnl["ifIpAddr"]=ifIp;
+								tnls1.push(tnl);
+							}
+							tnlList=new ArrayCollection(tnls1);
+						}
+					}
+				}
+				
+				
+				//				var stateNode:StateNode=element as StateNode;
+				//				var deviceName:String=stateNode.name;
+				//				for(var i:int=0;i<devices.length;i++){
+				//					var d:Object=devices[i];
+				//					var devicename:String = d["device"];
+				////					var srcIp:String=d["ip"];
+				//					if(deviceName==devicename){
+				//						ddl.selectedIndex=i;
+				//						break;
+				//					}
+				//				}
+				
+			}
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,Capabilities.screenResolutionX,Capabilities.screenResolutionY);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				this.stopDrag();
+			}
+			
+			/**更新tnl列表*/
+			public function refreshTnlList():void
+			{
+				if(SdncUtil.cuProjectType=="test"){
+					var tnls:Array=element.getClient("tnls");
+					tnlList=new ArrayCollection(tnls);
+				}else{
+					var device:Device=element.getClient("device");
+					device.getGre(false,function():void{
+						var greTunnels:Array=device.gre.greTunnels;
+						var interfArr:Array = device.ifm.interfaces;
+						if(greTunnels!=null){
+							var tnls1:Array=[];
+							for each(var greTunnel:GreTunnel in greTunnels){
+								var tnlName:String=greTunnel.tnlName;
+								var tnlType:String=greTunnel.tnlType;
+								var srcType:String=greTunnel.srcType;
+								var srcIpAddr:String=greTunnel.srcIpAddr;
+								var srcIfName:String=greTunnel.srcIfName;
+								var dstIpAddr:String=greTunnel.dstIpAddr;
+								var dstVpnName:String=greTunnel.dstVpnName;
+								var ifIp:String; 
+								for each(var i:Interface in interfArr){
+									var ifName:String = i.ifName;
+									if(ifName == tnlName){
+										var am4CfgAddrs:Array = i.ifmAm4.am4CfgAddrs;
+										for each(var am4:Am4CfgAddr in am4CfgAddrs){
+											ifIp = am4.ifIpAddr;
+										}
+										break;
+									}
+								}
+								var tnl:Object=new Object;
+								tnl["tnlName"]=tnlName;
+								tnl["tnlType"]=tnlType;
+								tnl["srcType"]=srcType;
+								tnl["src_value"]=srcType=="ip_address"?srcIpAddr:srcIfName;
+								tnl["srcIpAddr"]=srcIpAddr;
+								tnl["srcIfName"]=srcIfName;
+								tnl["dstIpAddr"]=dstIpAddr;
+								tnl["dstVpnName"]=dstVpnName;
+								tnl["ifIpAddr"]=ifIp;
+								tnls1.push(tnl);
+							}
+							tnlList=new ArrayCollection(tnls1);
+						}
+					});
+				}
+			}
+			private function onRefreshDefault(e:HttpErrorEvent):void
+			{
+				Alert.show("tnl列表更新gre失败");
+			}
+			
+			/**
+			 * 当更换设备时更新tnl列表
+			 */	
+			public function upDateTnlList():void
+			{
+				var networkX:NetworkX = __app.ipcore.physicsView.networkX;
+				var selectedDeviceIp:Object=ddl.selectedItem;
+				var ip:String=selectedDeviceIp["ip"];
+				var symbol:Boolean=true;
+				networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+					if(symbol){
+						if(item is StateNode){
+							var stateNode:StateNode=item as StateNode;
+							var ip1:String=stateNode.getClient("ip");
+							if(ip1==ip){
+								element=stateNode;
+								symbol=false;
+							}
+						}
+					}
+				});
+				if(SdncUtil.cuProjectType=="test"){
+					var tnls:Array=element.getClient("tnls");
+					tnls=tnls==null?[]:tnls;
+					tnlList=new ArrayCollection(tnls);
+				}else{
+					var device:Device=element.getClient("device");
+					var greTunnels:Array=device.gre.greTunnels;
+					var interfArr:Array = device.ifm.interfaces;
+					if(greTunnels!=null){
+						var tnls1:Array=[];
+						for each(var greTunnel:GreTunnel in greTunnels){
+							var tnlName:String=greTunnel.tnlName;
+							var tnlType:String=greTunnel.tnlType;
+							var srcType:String=greTunnel.srcType;
+							var srcIpAddr:String=greTunnel.srcIpAddr;
+							var srcIfName:String=greTunnel.srcIfName;
+							var dstIpAddr:String=greTunnel.dstIpAddr;
+							var dstVpnName:String=greTunnel.dstVpnName;
+							var ifIp:String;
+							for each(var i:Interface in interfArr){
+								var ifName:String = i.ifName;
+								if(ifName == tnlName){
+									var am4CfgAddrs:Array = i.ifmAm4.am4CfgAddrs;
+									for each(var am4:Am4CfgAddr in am4CfgAddrs){
+										ifIp = am4.ifIpAddr;
+									}
+									break;
+								}
+							}
+							var tnl:Object=new Object;
+							tnl["tnlName"]=tnlName;
+							tnl["tnlType"]=tnlType;
+							tnl["srcType"]=srcType;
+							tnl["src_value"]=srcType=="ip_address"?srcIpAddr:srcIfName;
+							tnl["srcIpAddr"]=srcIpAddr;
+							tnl["srcIfName"]=srcIfName;
+							tnl["dstIpAddr"]=dstIpAddr;
+							tnl["dstVpnName"]=dstVpnName;
+							tnl["ifIpAddr"]=ifIp;
+							tnls1.push(tnl);
+						}
+						tnlList=new ArrayCollection(tnls1);
+					}
+				}
+			}
+			/**
+			 * 删除tnl
+			 * */
+			//			public var pname:String;
+			public var behaviorName:String;
+			public function isTnlUsed(tnlName:String):Boolean{
+				var device:Device = element.getClient("device");
+				var qosBehaviors:Array = device.qos.qosBehaviors;
+				var qosPolicys:Array = device.qos.qosPolicys;
+				//				var behaviorName:String
+				for each(var behavior:QosBehavior in qosBehaviors){
+					if(behavior.qosActRdrIfs != null && behavior.qosActRdrIfs.length != 0){
+						var qosActRdrIf:QosActRdrIf = behavior.qosActRdrIfs[0] as QosActRdrIf ;
+						var ifName:String = qosActRdrIf.ifName;
+						if(tnlName == ifName){
+							behaviorName = behavior.behaviorName;
+							return true;
+							break;
+						}
+					}
+				}
+				return false;
+			}
+			public function deleteTnl():void
+			{
+				var tnlsobj:Array=element.getClient("tnls");
+				var tnlitem:Object=tnlgrid.selectedItem;
+				var tnlobjName:String=tnlitem["tnlName"];
+				if(SdncUtil.cuProjectType=="test")
+				{
+					Alert.show("确认删除吗？","提示框",Alert.OK | Alert.CANCEL,this,closeDelete);
+				}else{
+					if(isTnlUsed(tnlobjName)){
+						Alert.show("此条管道已被流行为-"+behaviorName+"引用，确认删除吗？","提示框",Alert.OK | Alert.CANCEL,this,closeDelete);
+					}else{
+						Alert.show("确认删除吗？","提示框",Alert.OK | Alert.CANCEL,this,closeDelete);
+					}
+				}
+			}
+			public var v1:Number
+			public var v2:Number
+			public function closeDelete(e:CloseEvent):void
+			{
+				var deviceIp:String=element.getClient("ip");
+				if(e.detail==Alert.OK){
+					var tnlsobj:Array=element.getClient("tnls");
+					var tnlitem:Object=tnlgrid.selectedItem;
+					willDeledTnl=tnlitem;
+					var tnlobjName:String=tnlitem["tnlName"];
+					if(SdncUtil.cuProjectType=="test")
+					{
+						var index:int;
+						for(var i:int=0;i<tnlsobj.length;i++){
+							var tnlobj:Object=tnlsobj[i];
+							var tnlName1:String=tnlobj["tnlName"];
+							if(tnlobjName==tnlName1){
+								index=i;
+								var dstIpAddr:String=tnlobj["dstIpAddr"];
+								DataHandleTool.addOrDelLinkByTnl(deviceIp,dstIpAddr,"del",__app.ipcore.physicsView.networkX);
+								break;
+							}
+						}
+						tnlsobj.splice(index,1);
+						refreshTnlList();
+					}else{
+						v1 = new Date().time
+						var id:String=element.getClient("id");
+						var opsIp:String=SdncUtil.serviceIp;
+						var uri:String="http://"+opsIp+"/AgileGre/rest/devices/"+id+"/utunnel?tnlName="+tnlobjName;
+						sdnService.ipcoreRequest(uri,onDelSuccess,onDelError,"del",null,"Boolean ret = utunnel.delete()");
+						PopupManagerUtil.getInstence().popupLoading(this);
+					}
+				}
+			}
+			private var willDeledTnl:Object;
+			private function onDelSuccess(e:HttpDataEvent):void
+			{
+				var message:String=e.bytes.toString();
+				v2 = new Date().time
+				var srcIpAddr:String=willDeledTnl["srcIpAddr"];
+				var dstIpAddr:String=willDeledTnl["dstIpAddr"];
+				var fromNode:StateNode=DataHandleTool.findNodeByDstIp(srcIpAddr,__app.ipcore.physicsView.networkX);
+				var toNode:StateNode=DataHandleTool.findNodeByDstIp(dstIpAddr,__app.ipcore.physicsView.networkX);
+				if(fromNode!=null&&toNode!=null){
+					var link:MyLink=DataHandleTool.findLink(fromNode,toNode,__app.ipcore.physicsView.networkX);
+					__app.ipcore.physicsView.networkX.elementBox.remove(link);
+				}
+				
+				ServiceTool.message = message
+				ServiceTool.usetime = (v2-v1)+"ms";
+				ServiceTool.api = "utunnel"
+				ServiceTool.curtime = SdncUtil.getFormatStr("MM-DD  JJ:NN",new Date())
+				refreshTnlList();
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			private function onDelError(e:ErrorEvent):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				ServiceTool.message = e.toString()
+			}
+			private function getGreData():void
+			{
+			}
+			private function onSu(e:ResultEvent):void
+			{
+				var gre:String=e.result.toString();
+				Alert.show(gre);
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				if(event.keyCode==Keyboard.ESCAPE){
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_PIPELINE_DEFINE));
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<s:VGroup id="content"  width="100%" height="100%">
+			<s:Group width="100%" height="10%">
+				<s:Label left="19" text="GRE隧道" verticalCenter="0"/>
+				<s:Label right="170" text="选择设备" verticalCenter="0"/>
+				<mx:ComboBox id="ddl" right="11" width="150" change="upDateTnlList()"
+								 contentBackgroundAlpha="1.0"
+								contentBackgroundColor="#FFFFFF"
+								dataProvider="{fileNameTypeDropDownList}" labelField="devicename"
+								verticalCenter="0"/>
+			</s:Group>
+			<s:Group  width="100%" height="75%">
+				<s:DataGrid id="tnlgrid" width="95%" height="95%"  
+							dataProvider="{tnlList}" horizontalCenter="0" requestedRowCount="4"
+							textAlign="center" verticalCenter="0">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn  headerText="隧道名称" dataField="tnlName" width="80" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"></s:GridColumn>
+							<s:GridColumn  headerText="隧道类型" dataField="tnlType" width="80" visible="false" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"></s:GridColumn>
+							<s:GridColumn  headerText="隧道源类型" dataField="srcType" width="100" visible="false" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"></s:GridColumn>
+							<s:GridColumn  headerText="隧道源IP/名称" dataField="src_value" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"></s:GridColumn>
+							<s:GridColumn  headerText="隧道目的IP" dataField="dstIpAddr" width="100" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"></s:GridColumn>
+							<s:GridColumn  headerText="入口的IP" dataField="ifIpAddr" width="100" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader" visible="false"></s:GridColumn>
+							<s:GridColumn headerText="删除" width="80" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<s:Button label="删除" horizontalCenter="0" verticalCenter="0" click="outerDocument.deleteTnl()"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+								
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+					
+				</s:DataGrid>
+			</s:Group>
+		</s:VGroup>
+	</s:VGroup>
+</mx:Canvas>

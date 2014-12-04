@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXAdvancedDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+								  xmlns:s="library://ns.adobe.com/flex/spark" 
+								  xmlns:mx="library://ns.adobe.com/flex/mx" 
+								  autoDrawBackground="false" width="100%"
+								  focusEnabled="true" color="0">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			[Bindable]
+			private var __lbtxt:String = "";
+			[Bindable]
+			private var __isSeled:Boolean = false;
+			
+			private var __portInfo:XML;
+			
+			public override function set data(value:Object):void{
+				super.data = value;
+				if(value == null)
+				{
+					__lbtxt = "null";
+					__isSeled = false;
+					delLabel.visible = false;
+					return;
+				}
+				var cuPort:Object;
+				if(value is XML)
+					cuPort = value;
+				else
+				{
+					var index:int = listData["dataField"];
+					cuPort = value.ports[index];
+				}
+				if(!cuPort)
+				{
+					__lbtxt = "null";
+					__isSeled = false;
+					delLabel.visible = false;
+				}
+				else  
+				{
+					__portInfo = cuPort as XML;
+					__lbtxt = String(cuPort.portName);
+					var adminStatus:String = String(cuPort.adminStatus);
+					__isSeled = adminStatus == "true";
+					editLabel.visible = true;
+					delLabel.visible = true;
+				}
+			}
+			
+			protected function editLabel_clickHandler(event:MouseEvent):void
+			{
+				this.parentDocument.dispatchEvent(new SdncEvt(SdncEvt.VIRTUALVIEW_EDIT_PORT,this));
+			}
+			
+			protected function delLabel_clickHandler(event:MouseEvent):void
+			{
+				this.parentDocument.dispatchEvent(new SdncEvt(SdncEvt.VIRTUALVIEW_DEL_PORT,this));
+			}
+
+			public function get _portInfo():XML
+			{
+				return __portInfo;
+			}
+
+			public function set _portInfo(value:XML):void
+			{
+				__portInfo = value;
+			}
+
+			
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%" verticalAlign="middle" paddingLeft="3" paddingRight="3" gap="2">
+		<s:CheckBox id="cb" selected="{__isSeled}" symbolColor="0x1382ec"/>
+		<s:Label id="lblData" textAlign="center" text="{__lbtxt}" maxDisplayedLines="1" maxWidth="73" fontSize="14"/>
+		<s:HGroup gap="2" width="26">
+			<!--<s:Label id="editLabel" text="(...)" click="editLabel_clickHandler(event)" buttonMode="true" toolTip="EDIT"/>-->
+			<s:Image id="editLabel"  click="editLabel_clickHandler(event)"
+					 source="@Embed('assets/imgs/virtual/editbutton.png')"
+					 buttonMode="true" toolTip="EDIT"/>
+			<!--<s:Label id="delLabel" text="(-)" click="delLabel_clickHandler(event)" buttonMode="true" toolTip="DELETE"/>-->
+			<s:Image id="delLabel"  click="delLabel_clickHandler(event)" 
+					 source="@Embed('assets/imgs/virtual/delbutton.png')"
+					 buttonMode="true" toolTip="DELETE"/>
+		</s:HGroup>
+	</s:HGroup>
+</s:MXAdvancedDataGridItemRenderer>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="380" height="450" backgroundAlpha=".9" backgroundColor="0xcccccc"
+		 borderColor="0x34b5d0" close="PopUpManager.removePopUp(this)"
+		 skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" title="编辑设备"
+		 fontFamily="微软雅黑"
+		 creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.gre.dataHandle.DataHandleTool;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.HttpResponse;
+			import org.httpclient.events.HttpDataEvent;
+			
+			import spark.components.DataGrid;
+			
+			import twaver.IElement;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var deviceSetUp:DevicesSetUpWindow;
+			public var dataGrid:DataGrid;
+			/**
+			 * 
+			 * */
+			protected function init(event:FlexEvent):void
+			{
+				var item:Object = dataGrid.selectedItem;
+				var id:String = item["id"];
+				trace("id::::"+id);
+				deviceId.text =  item["id"];
+				username.text = item["username"];
+				devicename.text = item["devicename"];
+				passwd.text = item["passwd"];
+				ip.text = item["ip"];
+				version.text =  item["version"];
+				productType.text = item["productType"];
+			}
+			
+			private function saveEditDevice(e:MouseEvent):void{
+				var opsIp:String = SdncUtil.serviceIp;
+				var id:String = deviceId.text;
+				var userName:String=username.text;
+				var devices:Array=DataHandleTool.devices;
+				var item:Object = dataGrid.selectedItem;
+				for each(var o:Object in devices){
+					var dname:String = o["devicename"];
+					if(devicename.text != item["devicename"]&&devicename.text == dname){
+						Alert.show("设备名已存在","提示");
+						return;
+				    }
+				}
+				if(passwd.text.length == 0){
+					Alert.show("密码不能为空");
+					return;
+				}
+				if(!userName.match("^[a-zA-Z]+[a-zA-Z0-9_]*$")){
+					Alert.show("用户名以字母开头加数字下划线","格式错误");
+					return;
+				}
+				if(!ip.text.match("^[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}$")){
+					Alert.show("ip格式不正确","格式错误");
+					return;
+				}
+				var url:String = "http://"+opsIp+"/AgileGre/rest/devices";
+				var body:String =
+					"{"
+					+"\"device\":"
+					+"	{"
+					+"	\"username\": \""+username.text+"\","
+					+"	\"devicename\": \""+devicename.text+"\","
+					+"	\"passwd\": \""+passwd.text+"\","
+					+"	\"ip\": \""+ip.text+"\","
+					+"	\"version\": \""+version.text+"\","
+					+"	\"productType\": \""+productType.text+"\","
+					+"	\"id\":  \""+deviceId.text+"\""
+					+"}"
+					+"	}";
+				connUtil.clientQuery(url,ConnUtil.METHOD_PUT,onPutResult,onPutFault,body);
+				
+			}
+			
+			
+			/**
+			 * 关闭编辑窗口
+			 * */
+			private function closeFunction(e:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				deviceSetUp.queryDevice();
+			}
+			
+			private function onPutResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("error")== -1 ){
+					Alert.show("设备编辑成功","提示",Alert.OK,this,closeFunction);
+				}else{
+					Alert.show("设备编辑失败","提示");
+				}
+			}
+			
+			private function onPutFault(e:Event):void
+			{
+				trace("编辑设备失败");
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<s:BorderContainer id="bcc" top="10" width="95%" height="90%" hideEffect="fadeout"
+					   horizontalCenter="0" showEffect="fadeIn" >
+		<s:Group width="100%" height="10%" x="0" y="13">
+			<s:Label text="设备ID ：" x="54" y="14"/>
+			<s:TextInput id="deviceId" x="125" y="7" width="130" editable="false"/>
+		</s:Group>
+		
+		<s:Group width="100%" height="10%" x="0" y="63">
+			<s:Label text="设备名称 ："  x="46" y="14" textAlign="right"/>
+			<s:TextInput id="devicename" x="125" y="7" width="130"/>
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="113">
+			<s:Label  text="　IP地址 ：" x="46" y="14" textAlign="right"/>
+			<s:TextInput id="ip" x="125" y="7" width="130"/>
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="163">
+			<s:Label text="	用户名 ：" y="14" x="54"/>
+			<s:TextInput id="username"  x="125" y="7" width="130"/>
+			<!--<s:Label id="usernamepanduan"  text="用户名格式不正确" visible="false" x="255" y="10"/>-->
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="213">
+			<s:Label text="		密码 ：" x="61" y="14" textAlign="right"/>
+			<s:TextInput id="passwd" x="125" y="7" width="130" displayAsPassword="true"/>
+		</s:Group>
+		<s:Group  width="100%" height="10%" x="0" y="263">
+			<s:Label text="		版本 ：" x="60" y="14" textAlign="right"/>
+			<s:TextInput id="version" x="125" y="7" width="130" text="3.0"/>
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="313">
+			<s:Label text="产品类型 ："  x="46" y="14"  textAlign="right"/>
+			<s:TextInput id="productType" x="125" y="7" width="130" text="NE5000E"/>
+		</s:Group>
+	</s:BorderContainer>
+	<s:Button bottom="15" label="确定" click="saveEditDevice(event)" horizontalCenter="-52"/>
+	<s:Button bottom="15" label="取消" click="PopUpManager.removePopUp(this)" horizontalCenter="50"/>
+</s:TitleWindow>

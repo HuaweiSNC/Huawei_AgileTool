@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AdvancedDataGridColumn xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			public var verticalMergeable:Boolean=true;
+			public var startDate:Date; //scheduleDate
+			public var dateColomColumn:Boolean = false
+			public var staticWidth:Number = 0;
+		]]>
+	</mx:Script>
+</mx:AdvancedDataGridColumn>

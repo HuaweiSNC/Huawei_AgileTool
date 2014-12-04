@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXAdvancedDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+								  xmlns:s="library://ns.adobe.com/flex/spark" 
+								  xmlns:mx="library://ns.adobe.com/flex/mx" 
+								  autoDrawBackground="false" color="0xffffff">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			public override function set data(value:Object):void{
+				if(value != null)
+				{
+					super.data = value;
+					var index:int = listData["dataField"];
+					lblData.text = String(value.headerText);
+				}
+			}
+			protected function editLabel_clickHandler(event:MouseEvent):void
+			{
+				this.parentDocument.dispatchEvent(new SdncEvt(SdncEvt.POPUP_ADDOREDIT_VDC_WINDOW,lblData.text));
+			}
+			
+			protected function delLabel_clickHandler(event:MouseEvent):void
+			{
+				this.parentDocument.dispatchEvent(new SdncEvt(SdncEvt.VIRTUALVIEW_DEL_VDC,lblData.text));
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Rect top="-2" right="0" bottom="-1" left="0">
+		<s:fill>
+			<s:SolidColor color="0x2f70ae"/>
+		</s:fill>
+	</s:Rect>
+	<s:Group width="100%" height="100%">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center"/>
+		</s:layout>
+		<s:Label id="lblData" maxDisplayedLines="3"/>
+	<!--	<s:Label id="editLabel" text="(...)" click="editLabel_clickHandler(event)" buttonMode="true" toolTip="EDIT"/>-->
+		<s:Image id="editLabel" source="@Embed('assets/imgs/virtual/editbutton.png')" buttonMode="true" toolTip="EDIT" click="editLabel_clickHandler(event)"/>
+		<!--<s:Label id="delLabel" text="(-)" click="delLabel_clickHandler(event)" buttonMode="true" toolTip="DELETE"/>-->
+		<s:Image id="delLabel" source="@Embed('assets/imgs/virtual/delbutton.png')" buttonMode="true" toolTip="DELETE" click="delLabel_clickHandler(event)"/>
+	</s:Group>
+</s:MXAdvancedDataGridItemRenderer>

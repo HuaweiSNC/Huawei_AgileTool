@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			[Bindable]
+			public var label:String = "";
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="normal_s"/>
+		<s:State name="click_s"/>
+	</s:states>
+	<s:Rect id="btnBack" width="100%" height="100%" includeIn="click_s">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry ratio="0" color="0x228bbb"/>
+				<s:GradientEntry ratio=".5" color="0x2382ae"/>
+				<s:GradientEntry ratio=".51" color="0x0c6c9e"/>
+				<s:GradientEntry color="0x0c6698"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	<s:Label text="{label}" width="100%" height="100%" textAlign="center"
+			 color.normal_s="black" color.click_s="white"
+			 verticalCenter="5" buttonMode="true"/>
+</s:Group>

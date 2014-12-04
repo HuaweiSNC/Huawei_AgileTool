@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+				   minWidth="21" minHeight="21" 
+				   >
+	
+	<s:Line left="0" top="0" right="0">
+		<s:stroke>
+			<s:SolidColorStroke color="0x5b91c5" weight="1"/>
+		</s:stroke>
+	</s:Line>
+ 	
+	<s:Rect left="0" right="0" top="1" bottom="0.5"> 
+		<s:fill> 
+			<s:LinearGradient rotation="90"> 
+				<s:GradientEntry color="0x3276b7" ratio=".5"/> 
+				<s:GradientEntry color="0x2f70ae" ratio=".5"/> 
+			</s:LinearGradient> 
+		</s:fill> 
+	</s:Rect> 
+	
+	<s:Line left="0" bottom="0.5" right="0">
+		<s:stroke>
+			<s:SolidColorStroke color="0x253a5b" weight="1"/>
+		</s:stroke>
+	</s:Line>
+	
+	<s:Line left="0" bottom="0" right="0">
+		<s:stroke>
+			<s:SolidColorStroke color="0x4c5975" weight="1"/>
+		</s:stroke>
+	</s:Line>
+</s:SparkSkin>

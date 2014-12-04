@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import spark.components.Image;
+			import spark.primitives.BitmapImage;
+			
+			private var reflectorImg:BitmapImage = new BitmapImage();
+			protected function init(event:FlexEvent):void
+			{
+				addElement(reflectorImg);
+			}
+			
+			public function setBitMapSource(value:BitmapData):void
+			{
+				reflectorImg.source = createShadowBitmapData(value);
+			}
+
+			private static function createShadowBitmapData(source:BitmapData):BitmapData {
+				var bitmapData:BitmapData = new BitmapData(source.width, source.height, true, 0x00000000);
+				bitmapData.copyPixels(source, new Rectangle(0, 0, source.width, source.height), new Point(),
+					createAlphaGradientBitmap(source.width, source.height));
+				
+				var result:BitmapData = new BitmapData(source.width, source.height, true, 0x00000000);
+				var matrix:Matrix = new Matrix(1, 0, 0, 1, 0, 0);
+				matrix.translate(-source.width / 2, -source.height / 2);
+				matrix.rotate(Math.PI);
+				matrix.translate(source.width / 2, source.height / 2);
+				result.draw(bitmapData, matrix);
+				return result;
+			}
+			
+			private static function createAlphaGradientBitmap(width:Number, height:Number):BitmapData {
+				var alphaGradientBitmap:BitmapData = new BitmapData(width, height, true, 0x00000000);
+				var gradientMatrix:Matrix = new Matrix();
+				var gradientSprite:Sprite = new Sprite();
+				gradientMatrix.createGradientBox(width, height, Math.PI/2, 0, height * 0.4);
+				gradientSprite.graphics.beginGradientFill(GradientType.LINEAR, [0xFFFFFF, 0xFFFFFF], 
+					[0, 0.5], [0, 255], gradientMatrix);
+				gradientSprite.graphics.drawRect(0, 0, width, height);
+				gradientSprite.graphics.endFill();
+				alphaGradientBitmap.draw(gradientSprite);
+				return alphaGradientBitmap;
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+</s:Group>

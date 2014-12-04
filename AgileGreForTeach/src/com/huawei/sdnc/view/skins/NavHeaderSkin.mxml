@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			 xmlns:s="library://ns.adobe.com/flex/spark" 
+			 xmlns:mx="library://ns.adobe.com/flex/mx"
+			 minWidth="21" alpha.disabled=".5">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="up"/>
+		<s:State name="over"/>
+		<s:State name="down"/>
+		<s:State name="disabled"/>
+		<s:State name="selectedUp"/>
+		<s:State name="selectedOver"/>
+		<s:State name="selectedDown"/>
+		<s:State name="selectedDisabled"/>
+	</s:states>
+	
+	<s:Rect  left="1" top="7" bottom="7" right="1">
+		<s:fill>
+			<s:BitmapFill source="@Embed('assets/imgs/navpanel/nav_header.png')"/>
+		</s:fill>
+	</s:Rect>
+</s:SparkSkin>

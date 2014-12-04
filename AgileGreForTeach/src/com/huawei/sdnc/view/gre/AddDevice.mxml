@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="380" height="420" backgroundAlpha=".9" backgroundColor="0xcccccc"
+		 borderColor="0x34b5d0" close="PopUpManager.removePopUp(this)"
+		 skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" title="增加设备"
+		 creationComplete="init(event)"
+		 fontFamily="微软雅黑"
+		 keyUp="onKeyUp(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.service.SdnUIService;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.gre.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			
+			import twaver.IElement;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var deviceSetUp:DevicesSetUpWindow;
+			public var item:Object;
+			private function saveAddDevice(e:MouseEvent):void{
+				var opsIp:String=SdncUtil.serviceIp;
+				var url:String = "http://"+opsIp+"/AgileGre/rest/devices";
+				var userName:String=username.text;
+				var devices:Array=DataHandleTool.devices;
+				for each(var o:Object in devices){
+					var dname:String = o["devicename"];
+					if(devicename.text == dname){
+						Alert.show("设备名已存在","提示");
+						return;
+					}
+				 
+				}
+				if(!userName.match("^[a-zA-Z]+[a-zA-Z0-9_]*$")){
+					Alert.show("用户名以字母开头加数字下划线","格式错误");
+					return;
+				}
+				if(!ip.text.match("^[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}$")){
+					Alert.show("ip格式不正确","格式错误");
+					return;
+				}
+				if(passwd.text.length == 0){
+					Alert.show("密码不能为空","提示");
+					return;
+				}
+				var body:String =
+					"{"
+					+"\"device\":"
+					+"	{"
+					+"	\"username\": \""+username.text+"\","
+					+"	\"devicename\": \""+devicename.text+"\","
+					+"	\"passwd\": \""+passwd.text+"\","
+					+"	\"ip\": \""+ip.text+"\","
+					+"	\"version\": \""+version.text+"\","
+					+"	\"productType\": \""+productType.text+"\""
+					+"}"
+			+"	}";
+				connUtil.clientQuery(url,ConnUtil.METHOD_POST,onPostResult,onPostFault,body);
+			}
+			
+			
+			/**
+			 * 关闭编辑窗口
+			 * */
+			private function closeFunction(e:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				deviceSetUp.queryDevice();
+			}
+			
+			private function onPostResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("error")== -1 ){
+					Alert.show("设备增加成功","提示",Alert.OK,this,closeFunction);
+				}else{
+					Alert.show("设备增加失败","提示");
+				}
+			}
+			private function onPostFault(e:Event):void
+			{
+				trace("添加设备失败");
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				focusManager.setFocus(devicename);
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				if(event.keyCode==Keyboard.ESCAPE){
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<fx:XML id="project" source="assets/xml/sdn_office_project.xml"/>
+	</fx:Declarations>
+	<s:BorderContainer id="bcc" top="10" width="95%" height="90%" hideEffect="fadeout"
+					   horizontalCenter="0" showEffect="fadeIn" >
+		
+		<s:Group width="100%" height="10%" x="0" y="13">
+			<s:Label text="设备名称 ："  x="46" y="14" textAlign="right"/>
+			<s:TextInput id="devicename" x="125" y="7" width="130"/>
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="63">
+			<s:Label  text="　IP地址 ："  x="46" y="14" textAlign="right"/>
+			<s:TextInput id="ip" x="125" y="7" width="130"/>
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="113">
+			<s:Label y="14" x="54" text=" 用户名 ："/>
+			<s:TextInput id="username"  x="125" y="7" width="130"/>
+			<!--<s:Label id="usernamepanduan"  text="用户名格式不正确" visible="false" x="255" y="10"/>-->
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="163">
+			<s:Label text="		密码 ：" x="61" y="14" textAlign="right"/>
+			<s:TextInput id="passwd" x="125" y="7" width="130" displayAsPassword="true"/>
+		</s:Group>
+		<s:Group  width="100%" height="10%" x="0" y="213">
+			<s:Label text="		版本 ：" x="60" y="14" textAlign="right"/>
+			<s:TextInput id="version" x="125" y="7" width="130" text="V100R003"/>
+		</s:Group>
+		<s:Group width="100%" height="10%" x="0" y="263">
+			<s:Label text="产品类型 ："  x="46" y="14" textAlign="right"/>
+			<s:TextInput id="productType" x="125" y="7" width="130" text="CE5800"/>
+		</s:Group>
+	</s:BorderContainer>
+	<s:Button bottom="15" label="确定" click="saveAddDevice(event)" horizontalCenter="-52"/>
+	<s:Button bottom="15" label="取消" click="PopUpManager.removePopUp(this)" horizontalCenter="50"/>
+</s:TitleWindow>
