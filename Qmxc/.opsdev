@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<pydev_project>
+  <pydev_pathproperty name="opspath">
+    <path>$(OPSDEV_PLUGIN_PATH)\OPS2.0\ops</path>
+  </pydev_pathproperty>
+  <pydev_pathproperty name="plugid">
+    <path>com.huawei.networkos.ops.java</path>
+  </pydev_pathproperty>
+  <pydev_pathproperty name="projecttemplet">
+    <path>$(ECLIPSE_PATH)\plugins\com.huawei.networkos.ops.java_1.0.0.2014120215305510\projecttemplet.xml</path>
+  </pydev_pathproperty>
+  <pydev_pathproperty name="opsapipath">
+    <path>$(OPSDEV_PLUGIN_PATH)\OPS2.0\document</path>
+  </pydev_pathproperty>
+  <pydev_pathproperty name="apifiles">
+    <path>$(OPSDEV_PLUGIN_PATH)\OPS2.0\schema</path>
+  </pydev_pathproperty>
+  <pysdev_schema_path>
+    <path>F:\SDN\source\vdc_schema\vdc_schema\serviceflow.xsd</path>
+    <path>F:\SDN\source\vdc_schema\vdc_schema\vdc.xsd</path>
+  </pysdev_schema_path>
+  <pydev_projecttype type="java"/>
+  <pydev_projectmonitor state="off"/>
+</pydev_project>
