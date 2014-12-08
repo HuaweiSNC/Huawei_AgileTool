@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="400" height="230" 
+				   backgroundAlpha=".9" backgroundColor="0x4578a7"  borderAlpha="0"
+				   color="0xffffff">
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			[Bindable]
+			/**数据数组 */
+			private var __arr:ArrayCollection=new ArrayCollection([
+				{time:100,flowAverage:20},
+				{time:200,flowAverage:50},
+				{time:300,flowAverage:100},
+				{time:400,flowAverage:40}]);
+			private function categoryAxis_labelFunc(item:Object, prevValue:Object, axis:CategoryAxis, categoryItem:Object):String { 
+				return String(item) + '秒'; 
+			} 
+			private function bianhua():void
+			{
+				var timer:Timer=new Timer(1000);
+				var t:int=500;
+				var count:int=-1;
+				
+				timer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void{
+					count++;
+					__arr.removeItemAt(0);
+					var o:Object=new Object;
+					o["time"]=t+count*100;
+					o["flowAverage"]=Math.random()*100;
+					__arr.addItem(o);
+				});
+				timer.start();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:SolidColorStroke id="chartAxisStrokeThick" caps="square" color="0x002859" weight="1" />    
+		
+		<mx:SolidColorStroke id = "s1" color="blue" weight="2"/>
+		<mx:SolidColorStroke id = "s2" color="red" weight="2"/>
+		<mx:SolidColorStroke id = "s3" color="yellow" weight="2"/>
+		<mx:SolidColorStroke id = "s4" color="green" weight="2"/>
+	</fx:Declarations>
+	
+	<mx:LineChart id="chart" horizontalCenter="0" top="20" width="100%" height="85%"
+				  color="0" dataProvider="{__arr}">
+		<mx:backgroundElements>
+			<!-- 定制图表水平网格线 -->
+			<mx:GridLines id="gridLines" gridDirection="both">
+				<mx:horizontalStroke>
+					<s:SolidColorStroke color="0x072d41" weight="1" alpha="1" />
+				</mx:horizontalStroke>
+				<mx:verticalStroke>
+					<s:SolidColorStroke color="0x072d41" weight="1" alpha="1" />
+				</mx:verticalStroke>
+			</mx:GridLines>
+		</mx:backgroundElements>
+		
+		<mx:horizontalAxis>
+			<mx:CategoryAxis id="catAx"  categoryField="@time"/>
+		</mx:horizontalAxis>
+		<mx:verticalAxis>
+			<mx:LinearAxis id="vAxis" maximum="1600" baseAtZero="false" title="流量"/>
+		</mx:verticalAxis>
+		<mx:horizontalAxisRenderers>
+			<mx:AxisRenderer axis="{catAx}" tickPlacement="none" minorTickPlacement="none" axisStroke="{chartAxisStrokeThick}"/>
+		</mx:horizontalAxisRenderers>
+		<mx:verticalAxisRenderers>
+			<mx:AxisRenderer axis="{vAxis}" tickPlacement="none" minorTickPlacement="none"  axisStroke="{chartAxisStrokeThick}"
+							 canDropLabels="true" placement="left"/>
+		</mx:verticalAxisRenderers>
+		<mx:series>
+			<mx:LineSeries yField="flowAverage" form="curve" displayName="流量" lineStroke="{s1}"/>
+		</mx:series>
+	</mx:LineChart>
+</s:BorderContainer>

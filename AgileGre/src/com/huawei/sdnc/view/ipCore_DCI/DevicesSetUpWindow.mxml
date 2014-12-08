@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:control="com.huawei.sdnc.tools.*"
+		 width="{Capabilities.screenResolutionX*0.53}"
+		 height="{Capabilities.screenResolutionY*0.30}"
+		 initialize="init()"
+		 creationComplete="onCreate()"
+		 fontFamily="微软雅黑" 
+		 keyUp="onKeyUp(event)"
+		 >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.service.SdnService;
+			import com.huawei.sdnc.service.SdnUIService;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.PopupManagerUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.managers.DragManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.HttpResponse;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.core.util.h._ED;
+			[Bindable]
+			public var deviceList:ArrayCollection=new ArrayCollection([]);
+			private var __app:sdncui2;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public function init():void
+			{
+				__app = SdncUtil.app;
+				focusManager.setFocus(btn);
+			}
+			
+			/**
+			 * 初始化设备列表
+			 * */
+			public function onCreate():void
+			{
+				var devices:Array=DataHandleTool.devices;
+				for each(var o:Object in devices){
+					o["state"]="uninitialized";
+				}
+				deviceList=new ArrayCollection(devices);
+			}
+			
+			/**
+			 * 查询设备列表
+			 * */
+			public function queryDevice():void{
+				var opsIp:String=SdncUtil.opsIp;
+				var url:String = "http://"+opsIp+"/devices";
+				connUtil.clientQuery(url,ConnUtil.METHOD_GET,onGetResult,onGetFault);
+				PopupManagerUtil.getInstence().popupLoading(this.parent);
+			}
+			
+			/**
+			 * 测试所有设备
+			 * */
+			public function testAllDevices():void{
+				PopupManagerUtil.getInstence().popupLoading(this.parent);
+				var over:int = 0;
+				var devices:Array=DataHandleTool.devices;
+				if( devices == null||devices.length == 0){
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+				var newDevices:Array=new Array;
+				for each(var o:Object in devices){
+					var id:String = o["id"];
+					var device:Device = o["device"];
+					device.pingTest(id,function(curDevice:Device):void{
+						var obj:Object=new Object;
+						obj["state"] = curDevice.state;
+						obj["id"] = curDevice.id;
+						obj["username"] = curDevice.username;
+						obj["passwd"] = curDevice.passwd;
+						obj["devicename"] = curDevice.devicename;
+						obj["ip"] = curDevice.ip;
+						obj["productType"] = curDevice.productType;
+						obj["version"] = curDevice.version;
+						obj["device"] = curDevice;
+						newDevices.push(obj);
+						over++;
+						if(over == devices.length){
+							deviceList=new ArrayCollection(newDevices);	
+							PopupManagerUtil.getInstence().closeLoading();
+						}
+					});
+				}
+			}
+			
+			/**
+			 * 单独测试一个设备
+			 * */
+			public var currentItem:Object;
+			public var index:int; 
+		    public function testDevice(e:MouseEvent):void{
+				PopupManagerUtil.getInstence().popupLoading(this.parent);
+				currentItem = g.selectedItem;
+				index = g.selectedIndex;
+				var id:String = currentItem["id"];
+				var device:Device = currentItem["device"];
+				device.pingTest(id,setCurrDeviceState);
+				
+			}
+			//取得当前设备的状态的回调函数
+			public function setCurrDeviceState(curDevice:Device):void{
+				var value:String = curDevice.state;
+				trace("取到的state+++"+value);
+				currentItem["state"] = value;
+				deviceList.setItemAt(currentItem,index);
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**
+			 * 使设备可以拖动
+			 */	
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,1000,1000);
+				this.startDrag(false,re);
+			}
+			
+			public function endDrag(e:MouseEvent):void
+			{
+				stopDrag();
+			}
+			
+			/**
+			 * 增加设备
+			 */	
+			public function addDevice():void
+			{
+				var addDevice:AddDevice=AddDevice(PopUpManager.createPopUp(this.parent,AddDevice,true));
+				addDevice.deviceSetUp=this;
+				PopUpManager.centerPopUp(addDevice);     
+			}
+			
+			/**
+			 * 编辑设备
+			 */
+			public function editData(e:MouseEvent):void{
+				var editDevice:EditDevice=EditDevice(PopUpManager.createPopUp(this.parent,EditDevice,true));
+				//先把EditDevice这个子页面的属性赋给此页面
+				editDevice.deviceSetUp=this;
+				editDevice.dataGrid=g;
+				PopUpManager.centerPopUp(editDevice);     
+			}
+			
+			/**
+			 * 删除该条设备
+			 */	
+			public function deletedata(e:MouseEvent):void
+			{
+				Alert.show("确定删除？","提示",Alert.OK|Alert.CANCEL,__app.ipcore.physicsView,closeDelete);
+			}
+			
+			public function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.OK){
+					var opsIp:String = SdncUtil.opsIp;
+					var device:Object=g.selectedItem;
+					var id:String=device["id"];
+					var url:String="http://"+opsIp+"/devices/"+id;
+					trace("url:::::::::::"+url);
+					connUtil.clientQuery(url,ConnUtil.METHOD_DELETE,onDelResult,onDelFault);
+				}
+			
+			}
+			private function onDelResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("error")== -1 ){
+					Alert.show("设备删除成功","提示");
+					deviceList.removeItemAt(g.selectedIndex);
+				}else{
+					Alert.show("设备删除失败","提示");
+				}
+			}
+			
+			private function onDelFault(e:Event):void
+			{
+				trace("Delete失败"+e.toString());
+			}
+			private function onGetResult(e:HttpResponseEvent,data:ByteArray):void
+			{
+				var over:int = 0;
+				var devices:Array = DataHandleTool.handleDeviceData(data.toString());
+				if( devices == null||devices.length == 0){
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+				var newDevices:Array=new Array;
+				for each(var o:Object in devices){
+					var id:String = o["id"];
+					var device:Device = o["device"];
+					device.pingTest(id,function(curDevice:Device):void{
+						var obj:Object=new Object;
+						obj["state"] = curDevice.state;
+						obj["id"] = curDevice.id;
+						obj["username"] = curDevice.username;
+						obj["passwd"] = curDevice.passwd;
+						obj["devicename"] = curDevice.devicename;
+						obj["ip"] = curDevice.ip;
+						obj["productType"] = curDevice.productType;
+						obj["version"] = curDevice.version;
+						obj["device"] = curDevice;
+						newDevices.push(obj);
+						over++;
+						if(over == devices.length){
+							deviceList=new ArrayCollection(newDevices);	
+							PopupManagerUtil.getInstence().closeLoading();
+						}
+					});
+				}
+			}
+			
+			private function onGetFault(e:Event):void
+			{
+				trace("获取所有数据失败"+e.toString());
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				if(event.keyCode==Keyboard.ESCAPE){
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_SETUP_DEVICES_WINDOW));
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<fx:XML id="option_ipcore" source="assets/xml/option_ipcore.xml"/>
+	</fx:Declarations>
+	<s:Rect width="100%" height="100%" >
+		<s:fill>
+			<s:SolidColor color="0xcccccc" alpha=".9"/>
+		</s:fill>
+	</s:Rect>
+	<s:RectangularDropShadow blurX="20" blurY="20" width="100%" height="100%"
+							 alpha="0.32" distance="11"
+							 blRadius="0" brRadius="0"
+							 angle="90" color="#000000" left="0" top="0" right="0"
+							 bottom="0"/>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<s:Group id="titlelayer" width="100%" height="10%" left="0"  mouseDown="beginDrag(event)" mouseUp="endDrag(event)">
+			<s:Rect width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient>
+						<s:GradientEntry color="0x3276b7"/>
+						<s:GradientEntry color="0x4489ca"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Label text="设备导入" color="0xf9f3f3" fontWeight="bold" fontFamily="微软雅黑" verticalCenter="0" left="10" fontSize="16"/>
+			<s:Image id="cbtn" source="@Embed('assets/imgs/ipran/close.png')" verticalCenter="0" right="15" 
+					 buttonMode="true" mouseOver="cbtn.filters=[glow]" mouseOut="cbtn.filters=null"	click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_SETUP_DEVICES_WINDOW))"/>
+		</s:Group>
+		
+		<s:VGroup id="content"  width="100%" height="80%">
+			<s:Group  width="100%" height="15%">
+				<s:Button id="btn" verticalCenter="0"  label="增加..." click="addDevice()" right="20"/>
+				<s:Button id="test" verticalCenter="0"  label="测试" click="testAllDevices()" right="120"/>
+			</s:Group>
+			<s:Group  width="100%" height="85%">
+				
+		<s:DataGrid id="g"  width="95%" height="95%" requestedRowCount="4" verticalCenter="0" horizontalCenter="0" textAlign="center"
+							dataProvider="{deviceList}" horizontalScrollPolicy="off"
+							editable="false"  
+							sortableColumns="false" skinClass="com.huawei.sdnc.view.skins.DataGridSkin">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn  headerText="用户名" dataField="username" width="{(g.width-225)/6}" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn  headerText="设备名称" dataField="devicename" width="{(g.width-225)/6}" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader" />
+							<s:GridColumn headerText="ip地址" dataField="ip" width="{(g.width-225)/6}" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn headerText="版本"  dataField="version" width="{(g.width-225)/6}" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn headerText="产品类型" dataField="productType" width="{(g.width-225)/6}" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn headerText="状态" dataField="state" width="{(g.width-225)/6}" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn editable="false" width="75" headerText="编辑" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<s:Button label="编辑..." horizontalCenter="0" verticalCenter="0"  click="outerDocument.editData(event)"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn editable="false" width="75" headerText="删除" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<s:Button label="删除" horizontalCenter="0" verticalCenter="0" click="outerDocument.deletedata(event)"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						   <s:GridColumn editable="false" width="75" headerText="测试" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader">
+							   <s:itemRenderer>
+								   <fx:Component>
+									   <s:GridItemRenderer>
+										   <s:Button label="测试" horizontalCenter="0" verticalCenter="0" click="outerDocument.testDevice(event)"/>
+									   </s:GridItemRenderer>
+								   </fx:Component>
+							   </s:itemRenderer>
+						 </s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+		</s:VGroup>
+	</s:VGroup>
+	
+</s:Group>
+ 

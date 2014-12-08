@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"  
+		 xmlns:virtural="com.huawei.sdnc.view.ipRan.virtural.*" 
+		 xmlns:physics="com.huawei.sdnc.view.ipRan.physics.*" 
+		 xmlns:ctrlV="com.huawei.sdnc.view.ipRan.ctrlV.*"
+		 xmlns:components="com.huawei.sdnc.view.components.*"
+		 xmlns:common="com.huawei.sdnc.view.common.*" 
+		 xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*"
+		 xmlns:controller="com.huawei.sdnc.controller.ipRanController.*"
+		 initialize="ipRanCtrl.onInit()"
+		 creationComplete="ipRanCtrl.onCreate()"
+		 >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<controller:IpRanCtrl id="ipRanCtrl" page="{this}"/>
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.as3xls.xls.ExcelFile;
+			import com.as3xls.xls.Sheet;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.view.common.MenuBtn;
+			import com.huawei.sdnc.view.ipRan.physics.AddNewDevice;
+			import com.huawei.sdnc.view.ipRan.physics.FpidAddWindow;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			public function menuClickHandler(evt:MouseEvent):void
+			{
+				var cuBtn:MenuBtn = evt.currentTarget as MenuBtn;
+				var leng:int = menuHg.numElements;
+				for(var i:int = 0; i < leng; i++)
+				{
+					if(menuHg.getElementAt(i) is MenuBtn)
+					{
+						var btn:MenuBtn = menuHg.getElementAt(i) as MenuBtn;
+						var state:String = "normal_s";
+						if(cuBtn == btn) state = "click_s";
+						btn.currentState = state;
+					}
+				}
+//				this.currentState = cuBtn.id;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+	</s:states>
+	
+	<s:Group id ="m" width="100%" height="100%">
+		<s:layout>
+			<s:VerticalLayout/>
+		</s:layout>
+		<!--导航栏-->
+		<s:Group width="100%" height="30" fontSize="15">
+			<s:Rect left="0" right="0" top="0" height="100%">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry ratio=".5" color="0xd1d4db"/>
+						<s:GradientEntry ratio=".51" color="0xc7c9d5"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:HGroup id="menuHg" paddingLeft="56" paddingRight="15" width="100%" height="100%" horizontalAlign="left" verticalAlign="middle">
+				<s:Spacer width="100%"/>
+				<common:SearchBar id="searchBar"/>
+			</s:HGroup>
+			<s:HGroup y="3" right="420">
+				<s:Image id="refresh" source="@Embed('assets/imgs/topoimgs/refresh.png')"
+						 mouseOver="refresh.filters = [glow]" mouseOut = "refresh.filters = null"
+						 buttonMode="true" toolTip="refresh"/>
+			</s:HGroup>
+		</s:Group>
+		<!--拓扑图等展示区域-->
+		<s:Group id="topoContent" width="100%" height="100%">
+			<physics:PhysicsView id="physicsView" width="100%" height="100%" />
+		</s:Group>
+	</s:Group>
+	
+	<!--控制面板-->
+	<optionpanel:IpRanOptionPanel id="ipRanoptionPanel" right="22" top="35" visible="false" includeInLayout="false"/>
+</s:Group>

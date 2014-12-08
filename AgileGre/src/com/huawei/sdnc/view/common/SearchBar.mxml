@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			protected function searchBtn_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new SdncEvt(SdncEvt.SEARCH_ELEMENT,searchText.text));
+			}
+			
+			protected function searchBtn_keyDownHandler(event:KeyboardEvent):void
+			{
+				if(event.keyCode == Keyboard.ENTER)
+					dispatchEvent(new SdncEvt(SdncEvt.SEARCH_ELEMENT,searchText.text));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:BitmapImage source="@Embed('assets/imgs/search/searchBarBg.png')"/>
+	<s:TextInput id="searchText" x="11" width="354" height="25" borderAlpha="0"
+				 contentBackgroundAlpha="0" prompt="Please enter a keyword"
+				 focusAlpha="0" keyDown="searchBtn_keyDownHandler(event)"/>
+	<s:Image id="searchBtn" x="373" y="3" source="@Embed('assets/imgs/search/button_search.png')" 
+			 mouseOver = "searchBtn.filters = [glow]" mouseOut = "searchBtn.filters = null"
+			 buttonMode="true" click="searchBtn_clickHandler(event)" toolTip="search"/>
+</s:Group>

@@ -1,0 +1,51 @@
+<sdn xmlns="http://www.huawei.com/netconf/vrp" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" format-version="1.0" content-version="1.0">
+	<sdnl3topo>
+		<l3toponodes>
+			<l3toponode>
+				<routerID>2</routerID>
+				<ifIndex>2</ifIndex>
+				<systemName />
+				<nodeType>DR</nodeType>
+				<role>none</role>
+			</l3toponode>
+			<l3toponode>
+				<routerID>1</routerID>
+				<ifIndex>0</ifIndex>
+				<systemName />
+				<nodeType>Normal</nodeType>
+				<role>none</role>
+			</l3toponode>
+			<l3toponode>
+				<routerID>2</routerID>
+				<ifIndex>0</ifIndex>
+				<systemName />
+				<nodeType>Normal</nodeType>
+				<role>none</role>
+			</l3toponode>
+		</l3toponodes>
+		<l3topolinks>
+			<l3topolink>
+				<leftRoterID>2</leftRoterID>
+				<leftSystemName />
+				<leftIfIndex>7</leftIfIndex>
+				<leftIfName>Ethernet0/1/0</leftIfName>
+				<linkType>ipgLinkType1</linkType>
+				<rigthRouterID>2</rigthRouterID>
+				<rightSystemName />
+				<rigthIfIndex>2</rigthIfIndex>
+				<rightIfName />
+			</l3topolink>
+			<l3topolink>
+				<leftRoterID>1</leftRoterID>
+				<leftSystemName />
+				<leftIfIndex>7</leftIfIndex>
+				<leftIfName>Ethernet0/1/0</leftIfName>
+				<linkType>ipgLinkType1</linkType>
+				<rigthRouterID>2</rigthRouterID>
+				<rightSystemName />
+				<rigthIfIndex>1</rigthIfIndex>
+				<rightIfName />
+			</l3topolink>
+		</l3topolinks>
+	</sdnl3topo>
+</sdn>

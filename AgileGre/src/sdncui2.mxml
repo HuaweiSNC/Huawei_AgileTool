@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+			   xmlns:common="com.huawei.sdnc.view.common.*"
+			   xmlns:view="com.huawei.sdnc.view.*"
+			   applicationComplete="validateLicense()"
+			   initialize="init(event)" xmlns:physics="com.huawei.sdnc.view.dataCenter.physics.*"
+			   creationComplete="onCreationComplete(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.Images;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.graphics.SolidColorStroke;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.Defaults;
+			import twaver.Utils;
+			public var license:XML;
+			/**工程文件*/
+			public var sdnproject:XML;
+			
+			private function validateLicense():void
+			{  
+				Utils.validateLicense(license);
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				Images.init();
+				SdncUtil.app = this;
+//				var xxxLoader:URLLoader = new URLLoader();
+//				xxxLoader.addEventListener(Event.COMPLETE, onUrlComplete);
+//				xxxLoader.load(new URLRequest("assets/xml/sdn_office_project.xml"));
+				
+				ConnUtil.getInstence().query("assets/xml/twaverLicense.xml",
+					function(evt:ResultEvent):void{
+						license = XML(evt.result.toString());
+					},onFailed);
+				ConnUtil.getInstence().query("assets/xml/sdn_office_project.xml",
+					function(evt:ResultEvent):void{
+						sdnproject = XML(evt.result.toString());
+						SdncUtil.opsIp=sdnproject.opsip;
+					},onFailed);
+			}
+			private function onFailed(evt:FaultEvent):void
+			{
+				trace(evt.message);	
+			}
+			
+			protected function onCreationComplete(event:FlexEvent):void
+			{
+				Defaults.FONT_FAMILY = "Arial";
+				copyright.text = sdnproject.copyright;
+				header.companyNameLabel.text = sdnproject.company;
+				header.softwareNameLabel.text = sdnproject.softwarename;
+			}
+			
+			protected function onUrlComplete(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var str:String = (event.target as URLLoader).data;
+				var projectXml:XML=XML(str);
+				SdncUtil.opsIp=projectXml.opsip;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!--<fx:XML source="assets/xml/twaverLicense.xml" id="license"/>
+		<fx:XML source="assets/xml/sdn_office_project.xml" id="sdnproject"/>-->
+		<fx:XML source="assets/xml/sdn_office_conf.xml" id="sdnconf" />
+	</fx:Declarations>
+	<fx:Style source="assets/Main.css"></fx:Style>
+	<s:states>
+		<s:State name="login_state"/>
+		<s:State name="main_state"/>
+		<s:State name="ipRan_state"/>
+		<s:State name="ipcore_state"/>
+	</s:states>
+	<s:BitmapImage id="id_background" source="@Embed('assets/imgs/background.png')"  smooth="true" left="0" right="0" top="0" bottom="0"/>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<common:Header id="header"  __app2="{this}"/>
+		<s:Line width="100%" height="1" stroke="{ new SolidColorStroke(0x263148,2) }" includeIn="login_state"/>
+		<view:Login id="login" width="100%" height="100%" includeIn="login_state"/>
+		<view:Main id="main" width="100%" height="100%" includeIn="main_state"/>
+		<view:IpRan id="ipRan" width="100%" height="100%" includeIn="ipRan_state"/>
+		<view:Ipcore id="ipcore" width="100%" height="100%" includeIn="ipcore_state"/>
+	</s:VGroup>
+	<!--<physics:Lobby id="tower" width="100%" height="100%"/>-->
+	<s:Label id="copyright" color="0x1b6bb9" bottom="10" horizontalCenter="0"/>
+</s:Application>

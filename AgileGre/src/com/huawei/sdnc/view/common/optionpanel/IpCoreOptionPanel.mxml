@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*"
+		 width="{btns.width + 4}" height="150" height.setup="{setupPage.height + 10}" height.service="180">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			private var _curView:String;
+			
+			public function set curView(value:String):void
+			{
+				_curView = value;
+				if(this.currentState=="general"){
+					generanlPanel.judgeState();
+				}else if(this.currentState=="service"){
+					servicePanel.judgeState();
+				}
+			}
+
+			protected function tabBtnClickHandler(event:MouseEvent):void
+			{
+				var curBtn:TabBtnForIpcore = event.currentTarget as TabBtnForIpcore;
+				for(var i:int = 0;i < btns.numElements; i++)
+				{
+					var btn:TabBtnForIpcore = btns.getElementAt(i) as TabBtnForIpcore;
+					var stateStr:String = "unSelected";
+					if(btn == curBtn)stateStr = "selected";
+					btn.currentState = stateStr;
+				}
+				this.currentState = String(curBtn.id);
+				if(String(curBtn.id)=="general")
+				{
+					generanlPanel.judgeState();
+				}else if(String(curBtn.id)=="service"){
+					servicePanel.judgeState();
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="general"/>
+		<s:State name="setup"/>
+		<s:State name="service"/>
+	</s:states>
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0"/>
+		</s:fill>
+		<s:stroke>
+			<s:LinearGradientStroke rotation="175" weight="2">
+				<s:GradientEntry color="0xb4becc"/>
+				<s:GradientEntry color="0x57b0c9"/>
+				<s:GradientEntry color="0x21a9c9"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<s:VGroup  left="1" right="1" top="1" bottom="1" gap="-1">
+		<s:HGroup id="btns" height="23" gap="0">
+			<optionpanel:TabBtnForIpcore id="general" text="General" click="tabBtnClickHandler(event)" currentState="selected"/>
+			<optionpanel:TabBtnForIpcore id="setup" text="Setup" click="tabBtnClickHandler(event)"/>
+			<optionpanel:TabBtnForIpcore id="service" text="Service" click="tabBtnClickHandler(event)"/>
+		</s:HGroup>
+		<optionpanel:IpCoreGeneralPanel id="generanlPanel" width="100%" height="100%" includeIn="general"/>
+		<optionpanel:IpCoreSetupPanel id="setupPage" width="100%" height="100%" includeIn="setup"/>
+		<optionpanel:IpCoreServicePanel id="servicePanel" width="100%" height="100%" includeIn="service"/>
+	</s:VGroup>
+</s:Group>

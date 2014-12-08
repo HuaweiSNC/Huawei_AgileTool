@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<common:MyGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:common="com.huawei.sdnc.view.common.*"
+				xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+				implements="com.huawei.sdnc.view.ISerializable"
+				xmlns:controller="com.huawei.sdnc.controller.*"
+				xmlns:ctrlV="com.huawei.sdnc.view.dataCenter.ctrlV.*"
+				creationComplete="cuCtrl.init(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Button;
+			
+			import twaver.DataBox;
+			import twaver.ElementBox;
+			import twaver.network.layout.AutoLayouter;
+			import twaver.network.layout.SpringLayouter;
+			/**自动布局器(twaver)*/
+			private var __autoLayouter:AutoLayouter = null;
+			/**动态布局器(twaver)*/
+			private var __springLaouter:SpringLayouter = null;
+			/**控制视图当前databox*/
+			public var curBox:ElementBox;
+			/**openflow日志数据数组*/
+			[Bindable]
+			public var __logAc:ArrayCollection = new ArrayCollection();
+			
+			/**控制视图databox*/
+			private var __box:ElementBox = new ElementBox();
+			/**
+			 * databox getter
+			 */
+			/**
+			 * databox getter
+			 */
+			public function get dataBox():DataBox{				
+				return __box;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<controller:CtrlLayoutCtrl id="cuCtrl" page="{this}"/>
+	</fx:Declarations>
+	<twaver:NetworkX id="network" width="100%" height="100%"/>
+	<!--<s:HGroup>
+	<s:Button click="cuCtrl.onDc('dc1')"/>
+	<s:Button click="cuCtrl.onDc('dc2')"/>
+	</s:HGroup>-->
+	<ctrlV:LogVindow id="logView" _dp="{__logAc}"/>
+</common:MyGroup>

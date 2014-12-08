@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="48" height="30" buttonMode="true"
+		 creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import twaver.Utils;
+			/**此格的纵列序号*/
+			public var ver:int;
+			/**此格的横列序号*/
+			public var hor:int
+			/**选中状态，true为已选中，false为未选中*/
+			public var isSelected:Boolean;
+			/**此格子所代表的dc名字  */
+			public var __dcName:String;
+			/**此格子所代表的VDC id  */
+			public var __vdcID:String;
+			/**此格子所代表的VDC名字*/
+			public var __vdcName:String;
+			[Bindable]
+			/**格子选中时呈现的颜色,默认白色*/
+			private var __color:uint = 0xffffff;
+			/**格子选中时呈现的颜色*/
+			public function get color():uint
+			{
+				return __color;
+			}
+			/**格子选中时呈现的颜色*/
+			public function set color(value:uint):void
+			{
+				__color = value;
+			}
+			/**根据选中状态来显示颜色,isSelected为true时显示颜色，反之不显示  */
+			public function showColor():void
+			{
+				if(isSelected)
+				{
+					rectfill.alpha = 0;
+				}else
+				{
+					rectfill.alpha = 1;
+				}
+			}
+			/**是否添加高亮
+			 * @param isHLight:true为高亮，false为取消高亮 
+			 */
+			public function highLight(isHLight:Boolean):void
+			{
+				/* if(isHLight)
+				this.filters = [glow];
+				else
+				this.filters = null; */
+			}
+			
+			private function setBgColor():void
+			{
+				if(ver % 2 != 0 && hor % 2 != 0 || ver % 2 == 0 && hor % 2 == 0)
+					bgColor.color = 0x404c65//6ea7d5;深色格子
+				else bgColor.color = 0x7c9cb3//d3f1ff//c0d6e8;6ca4d3浅色格子
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				setBgColor();
+				this.toolTip = __vdcName + "&" + __dcName;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xffffff"/>
+	</fx:Declarations>
+	<s:Rect id="bg" top="0" bottom="0" right="0" left="0">
+		<s:fill>
+			<s:SolidColor id="bgColor" color="0xffffff"/>
+		</s:fill>
+		<!--<s:stroke>
+			<s:SolidColorStroke color="0xfff100"/>
+		</s:stroke>-->
+	</s:Rect>
+	<s:Rect id="rectfill" width="100%" height="100%" alpha="0">
+		<s:fill>
+			<s:SolidColor color="{__color}"/>
+		</s:fill>
+	</s:Rect>
+</s:Group>

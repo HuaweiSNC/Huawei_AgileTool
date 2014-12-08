@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:btn="com.huawei.sdnc.view.ipRan.physics.*"
+		 width="830" height="473" creationComplete="init()" fontFamily="微软雅黑">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.model.GreTunnel;
+			import com.huawei.sdnc.model.Qos;
+			import com.huawei.sdnc.model.acl.AclGroup;
+			import com.huawei.sdnc.model.acl.aclRuleBas4.AclRuleAdv4;
+			import com.huawei.sdnc.model.qos.QosActRdrIf;
+			import com.huawei.sdnc.model.qos.QosBehavior;
+			import com.huawei.sdnc.model.qos.QosClassifier;
+			import com.huawei.sdnc.model.qos.QosGlobalCfgs;
+			import com.huawei.sdnc.model.qos.QosGlobalPolicyApply;
+			import com.huawei.sdnc.model.qos.QosPolicy;
+			import com.huawei.sdnc.model.qos.QosPolicyNode;
+			import com.huawei.sdnc.model.qos.QosRuleAcl;
+			import com.huawei.sdnc.model.qos.QosSlotPolicyApply;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.PopupManagerUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpErrorEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			
+			public  var __app:sdncui2
+			private var devices:Array=[];
+			[Bindable]
+			public var pipeline:ArrayCollection= new ArrayCollection();
+			[Bindable]
+			public var tnllist:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var pipeIPlist:ArrayCollection = new ArrayCollection();
+			public var element:IElement;
+			public var ppBtnArray:Array=[];
+			public var jcBtnArray:Array=[];
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public function init():void
+			{
+				__app=SdncUtil.app;
+				devices=DataHandleTool.devices;
+				if(element == null){
+//					控制面板里面直接点不传入element
+//					ddl.selectedIndex=0;
+				}else{
+					var stateNode:StateNode=element as StateNode;
+					var deviceName:String=stateNode.name;
+					if(SdncUtil.cuProjectType == "test"){
+						var policyes:Array=stateNode.getClient("policyes");
+						if(policyes==null){
+						policyes=[];
+						}
+						var tnls:Array=stateNode.getClient("tnls");
+						tnllist=new ArrayCollection(tnls);
+						datagrid.dataProvider=new ArrayCollection(policyes);
+					}else{
+						var device:Device = element.getClient("device");
+//						var qosPolicys:Array = device.qos.qosPolicys;
+						var qosClassifiers:Array = device.qos.qosClassifiers;
+						var qosBehaviors:Array = device.qos.qosBehaviors;
+						var globalPolicyName:String = "";
+						var globlnames:Array =[];
+						var globlClassifiers:Array =[];
+						var qosGlobalPolicyApplys:Array = device.qos.qosGlobalCfgs.qosGlobalPolicyApplys;
+						if(qosGlobalPolicyApplys.length != 0){
+							for each(var globalPolicy:QosGlobalPolicyApply in qosGlobalPolicyApplys){
+								globalPolicyName = globalPolicy.policyName;
+								globlnames.push(globalPolicyName);
+								var policys:Array=device.qos.qosPolicys;
+								for each(var policy:QosPolicy in policys){
+									var policyName:String=policy.policyName;
+									if(globalPolicyName==policyName){
+										var nodes:Array=policy.qosPolicyNodes;
+										for each(var node:QosPolicyNode in nodes){
+											var clsName:String=node.classifierName;
+											globlClassifiers.push(clsName);
+										}
+									}
+								}
+							}
+						}else{
+							device.createGlobalPolicy(function(e:HttpDataEvent):void{
+//								trace("createGlobalPolicy的返回信息:     "+e.bytes);
+								if(e.bytes.toString().search("rpc-error") == -1){
+									globalPolicyName = "gp";
+									globlnames.push(globalPolicyName);
+//									trace("全局策略下发成功 gp");
+								}else{
+//									trace("全局策略下发失败 ");
+								}
+							});
+						}
+						var policyArr:Array = [];
+						
+						for each(var classifier:QosClassifier in qosClassifiers){
+							var policyObj:Object = new Object();
+							var policyName:String = classifier.classifierName;
+//							trace("流分类名称：    "+policyName);
+							policyObj["policyName"] = policyName;
+							var ifexistbehavior:Boolean = false;
+							for each(var behavior:QosBehavior in qosBehaviors){
+								var behaviorName:String = behavior.behaviorName;
+								if(behaviorName == policyName+"_action"||behaviorName==policyName){
+									var qosActRdrIfs:Array = behavior.qosActRdrIfs;
+									for each(var qosAct:QosActRdrIf in qosActRdrIfs){
+										var ifName:String = qosAct.ifName;
+										policyObj["ifName"] = ifName;
+										ifexistbehavior = true;
+										break;
+									}
+								}
+								if(ifexistbehavior)
+								{
+									break;
+								}
+							}
+							if(!ifexistbehavior)
+							{
+								continue;
+							}
+							policyArr.push(policyObj);
+							
+							policyObj["pipei"] = true;
+							policyObj["jiechu"] = false;
+			 
+							for each(var globlname:String in globlClassifiers){
+								if(policyName == globlname){
+									policyObj["pipei"] = false;
+									policyObj["jiechu"] = true;	
+									break;
+								}
+							}
+							
+						}
+						datagrid.dataProvider=new ArrayCollection(policyArr);
+					}
+				}
+				callLater(initBtn);
+			}
+			private function initBtn():void
+			{
+				for each(var ppbtn:Object in ppBtnArray){
+//					ppbtn.enabled=false;
+				}
+			}
+			/**
+			 * 匹配按钮 下发POST请求
+			 * url: "http://"+opsIp+":8080/devices/"+id+"/qosSlotQoss/qosSlotPolicyApply/qosSlotPolicyApply;
+			 * body:policyName   slotId=ifName   direction=inbound
+			 * */
+			public var seletedObj:Object;
+			public var selectedIndex:int;
+			public function pipei_clickHandler(e:MouseEvent):void
+			{
+				var opsIp:String=SdncUtil.opsIp;
+				var id:String=element.getClient("id");
+				var device:Device = element.getClient("device");
+				seletedObj =  datagrid.selectedItem;
+				selectedIndex=datagrid.selectedIndex;
+				var classifierName:String = seletedObj["policyName"];
+				var ifName:String = seletedObj["ifName"] ;
+				var qosGlobalPolicyApplys:Array = device.qos.qosGlobalCfgs.qosGlobalPolicyApplys;
+				var behaviors:Array = device.qos.qosBehaviors;
+				var policyName:String;
+				for each(var globalPolicy:QosGlobalPolicyApply in qosGlobalPolicyApplys){
+						policyName = qosGlobalPolicyApplys[0].policyName;
+//						trace("policyName::::"+policyName);
+				}
+				var behaviorName:String = classifierName+"_action";
+//				for each(var behavior:QosBehavior in behaviors){
+//					var qosActRdrIfs:Array = behavior.qosActRdrIfs;
+//					for each(var qosActRdrIf:QosActRdrIf in qosActRdrIfs){ 
+//						var ifName1:String = qosActRdrIf.ifName;
+//					    if(ifName == ifName1){
+//							var behaviorName:String = behavior.behaviorName;
+//						}
+//					}
+//				}
+					var url:String="http://"+opsIp+"/devices/"+id+"/qos/qosCbQos/qosPolicys/qosPolicy?policyName="+policyName;
+//					trace("匹配下发的url:::"+url);
+					var body:String = "<qosPolicyNodes><qosPolicyNode><classifierName>"+classifierName+
+						"</classifierName><behaviorName>"+behaviorName+
+						"</behaviorName></qosPolicyNode></qosPolicyNodes>";
+					connUtil.clientQuery(url,ConnUtil.METHOD_POST,onPostResult,onPostFault,body,"application/XML");
+					PopupManagerUtil.getInstence().popupLoading(this);
+			}
+			
+			public function onPostResult(e:HttpDataEvent):void{
+				if(e.bytes.toString().search("error") == -1 ){
+					Alert.show("下发成功!","提示");
+//					trace(e.bytes);
+					var device:Device = element.getClient("device");
+					device.getQos(false,function():void{});
+					ppBtnArray[selectedIndex].enabled=false;
+					jcBtnArray[selectedIndex].enabled=true;
+					
+				}else{
+					Alert.show("下发失败!","提示");
+//					trace(e.bytes);
+				}
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			public function onPostFault(e:HttpErrorEvent):void{
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			public function jiechu_clickHandler(event:MouseEvent):void
+			{
+//				var index:int=datagrid.selectedIndex;
+//				(jcBtnArray[index] as Object).enabled=false;
+//				(ppBtnArray[index] as Object).enabled=true;
+				var opsIp:String=SdncUtil.opsIp;
+				var id:String=element.getClient("id");
+				var device:Device = element.getClient("device");
+				seletedObj =  datagrid.selectedItem;
+				selectedIndex=datagrid.selectedIndex;
+				var classifierName:String = seletedObj["policyName"];
+				var ifName:String = seletedObj["ifName"] ;
+				var behaviors:Array = device.qos.qosBehaviors;
+				var policys:Array = device.qos.qosPolicys;
+				for each(var policy:QosPolicy in policys){
+					var policyNodes:Array = policy.qosPolicyNodes;
+					for each(var policyNode:QosPolicyNode in policyNodes){
+						var classifierName1:String = policyNode.classifierName;
+						if(classifierName1 == classifierName){
+							var policyName:String = policy.policyName;
+						}
+					}
+				}
+				var behaviorName:String = classifierName+"_action";
+//				for each(var behavior:QosBehavior in behaviors){
+//					var qosActRdrIfs:Array = behavior.qosActRdrIfs;
+//					for each(var qosActRdrIf:QosActRdrIf in qosActRdrIfs){
+//						var ifName1:String = qosActRdrIf.ifName;
+//						if(ifName1 == ifName){
+//							var behaviorName:String = behavior.behaviorName;
+							
+//						}
+//					}
+//				}
+				var url:String="http://"+opsIp+"/devices/"+id+"/qos/qosCbQos/qosPolicys/qosPolicy";
+				var body:String ="<policyName>"+policyName+
+										"</policyName><qosPolicyNodes><qosPolicyNode operation='delete'><classifierName>"+classifierName+
+										"</classifierName><behaviorName>"+behaviorName+
+										"</behaviorName></qosPolicyNode></qosPolicyNodes>";
+				connUtil.clientQuery(url,ConnUtil.METHOD_PUT,onDelResult,onDelFault,body,"application/XML");
+				PopupManagerUtil.getInstence().popupLoading(this);
+				
+			}
+			public function onDelResult(e:HttpDataEvent):void{
+				if(e.bytes.toString().search("error") == -1 ){
+					Alert.show("解除成功!","提示");
+//					trace(e.bytes);
+					var device:Device = element.getClient("device");
+					device.getQos(false,function():void{});
+					ppBtnArray[selectedIndex].enabled=true;
+					jcBtnArray[selectedIndex].enabled=false;
+				}else{
+					Alert.show("解除失败!","提示");
+//					trace(e.bytes);
+				}
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			public function onDelFault(e:HttpErrorEvent):void{
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			public var pipeArray:Array=[];
+			public function itemClick(event:MouseEvent):void
+			{
+				flowinfo.text="";
+				tnlinfo.text="";
+				var item:Object=datagrid.selectedItem;
+				if(item==null)
+					return;
+				var policyName:String = item["policyName"];
+				var ifName:String = item["ifName"];
+				
+				if(SdncUtil.cuProjectType == "test"){
+				var policyes:Array=element.getClient("policyes");
+				for each(var policy:Object in policyes){
+					var xPolicyName:String=policy["policyName"];
+					if(policyName==xPolicyName){
+						var tnlName:String=policy["tnlName"];
+						var tnls:Array=element.getClient("tnls");
+						
+						var policyType:String=policy["policyType"];
+						var srcIp:String=policy["srcIp"];
+						var desIp:String=policy["desIp"];
+						flowinfo.text="策略名称　　:"+policyName+"\n"
+							+"流策略类型　　:"+policyType+"\n"
+							+"源地址　　:"+srcIp+"\n"
+							+"管道名称　:"+tnlName+"\n"
+							+"目的地址　　　:"+desIp;
+						break;
+					}
+				}
+				var dropListObj:Object=pipeArray[datagrid.selectedIndex];
+				var xTnl:Object=dropListObj.selectedItem;
+				tnlinfo.text="管道名称　　:"+xTnl["tnlName"]+"\n"
+					+"管道类型　　:"+xTnl["tnlType"]+"\n"
+					+"目的地址　　:"+xTnl["dstIpAddr"]+"\n"
+					+"源接口类型　:"+xTnl["srcType"]+"\n"
+					+"源接口　　　:"+xTnl["src_value"];
+				}else{
+					//根据流policyName--qosPolicyNodes--policyClassifier和policyBehaivor
+					//根据ifName--gre
+					var device:Device = element.getClient("device");
+					var greTunnels:Array = device.gre.greTunnels;
+					var aclGroups:Array = device.acl.aclGroups;
+					var qosPolicys:Array = device.qos.qosPolicys;
+					var qosClassifiers:Array = device.qos.qosClassifiers;
+					var qosBehaviors:Array = device.qos.qosBehaviors;
+					for each(var greTunnel:GreTunnel in greTunnels){
+						var tnlName1:String = greTunnel.tnlName;
+						if(ifName == tnlName1){
+							var tnlType:String = greTunnel.tnlType;
+							var srcType:String = greTunnel.srcType;
+							var srcIpAddr:String = greTunnel.srcIpAddr;
+							var dstIpAddr:String = greTunnel.dstIpAddr;
+							tnlinfo.text=
+								  "管道名称　　:"+ifName+"\n"
+								+"管道类型　　:"+tnlType+"\n"
+								+"目的地址　　:"+dstIpAddr+"\n"
+								+"源接口类型　:"+srcType+"\n"
+								+"源接口　　　:"+srcIpAddr;
+							break;
+						}
+					}
+					
+					for each(var qosClassifer:QosClassifier in device.qos.qosClassifiers){
+						var classiferName:String=qosClassifer.classifierName;
+						if(policyName==classiferName){
+							var qosRuleAcl:QosRuleAcl=(qosClassifer.qosRuleAcls[0] as QosRuleAcl);
+							var aclGroups:Array=device.acl.aclGroups;
+							for each(var aclGroup:AclGroup in aclGroups){
+								var aclName:String=aclGroup.aclNumOrName;
+								if(qosRuleAcl.aclName==aclName){
+									flowinfo.text=
+										"策略名称　:"+policyName+"\n"
+										+"源地址　　:"+(aclGroup.aclRuleAdv4s[0] as AclRuleAdv4).aclSourceIp+"\n"
+										+"协议类型　:"+(aclGroup.aclRuleAdv4s[0] as AclRuleAdv4).aclProtocol+"\n"
+										+"目的地址　:"+(aclGroup.aclRuleAdv4s[0] as AclRuleAdv4).aclDestIp;
+									break;
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<s:VGroup id="content" width="100%" height="80%">
+			<s:Group width="100%" height="60%">
+				<s:DataGrid id="datagrid" width="95%" height="95%" horizontalCenter="0"
+							verticalCenter="0">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn id="policyNameId" dataField="policyName"
+										  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="流策略名称">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer buttonMode="true"
+															click="outerDocument.itemClick(event)">
+											<s:Label width="100%" height="30" fontFamily="微软雅黑"
+													 text="{data.policyName}" textAlign="center"
+													 verticalAlign="middle"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn dataField="ifName"
+										  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="隧道选择">
+							<!--	<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer creationComplete="initPipeArray(event)">
+											<fx:Script>
+												<![CDATA[
+													import mx.events.FlexEvent;
+													override public function set data(value:Object):void
+													{
+														super.data=value;
+														pipe.selectedIndex=0;
+													}
+													public function changeTnlinfo():void
+													{
+														var xTnl:Object=pipe.selectedItem;
+														outerDocument.tnlinfo.text="管道名称　　:"+xTnl["tnlName"]+"\n"
+															+"管道类型　　:"+xTnl["tnlType"]+"\n"
+															+"目的地址　　:"+xTnl["dstIpAddr"]+"\n"
+															+"源接口类型　:"+xTnl["srcType"]+"\n"
+															+"源接口　　　:"+xTnl["src_value"];
+													}
+													
+													protected function initPipeArray(event:FlexEvent):void
+													{
+														outerDocument.pipeArray.push(pipe);
+													}
+													
+												]]>
+											</fx:Script>
+											<s:DropDownList id="pipe" dataProvider="{outerDocument.tnllist}"  change="changeTnlinfo()"  horizontalCenter="0"  labelField="tnlName" verticalCenter="0" />
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer> -->
+							</s:GridColumn>
+							<s:GridColumn headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="匹配">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer creationComplete="pipei_creationComplete(event)">
+											<fx:Script>
+												<![CDATA[
+													import com.huawei.sdnc.tools.SdncUtil;
+													
+													import mx.events.FlexEvent;
+													protected function pipei_creationComplete(event:FlexEvent):void
+													{
+														var btn:Object=event.currentTarget;
+														outerDocument.ppBtnArray.push(pipei1);
+//														if(data.pipei==true){
+//															pipei1.enabled=false;
+//														}else{
+//															pipei1.enabled=true;	
+//														}
+													}
+												]]>
+											</fx:Script>
+											<s:Button id="pipei1" label="匹配"
+													  click="outerDocument.pipei_clickHandler(event)"
+													  enabled="{data.pipei}" horizontalCenter="0"
+													  verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"
+										  headerText="解除">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer creationComplete="jiechu_creationComplete(event)">
+											<fx:Script>
+												<![CDATA[
+													import com.huawei.sdnc.tools.SdncUtil;
+													
+													import mx.controls.Alert;
+													import mx.events.FlexEvent;
+													protected function jiechu_creationComplete(event:FlexEvent):void
+													{
+														var btn:Object=event.currentTarget;
+														outerDocument.jcBtnArray.push(jiechu1);
+//														if(data.jiechu==true){
+//															jiechu1.enabled=false;
+//														}else{
+//															jiechu1.enabled=true;
+//														}
+													}
+												]]>
+											</fx:Script>
+											<s:Button id="jiechu1" label="解除"
+													  click="outerDocument.jiechu_clickHandler(event)"
+													  enabled="{data.jiechu}" horizontalCenter="0"
+													  verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+			
+			<s:HGroup width="100%" height="25%">
+				<s:Group width="49%" height="129">
+					<s:Label y="0" left="23" text="流详细信息"/>
+					<s:TextArea id="flowinfo" y="32" width="362" height="91" horizontalCenter="0"/>
+				</s:Group>
+				<s:Group width="49%" height="100%">
+					<s:Label y="-1" left="14" text="管道详细信息"/>
+					<s:TextArea id="tnlinfo" y="32" width="386" height="91" horizontalCenter="0"/>
+				</s:Group>
+			</s:HGroup>
+		</s:VGroup>
+	</s:VGroup>
+</s:Group>

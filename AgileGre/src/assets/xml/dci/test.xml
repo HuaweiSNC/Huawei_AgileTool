@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<devices>
+   <device>
+      <devicename>10.137.208.27</devicename>
+      <policys>
+         <policy>
+            <policyName>flow3</policyName>
+            <policyType>middle</policyType>
+            <srcIp>10.111.86.148</srcIp>
+            <nextIp>tnl5</nextIp>
+            <desIp>10.137.208.118</desIp>
+            </policy>
+         <policy>
+          <policyName>flow2</policyName>
+           <policyType>end</policyType>
+           <srcIp>10.137.210.122</srcIp>
+           <nextIp></nextIp>
+           <desIp>10.137.208.27</desIp>
+           </policy>
+      </policys>
+     
+       <greTunnels>
+        <greTunnel>
+          <tnlName>tnl5</tnlName><!-- tnl唯一标识 -->
+          <tnlType>gre</tnlType>
+          <srcType>Ip</srcType>
+          <srcIpAddr>10.137.208.27</srcIpAddr>
+          <srcIfName>src1</srcIfName>
+          <dstVpnName>public</dstVpnName>
+          <dstIpAddr>10.137.208.118</dstIpAddr><!-- 重要 -->
+          <keepalvEn>false</keepalvEn><!-- 默认 -->
+          <keepalvPeriod></keepalvPeriod>
+          <keepalvRetryCnt></keepalvRetryCnt>
+          <greKeepalvInfo></greKeepalvInfo>
+       </greTunnel>
+   </greTunnels>
+
+   </device>
+   
+      <device>
+        <devicename>10.137.210.122</devicename>
+        <policys>
+         <policy>
+          <policyName>flow2</policyName>
+         <policyType>begin</policyType>
+          <srcIp>10.137.210.122</srcIp>
+          <nextIp>tnl3</nextIp>
+          <desIp>10.137.208.27</desIp>
+         </policy>
+         </policys>
+         
+           <greTunnels>
+        <greTunnel>
+          <tnlName>tnl3</tnlName><!-- tnl唯一标识 -->
+          <tnlType>gre</tnlType>
+          <srcType>Ip</srcType>
+          <srcIpAddr>10.137.210.122</srcIpAddr>
+          <srcIfName>src1</srcIfName>
+          <dstVpnName>public</dstVpnName>
+          <dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+          <keepalvEn>false</keepalvEn><!-- 默认 -->
+          <keepalvPeriod></keepalvPeriod>
+          <keepalvRetryCnt></keepalvRetryCnt>
+          <greKeepalvInfo></greKeepalvInfo>
+       </greTunnel>
+   </greTunnels>
+   </device>
+   
+      <device>
+         <devicename>10.137.208.22</devicename>
+        <policys>
+         <policy>
+          <policyName>flow1</policyName>
+            <policyType>begin</policyType>
+            <srcIp>10.137.208.22</srcIp>
+            <nextIp>tnl1</nextIp>
+            <desIp>10.137.131.231</desIp>
+         </policy>
+        </policys>
+        
+        <greTunnels>
+        <greTunnel>
+          <tnlName>tnl1</tnlName><!-- tnl唯一标识 -->
+          <tnlType>gre</tnlType>
+          <srcType>Ip</srcType>
+          <srcIpAddr>10.137.208.22</srcIpAddr>
+          <srcIfName>src1</srcIfName>
+          <dstVpnName>public</dstVpnName>
+          <dstIpAddr>10.137.208.118</dstIpAddr><!-- 重要 -->
+          <keepalvEn>false</keepalvEn><!-- 默认 -->
+          <keepalvPeriod></keepalvPeriod>
+          <keepalvRetryCnt></keepalvRetryCnt>
+          <greKeepalvInfo></greKeepalvInfo>
+       </greTunnel>
+   </greTunnels>
+   </device>
+   
+      <device>
+          <devicename>10.137.208.118</devicename>
+       <policys>
+       <policy>
+        <policyName>flow1</policyName>
+           <policyType>middle</policyType>
+           <srcIp>10.137.208.22</srcIp>
+           <nextIp>tnl2</nextIp>
+           <desIp>10.137.131.231</desIp>
+       </policy>
+       <policy>
+        <policyName>flow3</policyName>
+          <policyType>end</policyType>
+           <srcIp>10.111.86.148</srcIp>
+           <nextIp></nextIp>
+           <desIp>10.137.208.118</desIp>
+       </policy>
+       </policys>
+       
+        <greTunnels>
+        <greTunnel>
+          <tnlName>tnl2</tnlName><!-- tnl唯一标识 -->
+          <tnlType>gre</tnlType>
+          <srcType>Ip</srcType>
+          <srcIpAddr>10.137.208.118</srcIpAddr>
+          <srcIfName>src1</srcIfName>
+          <dstVpnName>public</dstVpnName>
+          <dstIpAddr>10.137.131.231</dstIpAddr><!-- 重要 -->
+          <keepalvEn>false</keepalvEn><!-- 默认 -->
+          <keepalvPeriod></keepalvPeriod>
+          <keepalvRetryCnt></keepalvRetryCnt>
+          <greKeepalvInfo></greKeepalvInfo>
+       </greTunnel>
+   </greTunnels>
+   </device>
+   
+      <device>
+        <devicename>10.137.131.231</devicename>
+       <policys>
+       <policy>
+        <policyName>flow1</policyName>
+          <policyType>end</policyType>
+          <srcIp>10.137.208.22</srcIp>
+          <nextIp></nextIp>
+          <desIp>10.137.131.231</desIp>
+       </policy>
+       </policys>
+   </device>
+   
+      <device>
+          <devicename>172.40.22.2</devicename>
+       <policys>
+        <policy>
+         <policyName></policyName>
+           <policyType></policyType>
+           <srcIp></srcIp>
+           <nextIp></nextIp>
+        </policy>
+       </policys>
+   </device>
+   
+      <device>
+         <devicename>10.111.86.148</devicename>
+       <policys>
+       <policy>
+        <policyName>flow3</policyName>
+          <policyType>begin</policyType>
+          <srcIp>10.111.86.148</srcIp>
+          <nextIp>tnl4</nextIp>
+          <desIp>10.137.208.118</desIp>
+       </policy>
+       </policys>
+       
+        <greTunnels>
+        <greTunnel>
+          <tnlName>tnl4</tnlName><!-- tnl唯一标识 -->
+          <tnlType>gre</tnlType>
+          <srcType>Ip</srcType>
+          <srcIpAddr>10.111.86.148</srcIpAddr>
+          <srcIfName>src1</srcIfName>
+          <dstVpnName>public</dstVpnName>
+          <dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+          <keepalvEn>false</keepalvEn><!-- 默认 -->
+          <keepalvPeriod></keepalvPeriod>
+          <keepalvRetryCnt></keepalvRetryCnt>
+          <greKeepalvInfo></greKeepalvInfo>
+       </greTunnel>
+   </greTunnels>
+   </device>
+</devices>

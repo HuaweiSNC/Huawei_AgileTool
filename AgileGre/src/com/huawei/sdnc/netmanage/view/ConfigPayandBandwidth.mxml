@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="346" height="294" backgroundAlpha=".9" backgroundColor="0xcccccc"
+			   borderColor="0x34b5d0" close="PopUpManager.removePopUp(this)"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" title="配置线"  
+			   fontFamily="微软雅黑" creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.netmanage.controller.ChangeTopo;
+			import com.huawei.sdnc.netmanage.model.NetLink;
+			import com.huawei.sdnc.netmanage.model.NetNode;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.netmanage.model.datas;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.Link;
+			import twaver.networkx.NetworkX;
+			public var element:IElement;
+			private var __app:sdncui2;
+			public var mydata:datas = datas.getInstence();
+//			
+			public var fields:ArrayCollection = new ArrayCollection;
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				__app=SdncUtil.app;
+				fields.removeAll();
+				var networkX:NetworkX = __app.ipcore.netManageView.networkX;
+				var links:ArrayCollection = new ArrayCollection();
+				if(element is NetLink)
+				{
+					var netLink:NetLink=element as NetLink;
+					var leftnodeID:int =  netLink.leftnodeID;
+					var rightnodeID:int = netLink.rightnodeID;
+					var cost:String = netLink.cost.toString();
+					var bandwidth:String = netLink.bandwidth.toString(); 
+					//pay.text = cost;
+				//	bandwith.text = bandwidth;
+					var obj:Object=new Object;
+					obj["link"]=netLink;
+					obj["label"]=(netLink.fromNode as NetNode).systemName+"->"+(netLink.toNode as NetNode).systemName;
+					links.addItem(obj);
+					
+					for(var i:int=0;i<netLink.fromNode.links.count;i++){
+						var link:NetLink = netLink.fromNode.links.getItemAt(i);
+						if(link!=netLink&&link.toNode == netLink.fromNode&&link.fromNode==netLink.toNode){
+							var obj1:Object=new Object;
+							obj1["link"]=link;
+							obj1["label"]=(link.fromNode as NetNode).systemName+"->"+(link.toNode as NetNode).systemName;
+							links.addItem(obj1);
+						}
+					}
+					linknamelist.dataProvider=links;
+					
+					
+					var xml:XMLList = mydata.AlgoritmXML.requestcontent.topodata.topo.topoLinks;
+					var str:String = xml.foreachlink.@describe
+					var names:Array = str.split(",")
+					var str2:String = xml.foreachlink.@property
+					var propertys:Array = str2.split(",")
+					var str3:String = xml.foreachuserlink.@must
+					var musts:Array = str3.split(",");
+					if(names.length>propertys.length)
+					{
+						for(var i:int =0;i<(names.length-propertys.length);i++)
+						{
+							names.pop()
+						}
+					}
+					else if(names.length<propertys.length)
+					{
+						for(var i:int = names.length-1;i<propertys.length;i++)
+						{
+							names.push(propertys[i])
+						}
+					}
+					for(var i:int = 0;i<names.length;i++)
+					{
+						if(musts.indexOf(propertys[i],0)!=-1)
+						{
+							
+							fields.addItem({
+								property:propertys[i], 
+								must:"true",  
+								describe:names[i],
+								num:netLink.getClient(propertys[i])
+							})
+						}
+						else
+						{
+							fields.addItem({
+								property:propertys[i], 
+								must:"false",  
+								describe:names[i],
+								num:netLink.getClient(propertys[i]) 
+							})	
+						}
+					}
+				}
+				
+			}
+			private function upDateLink():void
+			{
+				var linkobj:Object=linknamelist.selectedItem;
+				var selectedlink:NetLink=linkobj["link"] as NetLink;
+				element=selectedlink;
+				var cost:String = selectedlink.cost.toString();
+				var bandwidth:String = selectedlink.bandwidth.toString(); 
+				var xml:XMLList = mydata.AlgoritmXML.requestcontent.topodata.topo.topoLinks;
+				var str:String = xml.foreachlink.@describe
+				var names:Array = str.split(",")
+				var str2:String = xml.foreachlink.@property
+				var propertys:Array = str2.split(",")
+				var str3:String = xml.foreachuserlink.@must
+				var musts:Array = str3.split(",");
+				fields.removeAll();
+				if(names.length>propertys.length)
+				{
+					for(var i:int =0;i<(names.length-propertys.length);i++)
+					{
+						names.pop()
+					}
+				}
+				else if(names.length<propertys.length)
+				{
+					for(var i:int = names.length-1;i<propertys.length;i++)
+					{
+						names.push(propertys[i])
+					}
+				}
+				for(var i:int = 0;i<names.length;i++)
+				{
+					if(musts.indexOf(propertys[i],0)!=-1)
+					{
+						
+						fields.addItem({
+							property:propertys[i], 
+							must:"true",  
+							describe:names[i],
+							num:selectedlink.getClient(propertys[i])
+						})
+					}
+					else
+					{
+						fields.addItem({
+							property:propertys[i], 
+							must:"false",  
+							describe:names[i],
+							num:selectedlink.getClient(propertys[i]) 
+						})	
+					}
+				}
+				//pay.text = cost;
+				//bandwith.text = bandwidth;
+			}
+			
+			protected function savelink(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				for(var i:int = 0;i<fields.length;i++)
+				{
+					mydata.Acldatas[fields[i].property] = fields[i].num
+				}
+				var changei:ChangeTopo = new ChangeTopo;
+				PopUpManager.removePopUp(this);
+				var changei:ChangeTopo = new ChangeTopo;
+				var linei:NetLink =linknamelist.selectedItem["link"] as NetLink;
+				changei.changeline(mydata.Acldatas,linei);
+				Alert.show("保存成功","提示");
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<fx:XML id="project" source="assets/xml/sdn_office_project.xml"/>
+	</fx:Declarations>
+	<s:BorderContainer id="bcc" top="10" width="95%" height="207" hideEffect="fadeout"
+					   horizontalCenter="0" showEffect="fadeIn" >
+		<s:Group  width="100%" height="33" x="0" y="15">
+			<s:Label  x="57" y="11" text="选择线 ：" textAlign="right"/>
+			<s:DropDownList id="linknamelist" x="125" y="7" width="160" verticalCenter="0"  requireSelection="true" 
+							labelField="label"  change="upDateLink()"/>
+		</s:Group>
+		<mx:DataGrid id="propertys" left="0" right="0" top="56" bottom="0" 
+					 rowCount="4" editable="true" dataProvider="{fields}"> 
+			<mx:columns>
+					<mx:DataGridColumn dataField="describe" headerText="名称" editable="false"></mx:DataGridColumn>
+					<mx:DataGridColumn dataField="num" headerText="值" editable="true"></mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+	</s:BorderContainer>
+	<s:Button id="save" bottom="15" label="确定" horizontalCenter="-52" click="savelink(event)"/>
+	<s:Button bottom="15" label="取消" click="PopUpManager.removePopUp(this)" horizontalCenter="50"/>
+</s:TitleWindow>

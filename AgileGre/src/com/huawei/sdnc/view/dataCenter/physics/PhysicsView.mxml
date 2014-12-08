@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:physics="com.huawei.sdnc.view.dataCenter.physics.*" 
+		 xmlns:common="com.huawei.sdnc.view.common.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="p_dc_s"/>
+		<s:State name="p_tower_s"/>
+	</s:states>
+	<physics:PhysicsLayout id="dataCenter" width="100%" height="100%" includeIn="p_dc_s"/>
+	<physics:Lobby id="tower" width="100%" height="100%" includeIn="p_tower_s"/>
+</s:Group>

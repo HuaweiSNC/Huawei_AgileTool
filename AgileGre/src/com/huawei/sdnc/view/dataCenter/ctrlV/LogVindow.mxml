@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 borderColor="0x6aacbe" borderAlpha="1" borderWeight="3" alpha="0.8"
+		 backgroundColor="0x222d40" backgroundAlpha="0.5"
+		 color="white" contentBackgroundAlpha="0"
+		 top="40" right="20" width="400" height="420"
+		 visible="false" includeInLayout="false">
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			[Bindable]
+			public var _dp:ArrayCollection;
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:List id="logList" left="8" right="8" top="8" bottom="8" dataProvider="{_dp}"
+			horizontalCenter="0" verticalCenter="0" borderVisible="false"
+			contentBackgroundColor="0x326290" contentBackgroundAlpha=".5"
+			itemRenderer="com.huawei.sdnc.view.common.render.LogItemRenderer">
+		<s:layout>
+			<s:VerticalLayout gap="5" paddingTop="20"/>
+		</s:layout>
+	</s:List>
+</s:BorderContainer>

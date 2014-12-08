@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<s:SparkSkin name="CustomPanelBorderSkin" 
+			 xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			 xmlns:s="library://ns.adobe.com/flex/spark"
+			 implements="mx.core.IRectangularBorder"> 
+	
+	<fx:Script> 
+		<![CDATA[ 
+			import mx.core.EdgeMetrics; 
+			import mx.core.IUIComponent; 
+			
+			
+			static private const exclusions:Array = ["background"]; 
+			override public function get colorizeExclusions():Array { 
+				return exclusions; 
+			} 
+			
+			
+			static private const contentFill:Array = []; 
+			override public function get contentItems():Array { 
+				return contentFill 
+			}; 
+			
+			private var _metrics:EdgeMetrics = new EdgeMetrics(1, 33, 1, 1); 
+			public function get borderMetrics():EdgeMetrics { 
+				var hasPanelParent:Boolean = isPanel(parent); 
+				var controlBar:IUIComponent = hasPanelParent ? Object(parent).mx_internal::_controlBar : null; 
+				if (controlBar && controlBar.includeInLayout) { 
+					_metrics.bottom = controlBar.getExplicitOrMeasuredHeight() + 1; 
+				} else { 
+					_metrics.bottom = 1; 
+				} 
+				return _metrics; 
+			} 
+			
+			public function get backgroundImageBounds():Rectangle { 
+				return null; 
+			} 
+			
+			public function set backgroundImageBounds(value:Rectangle):void { 
+			} 
+			
+			public function get hasBackgroundImage():Boolean { 
+				return false; 
+			} 
+			
+			public function layoutBackgroundImage():void { 
+			} 
+			
+			
+			private static var panels:Object = {}; 
+			
+			private static function isPanel(parent:Object):Boolean { 
+				var s:String = getQualifiedClassName(parent); 
+				if (panels[s] == 1) { 
+					return true; 
+				} 
+				if (panels[s] == 0) { 
+					return false; 
+				} 
+				if (s == "mx.containers::Panel") { 
+					panels[s] == 1; 
+					return true; 
+				} 
+				var x:XML = describeType(parent); 
+				var xmllist:XMLList = x.extendsClass.(@type == "mx.containers::Panel"); 
+				if (xmllist.length() == 0) { 
+					panels[s] = 0; 
+					return false; 
+				} 
+				panels[s] = 1; 
+				return true; 
+			} 
+		]]> 
+	</fx:Script> 
+	
+	
+	<!-- layer 1:边框--> 
+	<s:Rect left="0" right="0" top="0" bottom="0"> 
+		<s:fill>
+			<s:LinearGradient rotation="135">
+				<s:GradientEntry color="0xb4becc"/>
+				<s:GradientEntry color="0x57b0c9"/>
+				<s:GradientEntry color="0x21a9c9"/>
+			</s:LinearGradient>
+		</s:fill> 
+			<!--<s:RadialGradientStroke rotation="225">
+				
+			</s:RadialGradientStroke>
+		</s:stroke> -->
+	</s:Rect> 
+	
+	<!-- layer 2: 背景色--> 
+	<s:Rect id="background" left="1" top="1" right="1" bottom="1" alpha="1"> 
+		<s:fill> 
+			<s:SolidColor color="0x2b3956"/>
+		</s:fill> 
+	</s:Rect> 
+	
+	<!-- layer 3: 标题栏--> 
+	<s:Rect left="1" right="1" top="1" height="33"> 
+		<s:fill> 
+			<s:LinearGradient rotation="90"> 
+				<s:GradientEntry color="0x3276b7" ratio=".5"/> 
+				<s:GradientEntry color="0x2f70ae" ratio=".5"/> 
+			</s:LinearGradient> 
+		</s:fill> 
+	</s:Rect> 
+	
+	<!-- layer 6: 控制栏分割线--> 
+	<s:Rect id="cbdiv" left="1" right="1" top="34" height="1"> 
+		<s:fill> 
+			<s:SolidColor color="0x4c5b77" /> 
+		</s:fill> 
+	</s:Rect> 
+	
+</s:SparkSkin>

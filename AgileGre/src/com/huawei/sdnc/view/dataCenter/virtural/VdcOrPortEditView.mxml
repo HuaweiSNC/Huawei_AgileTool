@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   backgroundColor="0x22354e" backgroundAlpha=".6"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin"
+			   title="Edit"
+			   borderColor="0x34b5d0">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.AdvancedDataGrid.Renderer.AdgItemrender;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Text;
+			import mx.events.CloseEvent;
+			
+			/**保存虚拟网络编辑结果*/
+			private var __netXML:XML;
+			/**保存端口编辑结果*/
+			private var __portXml:XML;
+			
+			/**虚拟网络编辑窗口*/
+			public var vdcEditWindow:VDCEditWindow;
+			public var portItemRender:AdgItemrender;
+			[Bindable]
+			public var __isAddVDC:Boolean = true;
+			
+			[Bindable]
+			private var __adminStatusAc:ArrayCollection = new ArrayCollection(["true","false"]);
+			[Bindable]
+			private var __portAdminStatusAc:ArrayCollection = new ArrayCollection(["true","false"]);
+			[Bindable]
+			private var __operStatusAc:ArrayCollection = new ArrayCollection(["ACTIVE","DEACTIVE"]);
+			
+			protected function submitButton_clickHandler(event:MouseEvent):void
+			{
+				if(this.currentState == "portState")
+				{
+					var attach:XML = <attach/>;
+					attach.attachName = attachName.text;
+					attach.attachID = attachID.text;
+					attach.vmMac = vmMac.text;
+					attach.vSwitchMac = vSwitchMac.text;
+					attach.torProfileName = torProfileName.text;
+					var attachs:XML = <attachs/>;
+					attachs.appendChild(attach);
+					
+					__portXml = <port/>;
+					__portXml.portName = portName.text;
+					__portXml.portID = portID.text;
+					__portXml.adminStatus = portAdminStatus.selectedItem;
+					__portXml.operStatus = portOperStatus.selectedItem;
+					__portXml.attachs = attachs;
+					
+					portItemRender.data = __portXml;
+					vdcEditWindow.dispatchEvent(new SdncEvt(SdncEvt.VIRTUALVIEW_PORT_CHANGE,portItemRender));
+					dispatchCloseEvent();
+					return;
+				}
+				__netXML = <network/>;
+				if(networkName.text == "")
+					Alert.show("Network Name is null !");
+				else
+					__netXML.name = networkName.text;
+				__netXML.admin_state_up = adminStatus.selectedItem;
+				if(networkID.text != "") __netXML.id = networkID.text;
+				__netXML.shared = shared.selected;
+				vdcEditWindow.dispatchEvent(new SdncEvt(SdncEvt.VIRTUALVIEW_ADDOREDIT_VDC,[__isAddVDC,__netXML]));
+				dispatchCloseEvent();
+			}
+			
+			protected function dispatchCloseEvent():void
+			{
+				this.dispatchEvent(new CloseEvent(CloseEvent.CLOSE,true));
+			}
+			
+			public function get _netXML():XML
+			{
+				return __netXML;
+			}
+
+			public function set _netXML(value:XML):void
+			{
+				__netXML = value;
+				if(__netXML == null)
+				{
+					clearForm();
+					return;
+				}
+				networkName.text = value.networkName;
+				networkID.text = value.networkID;
+				adminStatus.selectedItem = value.adminStatus == "true" ? __adminStatusAc[0]:__adminStatusAc[1];
+				shared.selected = value.shared;
+			}
+			
+			/**清空虚拟网络编辑表格*/
+			private function clearForm():void
+			{
+				networkName.text = "";
+				networkID.text = "";
+				adminStatus.selectedItem = "true";
+			}
+
+			public function get _portXml():XML
+			{
+				return __portXml;
+			}
+
+			public function set _portXml(value:XML):void
+			{
+				__portXml = value;
+				if(value == null)
+				{
+					clearPortForm();
+					var data:Object = portItemRender.data;
+					vmMac.text =  String(data.vm.instance_mac_address);
+					return;
+				}
+				portName.text = value.portName;
+				portID.text = value.portID;
+				portAdminStatus.selectedItem = String(value.adminStatus);
+				portOperStatus.selectedItem = value.operStatus;
+				var attach:XML = value.attachs.attach[0];
+				attachName.text = attach.attachName;
+				attachID.text = attach.attachID;
+				vmMac.text = attach.vmMac;
+				vSwitchMac.text = attach.vSwitchMac;
+			}
+			
+			/**清空端口编辑表格*/
+			private function clearPortForm():void
+			{
+				portName.text = "";
+				portID.text = "";
+				portAdminStatus.selectedItem = "false";
+				portOperStatus.selectedItem = __operStatusAc.getItemAt(0);
+				attachName.text = "";
+				attachID.text = "";
+				vmMac.text = "";
+				vSwitchMac.text = "";
+				torProfileName.text = "";
+			}
+
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="vnState"/>
+		<s:State name="portState"/>
+	</s:states>
+	<s:VGroup paddingRight="10" paddingLeft="10" paddingTop="10" paddingBottom="10" horizontalAlign="right">
+		<s:Group>
+			<s:layout>
+				<s:HorizontalLayout/>
+			</s:layout>
+			<s:Form includeIn="vnState" width="50%" height="100%" backgroundColor="0xffffff">
+				<s:Label text="Basic Infomation:"/>
+				<s:FormItem label="Network Name:">
+					<s:TextInput id="networkName"/>
+				</s:FormItem>
+				<s:FormItem label="Network ID:" visible="{!__isAddVDC}" includeInLayout="{!__isAddVDC}">
+					<s:TextInput id="networkID" enabled="false"/>
+				</s:FormItem>
+				<s:FormItem label="Admin Status:">
+					<s:ComboBox id="adminStatus" dataProvider="{__adminStatusAc}"/>
+				</s:FormItem>
+				<s:FormItem label="Shared:">
+					<s:CheckBox id="shared"/>
+				</s:FormItem>
+			</s:Form>
+			<s:Form includeIn="portState" width="100%" height="100%" backgroundColor="0xffffff">
+				<s:Label text="Add Port:"/>
+				<s:FormItem label="Port Name:" required="true">
+					<s:TextInput id="portName"/>
+				</s:FormItem>
+				<s:FormItem label="Port ID:" required="true">
+					<s:TextInput id="portID"/>
+				</s:FormItem>
+				<s:FormItem label="AdminStatus">
+					<s:ComboBox id="portAdminStatus" dataProvider="{__portAdminStatusAc}"/>
+				</s:FormItem>
+				<s:FormItem label="OperStatus">
+					<s:ComboBox id="portOperStatus" dataProvider="{__operStatusAc}" selectedItem="{__operStatusAc.getItemAt(0)}" enabled="false"/>
+				</s:FormItem>
+				<s:FormItem label="Attach Name:" required="true">
+					<s:TextInput id="attachName"/>
+				</s:FormItem>
+				<s:FormItem label="Attach ID:" required="true">
+					<s:TextInput id="attachID"/>
+				</s:FormItem>
+				<s:FormItem label="VM Mac:">
+					<s:TextInput id="vmMac"/>
+				</s:FormItem>
+				<s:FormItem label="vSwitch Mac:">
+					<s:TextInput id="vSwitchMac"/>
+				</s:FormItem>
+				<s:FormItem label="torProfileName:">
+					<s:TextInput id="torProfileName"/>
+				</s:FormItem>
+			</s:Form>
+		</s:Group>
+		<s:HGroup height="30" horizontalAlign="right" verticalAlign="middle">
+			<s:Button label="submit" click="submitButton_clickHandler(event)" color="0xffffff" chromeColor="0x2a6ebb"/>
+			<s:Button label="cancel" click="dispatchCloseEvent()" color="0xffffff" chromeColor="0x2a6ebb"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:TitleWindow>

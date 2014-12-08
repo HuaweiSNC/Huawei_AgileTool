@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="150" height="150"
+		 styleName="popupStyle"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			[Bindable]
+			public var isVisible:Boolean = true;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//				this.addEventListener(ResizeEvent.RESIZE,function(e:ResizeEvent):void{
+				//					vg.verticalAlign = "middle";
+				//					vg.horizontalAlign = "center";
+				//				});
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--<s:Rect left="0" right="0" top="0" bottom="0" radiusX="5" radiusY="5">
+	<s:stroke>
+	<s:SolidColorStroke color="0x64b0d4" weight="2"/>
+	</s:stroke>
+	<s:fill>
+	<s:SolidColor color="0x000000" alpha=".5"/>
+	</s:fill>
+	</s:Rect>-->
+	<s:SWFLoader  id="id1" width="150" height="150" source="@Embed('/assets/swf/loading.swf')" horizontalCenter="0" verticalCenter="0"/>
+</s:Group>

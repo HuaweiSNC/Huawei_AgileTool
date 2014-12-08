@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	rowspanable AdvancedDataGrid
+	ver.0.7
+	2008.11.18
+	made by irismin@naver.com ( minie.pe.kr )
+	
+	this is alpha version. (has some bugs)
+	
+	known problem : 
+	1. selection & highlight has being abnormality actions.
+	- you can fix this at function named "drawSelectionIndicator" & "moveIndicators".
+	2. source is rough. I have no time to clear this.
+	3. no comment -.-;; sorry... I was busy;;
+	
+	please : It has no license. but if you fix this, 
+			and you think it's useful or being more performance, please send me the fixed source.  
+    
+    罗楷
+    kevin.luo.sl@gmail.com
+    修复:
+    1. 动态设置columns = XXX导致rowspan无效。
+    2. 在dataProvider不为空时设置dataProvider = null异常。
+    3. resetMergeCells 中 prevLabel只能接受字符串类型数据，修改为可以接受复杂数据类型。
+    
+    
+	
+-->
+<mx:AdvancedDataGrid xmlns:mx="http://www.adobe.com/2006/mxml"  height="100%" 
+	creationComplete="creApp();">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ScrollEvent;
+			import com.huawei.sdnc.view.common.AdvancedDataGrid.Util.DynamicFunction;
+			import com.huawei.sdnc.view.common.AdvancedDataGrid.Util.MergeCellInfo;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+			import mx.events.DynamicEvent;
+			import com.huawei.sdnc.view.common.AdvancedDataGrid.Util.ItemRendererIFactory;
+			import com.huawei.sdnc.view.common.AdvancedDataGrid.SubClasses.AdvancedDataGridColumn;
+			import mx.messaging.AbstractConsumer;
+			import mx.core.FlexShape;
+			import mx.events.AdvancedDataGridEvent;
+			import mx.controls.listClasses.AdvancedListBase;
+			import mx.core.Container;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.core.UIComponent;
+			import mx.core.mx_internal;
+			
+			use namespace mx_internal;
+			
+			private var mergeCells:Array=new Array();
+			private var columnsKeep:Array;
+			private var mergedRowNum:Array=new Array();
+			private var keepDrawedFocuses:Array=new Array();
+			private var rendererFactory:ItemRendererIFactory=new ItemRendererIFactory();
+			private var dynaFunc:DynamicFunction=new DynamicFunction();
+			private var scrolling:Boolean = false;
+
+			
+			/**
+			 * creationComplete Handler
+			 **/
+			private function creApp():void{
+				resetMergeCells();
+				validateDisplayList();
+			}
+			
+			public function getCellSelectionData():Array{
+				var array:Array = [];
+				for(var rowKey:String in this.cellSelectionData){
+					//array.push(
+					var row:* = cellSelectionData[rowKey]
+					for(var index:String in row){
+						var column:AdvancedDataGridColumn =  this.columns[Number(index)]
+						var dataField:String = column.dataField
+						var data:* = row[index].data[dataField];
+						var user_id:String = row[index].data["user_id"]
+						var branch_id:String = row[index].data["branch_id"]
+						var department_id:String = row[index].data["department_id"]
+						var schedule_policy_id:String = row[index].data["schedule_policy_id"]
+						
+						if(data is Array && data[0]){
+						      array.push(data[0])
+						}else{
+							if(!data || data == undefined || data is Array){
+								if(user_id){
+									data = {user_id:user_id,branch_id:branch_id,department_id:department_id,schedule_policy_id:schedule_policy_id}
+									array.push(data)
+								}else{
+									data = "";
+								}
+							    
+							}
+							 
+						}
+						
+					}
+				}
+				return array;
+				//return this.cellSelectionData
+			
+			}
+			
+			
+			/**
+			 * Dynamic Column set function by XML
+			 * standard XML format is below :
+			 * 
+			 **/
+			public function setColumnsByXML(setColumns:XML):void {
+				var ch:XMLList=setColumns.children();
+				var setColumn:Array=new Array();
+				
+				for (var i:int=0; i<ch.length(); i++){
+					setColumn.push(getColumnSet(ch[i]));
+				}
+				
+				this.groupedColumns=setColumn;
+				this.validateNow();
+				this.validateDisplayList();
+			}
+			
+			/**
+			 * return AdvancedDataGridColumn or AdvancedDataGridColumnGroup by XML
+			 **/
+			private function getColumnSet(value:XML):Object{
+				var ret:Object;
+				if(value.localName()=="ColumnGroup"){
+					// for group
+					ret=getUnitColumn(value, new AdvancedDataGridColumnGroup());
+					var ch:XMLList=value.Column;
+					
+					if(ch!=null){
+						var childs:Array=new Array();
+						for (var i:int=0; i<ch.length(); i++){
+							childs.push(getColumnSet(ch[i]));
+						}
+						ret.children=childs;
+					}
+				} else if(value.localName()=="Column"){
+					//for unit
+					ret=getUnitColumn(value);
+				}
+				
+				return ret;
+			}
+			
+			/**
+			 * return able style types
+			 **/
+			public function get styleTypes():String{
+				// 여기에 |로 구분. split 해서 쓸 수 있게... (실제로는 indexOf로 찾아서 쓴다)
+				var ret:String="backgroundColor|color|disabledColor|fontAntiAliasType|fontFamily|fontGridFitType|fontSharpness|fontSize|fontStyle|fontThickness|fontWeight|headerStyleName|kerning|letterSpacing|paddingLeft|paddingRight|textAlign|textDecoration|textIndent";
+				return ret;
+			}
+		
+			/**
+			 * return unit column by XML
+			 **/
+			private function getUnitColumn(value:XML, item:Object=null):Object{
+				var ret:Object;
+				if(item==null){
+					ret=new AdvancedDataGridColumn();
+				} else {
+					ret=item;
+				}
+				var checkItem:XML;
+				var ch:XMLList;
+				var i:int;
+				
+				// Mapping 처리
+				if(value.Mapping==undefined || value.Mapping==null){
+					return null;
+				}
+				
+				ch=value.Mapping;
+				for (i=0; i<ch.length(); i++){
+					checkItem=ch[i];
+					var checkChartField:String=checkItem.@name;
+					var checkDataField:String=checkItem.@value;
+					
+					if(styleTypes.indexOf(checkChartField)>-1){ //스타일일 경우
+					
+						ret.setStyle(checkChartField,checkDataField);
+						
+					} else { // 스타일이 아닐 경우
+						
+						// 각종 렌더러 설정일 경우
+						var renderer:ItemRendererIFactory;
+						switch(checkChartField){
+							case "itemRenderer":
+								renderer=new ItemRendererIFactory();
+								if(checkDataField==""){
+									checkDataField="defaultitem";
+								}
+								renderer.classname=checkDataField;
+								ret.itemRenderer=renderer;
+							case "headerRenderer": 
+								renderer=new ItemRendererIFactory();
+								if(checkDataField==""){
+									checkDataField="defaultheader";
+								}
+								renderer.classname=checkDataField;
+								ret.headerRenderer=renderer;
+							break;
+							default: // 기타 각종 properties 일 경우,
+								try {
+									ret[checkChartField]=checkDataField;
+								}catch(e:Error){
+									trace("AdvancedDataGridColumn에 "+checkChartField+"라는 속성이 없습니다");
+								}
+							break;
+						}
+						
+					}
+				}
+				
+				// Function 처리
+				if(value.Functions!=undefined && value.Functions.children().length()>0){
+					ch=value.Functions.children();
+					for (i=0; i<ch.length(); i++){
+						checkItem=ch[i];
+						checkChartField=checkItem.@name;
+						checkDataField=checkItem.@value;
+						ret[checkChartField]=dynaFunc.getFunction(checkDataField);
+					}
+				}
+				
+				return ret;
+			}
+			
+			/**
+			 * get data by row, col num (viewing)
+			 **/ 
+			private function getItemListData(row:int,col:int):Object{
+				if(getItemAt(row,col)!=null){
+					return Object(getItemAt(row,col)).listData;
+				}
+				
+				return null;
+			}
+			
+			private function getItemAt(row:int,col:int):IListItemRenderer{
+				row-=this.verticalScrollPosition;
+				col-=this.horizontalScrollPosition;
+				
+				if(row<0 || col<0 || listItems==null || listItems.length==0 || row > this.listItems.length-1 || col  > this.listItems[row].length-1){
+					return null;
+				}
+				return IListItemRenderer(this.listItems[row][col]);
+			}
+			
+			private function findItemRowCol(tg:IListItemRenderer):Object{
+				for (var i:int=0; i<listItems.length; i++){
+					if(listItems[i]!=null){
+						for (var j:int=0; j<listItems[i].length; j++){
+							if(listItems[i][j]==tg){
+								var ret:Object=new Object();
+								ret.row=i;
+								ret.col=j;
+								
+								return ret;
+							}
+						}
+					}
+				}
+				
+				return null;
+			}
+			
+			private function getItemRect(row:int,col:int):Rectangle{
+				var tg:IListItemRenderer=getItemAt(row,col);
+				var ret:Rectangle=new Rectangle(tg.x,tg.y,tg.width,tg.height);
+				
+				return ret;
+			}
+			
+			override protected function columnDraggingMouseMoveHandler(event:MouseEvent):void{
+				// 제가 가진 SDK 에서는 MouseEvent 로 되어 있는데... 이게 어찌된 일인지;;;
+				// 브라이언님은 Event로 되어 있나봐요... by 민님 2008.11.22
+				super.columnDraggingMouseUpHandler(event);
+				this.validateDisplayList();
+				resetMergeCells();
+				validateDisplayList();
+			}
+			
+			
+			override public function set columns(value:Array):void{
+				super.columns=value;
+				columnsKeep=value;
+				
+				
+				
+				if(!value){
+					resetMergeCells();
+				    validateDisplayList();
+				}
+				
+			}
+			
+			override public function get columns():Array{
+				//return columnsKeep;
+				return _columns;
+			}
+			
+			override protected function sortHandler(event:AdvancedDataGridEvent):void{
+				super.sortHandler(event);
+				resetMergeCells();
+				validateDisplayList();
+			}
+			
+			override public function set dataProvider(value:Object):void{
+				super.dataProvider=value;
+				resetMergeCells();
+				if(value){
+				    validateDisplayList();
+				}
+				
+			}
+			
+			override protected function scrollHandler(event:Event):void{
+			     this.scrolling = true;
+			     super.scrollHandler(event);
+			}
+			
+			override protected function mouseWheelHandler(event:MouseEvent):void{
+				this.scrolling = true;
+				super.mouseWheelHandler(event);
+			}
+			
+			override protected function mouseUpHandler(event:MouseEvent):void{
+				super.mouseUpHandler(event);
+				this.scrolling = false
+			}
+			
+			override public function set verticalScrollPosition(value:Number):void{
+				super.verticalScrollPosition=value;
+				if(scrolling){
+					validateDisplayList();
+				}
+				//
+			}
+			
+			override public function set horizontalScrollPosition(value:Number):void{
+				super.horizontalScrollPosition=value;
+				if(scrolling){
+                    validateDisplayList();
+                }
+			}
+			
+			override public function set width(value:Number):void{
+				super.width=value;
+				validateDisplayList();
+			}
+			
+			override public function set height(value:Number):void{
+				super.height=value;
+				validateDisplayList();
+			}
+			
+			override public function validateDisplayList():void{
+				super.validateDisplayList();
+				
+				var settedCol:int=-1;
+				var settedRow:int=-1;
+				var tg:Object;
+				var checkItem:MergeCellInfo;
+				
+				for(var i:int=0; i<mergeCells.length; i++){
+					checkItem=MergeCellInfo(mergeCells[i]);
+					tg=getItemAt(checkItem.row, checkItem.col);
+					
+					if(tg!=null && (settedCol!=checkItem.mergeOwnerCol || settedRow!=checkItem.mergeOwnerRow)){
+						settedCol=checkItem.mergeOwnerCol;
+						settedRow=checkItem.mergeOwnerRow;
+						
+						tg.visible=true;
+						var multiplyNum:int=checkItem.mergeNum;
+						var showingRowNum:int=checkItem.row-this.verticalScrollPosition;
+						if(checkItem.mergeNum+showingRowNum>this.rowCount){
+							multiplyNum=this.rowCount-showingRowNum;
+						}
+						tg.height=this.rowHeight*multiplyNum-2;
+						
+						var pr:Object=Object(tg.parent);
+						pr.swapChildrenAt(pr.numChildren-1, pr.getChildIndex(DisplayObject(tg)));
+					} else if(tg!=null && settedCol==checkItem.mergeOwnerCol && settedRow==checkItem.mergeOwnerRow){
+						tg.visible=false;
+					}
+				}
+				
+				// 배경 그리기
+				var rowBG:Sprite=Sprite(UIComponent(this.getChildAt(2)).getChildAt(0));
+				if(mergeCells.length>0){
+					while(rowBG.numChildren>0){
+						rowBG.removeChildAt(0);
+					}
+				}
+				
+				var colorset:Array=this.getStyle("alternatingItemColors");
+				var row:int=0;
+				var settednum:int;
+				
+				for (var col:int=0; listItems[row]!=null && col<listItems[row].length; col++){
+					settednum=1;
+					for (row=0; row<listItems.length; row++){
+						tg=IListItemRenderer(this.listItems[row][col]);
+						if(tg==null){
+							break;
+						}
+						var realRowNum:int=row+this.verticalScrollPosition;
+						var realColNum:int=col+this.horizontalScrollPosition;
+						
+						checkItem=getMergeCell(realRowNum, realColNum);
+						
+						if(checkItem==null || settednum==1 || 
+								checkItem.col==checkItem.mergeOwnerCol && checkItem.row==checkItem.mergeOwnerRow){
+							var toSetColor:int;
+							if(mergedRowNum[realColNum]==undefined || mergedRowNum[realColNum]==null || mergedRowNum[realColNum][realRowNum]==undefined || mergedRowNum[realColNum][realRowNum]==null){
+								toSetColor=settednum;
+							} else {
+								toSetColor=mergedRowNum[realColNum][realRowNum];
+							}
+							drawMergeCellBackground(rowBG,tg.x,tg.y,tg.width,tg.height,colorset[toSetColor%colorset.length]);
+							settednum++;
+						}
+					}
+					row=0;
+				}
+			}
+			
+			
+			private function getMergeCell(row:int, col:int):MergeCellInfo{
+				var ret:MergeCellInfo;
+				
+				for (var i:int=0; i<mergeCells.length; i++){
+					var checkItem:MergeCellInfo=mergeCells[i];
+					if(checkItem.col==col && checkItem.row==row){
+						ret=mergeCells[i];
+						break;
+					}
+				}
+				
+				return ret;
+			}
+			
+			private function resetMergeCells():void{
+				if(columns==null || columns.length==0 || this.dataProvider==null || this.dataProvider.length==0){
+					return;
+				}
+				
+				mergeCells=new Array();
+				
+				try{ // 기본 컬럼을 썼는지, mergeable column을 썼는 지 확인
+					var test:AdvancedDataGridColumn=AdvancedDataGridColumn(_columns[0]);
+				}catch(e:Error){
+					// 기본형일 경우 아무 것도 하지 않음
+					return;
+				}
+					
+				for (var i:int=0; i<_columns.length; i++){ // column
+					var prevcol:AdvancedDataGridColumn=null;
+					var col:AdvancedDataGridColumn=AdvancedDataGridColumn(_columns[i]);
+					var prevLabel:*;
+					var check:Boolean=false;
+					var keepNum:int=-1;
+					
+					if(i>0){
+						prevcol=AdvancedDataGridColumn(_columns[i-1]);
+					}
+					
+					
+					if(col.verticalMergeable){
+						for (var j:int=0; j<this.dataProvider.length; j++){ // row
+							var prevtemp:Object=null;
+							var temp:Object=this.dataProvider[j];
+							var domerge:Boolean=false;
+							
+							if(j>0){
+								prevtemp=this.dataProvider[j-1];
+							}
+							if(temp!=null){
+								//trace(temp[col.dataField])
+								if(prevLabel==temp[col.dataField] && (prevLabel !=null && temp[col.dataField] !=null)){
+									// 앞 컬럼의 구분과 걸리는 지 체크
+									var checkPrevColumnLine:MergeCellInfo=null;
+									
+									if(i>0 && j>0){
+										checkPrevColumnLine=getMergeCell(j-1,i-1);
+									}
+									
+									if((prevcol==null || prevtemp==null || temp[prevcol.dataField]==prevtemp[prevcol.dataField]) &&
+										((i==0 && checkPrevColumnLine==null) || (checkPrevColumnLine!=null && checkPrevColumnLine.mergeNum>=2))){
+										if(keepNum==-1){
+											keepNum=j-1;
+										}
+										check=true;
+									} else {
+										domerge=true;
+									}
+								}
+								
+								if(domerge || 
+									prevLabel!=temp[col.dataField] || 
+									j==this.dataProvider.length-1){
+									
+									if(keepNum!=-1){
+										if(j==this.dataProvider.length-1 && prevLabel==temp[col.dataField] && 
+											((i==0 && checkPrevColumnLine==null) || 
+											(checkPrevColumnLine!=null && checkPrevColumnLine.mergeNum>=2))){
+											j++;
+										}
+										
+										var mergeNum:int=j-keepNum;
+										for(var k:int=keepNum; k<j; k++){
+											var item:MergeCellInfo=new MergeCellInfo();
+											item.col=i;
+											item.row=k;
+											item.mergeNum=mergeNum-(k-keepNum);
+											item.mergeOwnerCol=i;
+											item.mergeOwnerRow=keepNum;
+											item.label=prevLabel;
+											mergeCells.push(item);
+										}
+									}
+									check=false;
+									keepNum=-1;
+								}
+								prevLabel=temp[col.dataField];
+							} else {
+								prevLabel="";
+								check=false;
+								keepNum=-1;
+							}
+						}
+					}
+				}
+				
+				resetMergedRowNum();
+			}
+			
+			private function resetMergedRowNum():void{
+				mergedRowNum=new Array();
+				for (var i:int=0; i<_columns.length; i++){ // column
+					var count:int=0;
+					var prevCol:int=-1;
+					var prevRow:int=-1;
+					
+					mergedRowNum[i]=new Array();
+					
+					for (var j:int=0; j<this.dataProvider.length; j++){ // row
+						var checkItem:MergeCellInfo=getMergeCell(j,i);
+						
+						if(checkItem==null || prevCol!=checkItem.mergeOwnerCol || prevRow!=checkItem.mergeOwnerRow){
+							count++;
+						}
+						
+						mergedRowNum[i][j]=count;
+						
+						if(checkItem!=null){
+							prevCol=checkItem.mergeOwnerCol;
+							prevRow=checkItem.mergeOwnerRow;
+						} else {
+							prevCol=i;
+							prevRow=j;
+						}
+					}
+				}
+			}
+			
+			override protected function drawRowBackgrounds():void {
+				if(mergeCells==null || mergeCells.length==0){
+					super.drawRowBackgrounds();
+					return;
+				}
+			}
+			
+			private function drawMergeCellBackground(s:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint):void{
+				var background:Shape;
+		        if (s.numChildren>0)
+		        {
+		            background = Shape(s.getChildAt(0));
+		        }
+		        else
+		        {
+		            background = new FlexShape();
+		            background.name = "background";
+		            s.addChild(background);
+		        }
+		
+				
+				var width:Number = Math.min(width, listContent.width - x);
+		        var height:Number = Math.min(height, listContent.height - y);
+				
+		        var g:Graphics = background.graphics;
+		        g.beginFill(color, getStyle("backgroundAlpha"));
+		        g.drawRect(x, y, width, height);
+		        g.endFill();
+			}
+
+		    override protected function drawHighlightIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+		    {
+				var item:Object=findItemRowCol(itemRenderer);
+				var row:int=item.row;
+				var col:int=item.col;
+				var mergeInfo:MergeCellInfo=getMergeCell(row,col);
+				
+/*				if(mergeInfo==null){
+					super.drawHighlightIndicator(indicator, x, y, width, height, color, itemRenderer);
+					return;
+				}
+*/				
+				if (isRowSelectionMode()) { 
+					drawMergeRowIndicator(indicator, row, col, itemRenderer, color); // row 단위 선택할 때
+				}
+		    }
+		    
+		    private function drawMergeRowIndicator(indicator:Sprite, row:int, col:int, itemRenderer:IListItemRenderer, color:uint):void{ // row 단위 선택할 때
+		    	var i:int;
+		    	var g:Graphics = Sprite(indicator).graphics;
+				var item:IListItemRenderer;
+				row+=this.verticalScrollPosition;
+				col+=this.horizontalScrollPosition;
+				
+				g.clear();
+				
+				for(i=0; i<_columns.length; i++){
+					var mergeInfo:MergeCellInfo=getMergeCell(row,i);
+					
+					
+					if(mergeInfo!=null && mergeInfo.row!=mergeInfo.mergeOwnerRow){
+						item=getItemAt(Math.max(mergeInfo.mergeOwnerRow, this.verticalScrollPosition), i);
+					} else {
+						item=getItemAt(row,i);
+					}
+					
+					var pt:Point=Sprite(indicator).globalToLocal(item.parent.localToGlobal(new Point(item.x,item.y)));
+					
+					var w:Number=Math.min(item.width, listContent.width - pt.x);
+					var h:Number=Math.min(item.height, listContent.height - pt.y);
+		            g.beginFill(color);
+			        g.drawRect(pt.x, pt.y, w, h);
+			        g.endFill();
+				}
+		    }
+		    
+            override protected function drawSelectionIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+		    {
+		    	super.drawSelectionIndicator(indicator, x, y, width, height, color, itemRenderer);
+		    	
+		    	var item:Object=findItemRowCol(itemRenderer);
+				var row:int=item.row;
+				var col:int=item.col;
+				var mergeInfo:MergeCellInfo=getMergeCell(row,col);
+				
+				if (isRowSelectionMode()) { 
+					drawMergeRowIndicator(indicator, row, col, itemRenderer, color); // row 단위 선택할 때
+					//keepDrawedFocuses=new Array();
+					//keepDrawedFocuses.push({indicator:indicator, itemRenderer:itemRenderer});
+				}
+		        //super.drawSelectionIndicator(indicator, x, y, width, height, color, itemRenderer);
+		    }
+		    
+		    override protected function moveIndicators(uid:String, offset:int, absolute:Boolean):void
+		    {
+		        super.moveIndicators(uid,offset,absolute);
+		    }
+		    
+	        
+	        
+	        
+
+		]]>
+	</mx:Script>
+</mx:AdvancedDataGrid>

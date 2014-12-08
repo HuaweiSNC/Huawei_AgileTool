@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="237" height="150">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0"/>
+		</s:fill>
+		<s:stroke>
+			<s:LinearGradientStroke rotation="175" weight="2">
+				<s:GradientEntry color="0xb4becc"/>
+				<s:GradientEntry color="0x57b0c9"/>
+				<s:GradientEntry color="0x21a9c9"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<s:Button x="83" y="53" label="AddDevice" chromeColor="0x0c6c9e" color="0xffffff" click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_ADDDEVICE_WINDOW))"/>
+	<s:Button x="83" y="86" width="79" label="TestPath" chromeColor="0x0c6c9e" color="0xffffff" click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.TEST_PATH))"/>
+</s:Group>

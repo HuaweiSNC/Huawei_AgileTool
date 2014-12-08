@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="673" height="166"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkins" 
+			   borderVisible="false"
+			   >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.core.DragSource;
+			import mx.managers.DragManager;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			private var arr:ArrayCollection=new ArrayCollection([
+				{FPID:"1",FPName:"fpname1",IPv4AdminIP:"ipv4",FPRole:"fprole",ESN:"esn",FPType:"fptype"},
+				{FPID:"2",FPName:"fpname1",IPv4AdminIP:"ipv4",FPRole:"fprole",ESN:"esn",FPType:"fptype"},
+			]);
+			public function init():void
+			{
+				
+			}
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,1000,1000);
+				this.startDrag(false,re);
+				//初始化拖动对象
+			/* 	var tw:TitleWindow=(e.currentTarget as DataGrid).parent as TitleWindow;
+				var dragSource:DragSource=new DragSource();
+				DragManager.doDrag(tw, dragSource, e, null); */
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				stopDrag();
+			}
+		]]>
+	</fx:Script>
+	
+	<s:DataGrid id="grid"  left="0" right="0" height="80%"  sortableColumns="false" borderVisible="false" editable="true"
+				skinClass="com.huawei.sdnc.view.skins.DataGridSkin"   dataProvider="{arr}">
+		<s:columns>
+			<s:ArrayList>
+				<s:GridColumn  headerText="FPID" dataField="FPID">
+					<!--<s:itemRenderer>
+						<fx:Component>
+							<s:GridItemRenderer>
+								<s:TextInput id="txt" alpha="1" width="100%" height="100%" />
+								<fx:Script>
+									<![CDATA[
+										
+									]]>
+								</fx:Script>
+								
+								
+							</s:GridItemRenderer>
+						</fx:Component>
+					</s:itemRenderer>-->
+				
+				</s:GridColumn>
+				<s:GridColumn dataField="FPName" headerText="FPName"></s:GridColumn>
+				<s:GridColumn dataField="IPv4AdminIP" headerText="IPv4AdminIP"></s:GridColumn>
+				<s:GridColumn dataField="FPRole" headerText="FPRole"></s:GridColumn>
+				<s:GridColumn dataField="ESN" headerText="ESN"></s:GridColumn>
+				<s:GridColumn dataField="FPType" headerText="FPType" minWidth="150"></s:GridColumn>
+			</s:ArrayList>
+		</s:columns>
+	</s:DataGrid>
+	<s:Group x="0" top="132" right="2" left="2" height="20%" >
+		<s:BitmapImage  width="100%" height="100%"
+					   source="@Embed('assets/imgs/ipran/rectbackground.png')"/>
+	<s:Image x="305" y="6" source="assets/imgs/ipran/plusnew.png"/>
+	</s:Group>
+	<s:Image x="646" y="-27" height="21" source="assets/imgs/ipran/close.png" click="PopUpManager.removePopUp(this)"/>
+	<s:Image x="612" y="-27" source="assets/imgs/ipran/save.png"/>
+</s:TitleWindow>

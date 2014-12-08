@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple custom MXML Spark TitleWindow component.
+The TitleWindowApp application displays this component. 
+You cannot run it independently. -->
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   backgroundColor="0x22354e" backgroundAlpha=".6"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin"
+			   title="Create VDC"
+			   width="800" height="500" 
+			   borderColor="0x34b5d0"
+			   creationComplete="init();" 
+			   close="closeWindow();"
+			   xmlns:AdvancedDataGrid="com.huawei.sdnc.view.common.AdvancedDataGrid.*"
+			   xmlns:SubClasses="com.huawei.sdnc.view.common.AdvancedDataGrid.SubClasses.*" 
+			   xmlns:Adg="com.huawei.sdnc.view.common.Adg.*">
+	<s:layout>
+		<s:VerticalLayout gap="10" horizontalAlign="center"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.protocols.dict.events.ConnectedEvent;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.Images;
+			import com.huawei.sdnc.tools.SdnXmlUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.tools.VdcManagerUtil;
+			import com.huawei.sdnc.view.common.AdvancedDataGrid.Renderer.AdgHeaderRender;
+			import com.huawei.sdnc.view.common.AdvancedDataGrid.Renderer.AdgItemrender;
+			import com.huawei.sdnc.vo.TopoXmlVo;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.MenuEvent;
+			import mx.managers.PopUpManager;
+			import mx.olap.aggregators.CountAggregator;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpErrorEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.events.DropDownEvent;
+			/**sdncui*/
+			private var _app:sdncui2;
+			
+			[Bindable]
+			private var connUtil:ConnUtil = ConnUtil.getInstence();
+			
+			[Bindable]
+			private var __dcNameAc:ArrayCollection;//DC名字数组
+			[Bindable]
+			private var __dp:ArrayCollection;//表格数据源
+			
+			private var __dp1:ArrayCollection;//用于存放表格临时数据
+			
+			private var __hostsDic:Dictionary = new Dictionary;//主机字典
+			
+			private var __cuVnmXml:XML;//当前vnm XML
+			private var __vnDic:Dictionary = new Dictionary();//虚拟网络字典
+
+			private var __vdcEditPanel:VdcOrPortEditView;//编辑VDC的弹出窗口
+			
+			private var __cuDcName:String;//当前所选DC
+			private var __cuDcIsSaved:Boolean;//当前DC是否已保存
+			private var __selectedIndex:int;//下拉框选中的序号
+			
+			[Bindable]
+			public var vdcManager:VdcManagerUtil = VdcManagerUtil.getInstence();
+			
+			protected function init():void
+			{
+				_app = SdncUtil.app;
+				__dcNameAc = new ArrayCollection(SdncUtil.dcHasDataArr);
+				__cuDcName = __dcNameAc[0];
+				__cuDcIsSaved = true;
+				changeDc.selectedIndex = 0;
+				if(!this.hasEventListener(SdncEvt.POPUP_ADDOREDIT_VDC_WINDOW))
+					this.addEventListener(SdncEvt.POPUP_ADDOREDIT_VDC_WINDOW,doAddVdcHandler);
+				if(!this.hasEventListener(SdncEvt.VIRTUALVIEW_ADDOREDIT_VDC))
+					this.addEventListener(SdncEvt.VIRTUALVIEW_ADDOREDIT_VDC,onAddOrEditVdc);
+				if(!this.hasEventListener(SdncEvt.VIRTUALVIEW_DEL_VDC))
+					this.addEventListener(SdncEvt.VIRTUALVIEW_DEL_VDC,onDelVdc);
+				if(!this.hasEventListener(SdncEvt.VIRTUALVIEW_EDIT_PORT))
+					this.addEventListener(SdncEvt.VIRTUALVIEW_EDIT_PORT,onEditPort);
+				if(!this.hasEventListener(SdncEvt.VIRTUALVIEW_DEL_PORT))
+					this.addEventListener(SdncEvt.VIRTUALVIEW_DEL_PORT,onDelPort);
+				if(!this.hasEventListener(SdncEvt.VIRTUALVIEW_PORT_CHANGE))
+					this.addEventListener(SdncEvt.VIRTUALVIEW_PORT_CHANGE,onPortChange);
+				onVDC();
+			}
+			
+			protected function onVDC():void
+			{
+				__dp1 = new ArrayCollection();
+				
+				if(__cuDcIsSaved)
+				{
+					__cuDcName = changeDc.selectedItem;
+					__selectedIndex = changeDc.selectedIndex;
+				}
+				else
+				{
+					changeDc.selectedIndex = __selectedIndex;
+					setTimeout(function():void{
+						var alert:Alert = Alert.show(__cuDcName + " Has changed, please save!","Warm Tip");
+						alert.height = 200;
+						alert.width = 324;
+					},100);
+					
+					return;
+				}
+				
+				//TODO: 获取真实数据
+				var topoXmlVo:TopoXmlVo = SdncUtil.dcTopoXmlDic[__cuDcName];
+				if(topoXmlVo._vnmXml == null)
+				{
+					return;
+				}
+				__cuVnmXml = topoXmlVo._vnmXml;
+				createTable(__cuVnmXml);
+				
+				if(SdncUtil.cuProjectType == "normal")
+				{
+					__dp1 = vdcManager.getTableDp(__cuVnmXml);
+					setTimeout(function():void{__dp = __dp1;},100);
+				}
+				else
+				{
+					var cuDcUrlInfo:Array = SdncUtil.dcUrlInfos[__cuDcName];
+					/**当前DC的server数据*/
+					var lldpXml:XML = topoXmlVo._lldpXml;
+					/**当前DC的vm数据*/
+					var vmQueryUrl:String = cuDcUrlInfo[5];
+					for each(var lldpIfTopo:XML in lldpXml.lldpIfsTopo.lldpIfTopo)
+					{
+						for each(var remoteInfo:XML in lldpIfTopo.lldpRemoteInfos.lldpRemoteInfo)
+						{
+							var hostKey:String = remoteInfo.remMacAddress;
+							trace(hostKey);
+							__hostsDic[hostKey] = remoteInfo;//将主机按Mac地址存入字典
+							connUtil.query(vmQueryUrl,onResultInstances,function(e:Event):void{
+								trace(e.currentTarget.url,"请求失败!");
+							});
+							break;
+						}
+						break;
+					}
+				}
+			}
+			
+			public function onResultInstances(e:ResultEvent):void
+			{
+				var vmXmlInfos:XML = new XML(e.result);
+				for each(var vmInfo:XML in vmXmlInfos.instance)
+				{
+					var cuPorts:Array = [];
+					for each(var network:XML in __cuVnmXml.network)
+					{
+						var flag:Boolean = false;
+						for each(var port:XML in network.ports.port)
+						{
+							var vmMac:String = String(port.attachs.attach[0].vmMac);
+							var instanceMac:String = String(vmInfo.instance_mac_address);
+							if(vmMac == instanceMac)
+							{
+								cuPorts.push(port);
+								flag = true;
+								break;
+							}
+						}
+						if(!flag) cuPorts.push(null);
+					}
+					var item:Object = new Object();
+					var hostMac:String = String(vmInfo.host_mac_address);
+					item.host = __hostsDic[hostMac];
+					item.vm = vmInfo;
+					item.ports = cuPorts;
+					__dp1.addItem(item);
+				}
+				setTimeout(function():void{__dp = __dp1;},100);
+			}
+			
+			private function createTable(_cuVnmXml:XML):void
+			{
+				var netws:XMLList = _cuVnmXml.children();
+				var networkNum:int = netws.length();
+				var columns:Array = [];
+				for(var i:int = 0; i < networkNum; i++)
+				{
+					var netName:String = netws[i].networkName;
+					columns.push(vdcManager.createVNColumn(netName,i.toString()));
+					__vnDic[netName] = netws[i];
+				}
+				vNGroup.children = columns;
+				myADG.groupedColumns = myADG.groupedColumns;
+			}
+			
+			private var addOrEditVdcName:String;
+			private var isAddVdc:Boolean;
+			private function onAddOrEditVdc(evt:SdncEvt):void
+			{
+				var arr:Array = evt.params as Array;
+				isAddVdc = arr[0];
+				var netXml:XML = arr[1];
+				if(SdncUtil.cuProjectType == "test") return;
+				var body:String;
+				var queryUrl:String;
+				addOrEditVdcName = netXml.name;
+				if(isAddVdc)
+				{
+					body = "{\"network\":{\"name\":\""+ addOrEditVdcName +"\",\"admin_state_up\":\""+ netXml.admin_state_up
+						+"\",\"shared\":\""+ netXml.shared +"\"}}";
+					queryUrl = connUtil.networkUrl + connUtil.addNetWork;
+					connUtil.sendRequest(queryUrl,body,onAddOrEditVdcResult,function(e:*):void{
+						Alert.show(e.text);
+					},connUtil.tokentId,ConnUtil.METHOD_POST);
+				}
+				else
+				{
+					body = "{\"network\":{\"name\":\""+ addOrEditVdcName +"\",\"admin_state_up\":\""+ netXml.admin_state_up
+						+"\",\"shared\":\""+ netXml.shared +"\"}}";
+					queryUrl = connUtil.networkUrl + connUtil.addNetWork + "/" + netXml.id;
+					connUtil.sendRequest(queryUrl,body,onAddOrEditVdcResult,function(e:*):void{
+						Alert.show(e.text);
+					},connUtil.tokentId,ConnUtil.METHOD_PUT);
+				}
+			}
+			
+			private function onAddOrEditVdcResult(e:HttpDataEvent):void
+			{
+				var byteArr:ByteArray = e.bytes;
+				var newNetworkXml:XML = <network/>;
+				try
+				{
+					var resultO:Object = JSON.parse(e.bytes.toString()) as Object;
+					newNetworkXml.networkName = resultO.network.name;
+					newNetworkXml.networkID = resultO.network.id;
+					newNetworkXml.adminStatus = resultO.network.admin_state_up;
+					newNetworkXml.shared = resultO.network.shared;
+					if(!SdncUtil.isExistInArr(SdncUtil.vdcNameArr,addOrEditVdcName))
+						SdncUtil.vdcNameArr.push(addOrEditVdcName);
+					__vnDic[addOrEditVdcName] = newNetworkXml;
+					__cuVnmXml.appendChild(newNetworkXml);
+					__cuDcIsSaved = false;
+					if(isAddVdc)
+						createTable(__cuVnmXml);
+					else
+					{
+						
+					}
+					Alert.show("add succes!");
+				} 
+				catch(error:Error) 
+				{
+					Alert.show("failed!","Error");
+				}
+			}
+			
+			private function doAddVdcHandler(evt:SdncEvt):void
+			{
+				__vdcEditPanel = VdcOrPortEditView(PopUpManager.createPopUp(this, VdcOrPortEditView , true));
+				PopUpManager.centerPopUp(__vdcEditPanel);
+				__vdcEditPanel.addEventListener(CloseEvent.CLOSE,onEditPanelClose);
+				__vdcEditPanel.currentState = "vnState";
+				__vdcEditPanel.vdcEditWindow = this;
+				if(evt.params)
+				{
+					__vdcEditPanel.__isAddVDC = false;
+					var editXml:XML = __vnDic[evt.params];
+					__vdcEditPanel._netXML = editXml;
+				}
+				else
+				{
+					__vdcEditPanel.__isAddVDC = true;
+					__vdcEditPanel._netXML = null;
+				}
+			}
+			
+			private function onDelVdc(evt:SdncEvt):void
+			{
+				var cuVdcName:String = evt.params;
+				var alert:Alert = Alert.show("You sure to delete " + cuVdcName + "?","Warning",Alert.YES | Alert.NO,this,function(evt1:CloseEvent):void{
+					if(evt1.detail == Alert.OK || evt1.detail == Alert.YES )
+					{
+						var delIndex:int = 0;
+						vNGroup.children.forEach(function(item:*, index:int, array:Array):void{
+							if(item.headerText == cuVdcName) 
+								delIndex = index;
+						});
+						vNGroup.children.splice(delIndex,1);
+						myADG.groupedColumns = myADG.groupedColumns;
+						__cuDcIsSaved = false;
+						if(SdncUtil.cuProjectType == "normal" || SdncUtil.cuProjectType == "commix")
+						{
+							var cuDcUrlInfo:Array = SdncUtil.dcUrlInfos[__cuDcName];
+							var vmQueryUrl:String = cuDcUrlInfo[4];
+							var topoXmlVo:TopoXmlVo = new TopoXmlVo();
+							topoXmlVo = SdncUtil.dcTopoXmlDic[__cuDcName];
+							var network:XML = topoXmlVo._vnmXml.network.(networkName == cuVdcName);
+							var url:String = vmQueryUrl + "/network?networkID=" + String(network.networkID);
+							connUtil.clientQuery(url,ConnUtil.METHOD_DELETE,onVdcRestDel,function(e:IOErrorEvent):void{trace("server error!")});
+						}
+					}
+				},Images.warningicon);
+				alert.height = 200;
+				alert.width = 324;
+			}
+			
+			private function onVdcRestDel(e:HttpResponseEvent,data:ByteArray):void
+			{
+				
+			}
+			
+			private function onEditPort(evt:SdncEvt):void
+			{
+				__vdcEditPanel = VdcOrPortEditView(PopUpManager.createPopUp(this, VdcOrPortEditView , true));
+				PopUpManager.centerPopUp(__vdcEditPanel);
+				__vdcEditPanel.addEventListener(CloseEvent.CLOSE,onEditPanelClose);
+				__vdcEditPanel.currentState = "portState";
+				var cuItemRenderer:AdgItemrender = evt.params;
+				__vdcEditPanel.portItemRender = cuItemRenderer;
+				var portInfo:XML = cuItemRenderer._portInfo;
+				__vdcEditPanel._portXml = portInfo;
+				__vdcEditPanel.vdcEditWindow = this;
+			}
+			
+			private function onDelPort(evt:SdncEvt):void
+			{
+				var itemRender:AdgItemrender = evt.params;
+				itemRender.data = null;
+				var rowIndex:int = itemRender.listData.rowIndex;
+				var columnIndex:int = itemRender.listData.columnIndex;
+				var cuColumn:Object = __dp.getItemAt(rowIndex);
+				var cuPorts:Array = cuColumn.ports as Array;
+				cuPorts[columnIndex-2] = null;
+				__cuDcIsSaved = false;
+			}
+			
+			private function onPortChange(evt:SdncEvt):void
+			{
+				var itemRender:AdgItemrender = evt.params;
+				var rowIndex:int = itemRender.listData.rowIndex;
+				var columnIndex:int = itemRender.listData.columnIndex;
+				var cuColumn:Object = __dp.getItemAt(rowIndex);
+				var cuPorts:Array = cuColumn.ports as Array;
+//				var portLeng:int = cuPorts.length;
+				cuPorts[columnIndex-2] = itemRender._portInfo;
+				__cuDcIsSaved = false;
+			}
+			
+			protected function onEditPanelClose(event:CloseEvent):void
+			{
+				__vdcEditPanel.removeEventListener(CloseEvent.CLOSE,onEditPanelClose);
+				PopUpManager.removePopUp(__vdcEditPanel);
+				__vdcEditPanel = null;
+			}
+			
+			private function saveDataGrid():void 
+			{
+				var newXml:XML = <networks/>;
+				var vnArr:Array = vNGroup.children;
+				var vnLeng:int = vnArr.length;
+				for(var i:int = 0; i < vnLeng; i++)
+				{
+					var vnItem:AdvancedDataGridColumn = vnArr[i];
+					var vnName:String = vnItem.headerText;
+					var cuVnXml:XML = __vnDic[vnName];
+					var portsXml:XML = <ports/>;
+					var rowNums:int = __dp.length;
+					for(var j:int = 0; j < rowNums; j++)
+					{
+						var cuColumnPort:XML = __dp[j].ports[i];
+						if(cuColumnPort != null)
+							portsXml.appendChild(cuColumnPort);
+					}
+					cuVnXml.ports = portsXml;
+					newXml.appendChild(cuVnXml);
+				}
+				var topoXmlVo:TopoXmlVo = SdncUtil.dcTopoXmlDic[__cuDcName];
+				topoXmlVo._vnmXml = newXml;//测试数据无法对应，先注释掉避免更改显示
+				__cuDcIsSaved = true;
+//				closeWindow();
+				var alert:Alert = Alert.show("succeed！","Warm Tip");
+				alert.height = 200;
+				alert.width = 324;
+			}
+			
+			private function closeWindow():void
+			{
+				var closeWindow:VDCEditWindow = this;
+				if(!__cuDcIsSaved)
+				{
+					var alert:Alert = Alert.show(__cuDcName + " Data changed, do you want to save?","Warm Tip",Alert.YES | Alert.NO,this,function(evt:CloseEvent):void{
+						if(evt.detail == Alert.OK || evt.detail == Alert.YES )
+						{
+							saveDataGrid();
+							_app.main.dispatchEvent(new SdncEvt(SdncEvt.VIRTUAL_VNM_CHANGE));
+						}
+						else
+						 	PopUpManager.removePopUp(closeWindow);
+					});
+					alert.height = 200;
+					alert.width = 324;
+				}
+				else
+				{
+					PopUpManager.removePopUp(closeWindow);
+				}
+			}
+			
+			private function parseHost(item:Object, column:AdvancedDataGridColumn):String
+			{
+				var str:String = SdncUtil.cuProjectType == "normal" ? item.host["host_name"]:item.host.systemName;
+				return str;
+			}
+			
+			private function parseVM(item:Object, column:AdvancedDataGridColumn):String
+			{
+				return String(item.vm.name);
+			}
+		]]>
+	</fx:Script>
+	<s:Form left="1" right="1" top="1" bottom="1" contentBackgroundColor="#666c64">
+		<s:layout>
+			<s:VerticalLayout gap="10"/>
+		</s:layout>
+		<s:FormItem label="choose a DC:" color="0xffffff" fontSize="14">
+			<s:ComboBox id="changeDc" width="125" height="33" dataProvider="{__dcNameAc}" change="onVDC()"
+						chromeColor="0x2a6ebb" contentBackgroundColor="0x22354e" color="0xffffff"/>
+			<!--<mx:PopUpMenuButton id="changeDc" width="125" height="33" dataProvider="{__dcNameArr}" 
+								itemClick="onVDC(event)" arrowButtonWidth="50"/>-->
+		</s:FormItem>
+	</s:Form>
+	<AdvancedDataGrid:AdvancedDataGrid id="myADG" width="98%" height="100%" borderColor="0x4f86ba"
+									   headerSeparatorSkin="com.huawei.sdnc.view.skins.HeaderSeparatorSkin"
+									   headerHorizontalSeparatorSkin="com.huawei.sdnc.view.skins.HeaderHorizontalSeparator"
+									   alternatingItemColors="[0xEEEEEE,0xFFFFFF]"
+									   horizontalScrollPolicy="auto"
+									   dataProvider="{__dp}"
+									   editable="true"
+									   selectionMode="multipleCells">
+		<AdvancedDataGrid:groupedColumns>
+			<SubClasses:AdvancedDataGridColumn dataField="host" headerText="Host" labelFunction="parseHost"
+											   headerRenderer="com.huawei.sdnc.view.common.AdvancedDataGrid.Renderer.AdgVMHeaderRender"
+											   minWidth="130" width="150" resizable="false" sortable="false" editable="false"/>
+			<SubClasses:AdvancedDataGridColumn dataField="vm" headerText="Virtual Machine" labelFunction="parseVM"
+											   headerRenderer="com.huawei.sdnc.view.common.AdvancedDataGrid.Renderer.AdgVMHeaderRender"
+											   minWidth="130" width="150" resizable="false" sortable="false" editable="false"/>
+			<mx:AdvancedDataGridColumnGroup id="vNGroup" dataField="ports" headerText="Virtual Network" sortable="false"
+											headerRenderer="com.huawei.sdnc.view.common.AdvancedDataGrid.Renderer.AdgVNHeaderRender">
+				
+			</mx:AdvancedDataGridColumnGroup>
+		</AdvancedDataGrid:groupedColumns>
+	</AdvancedDataGrid:AdvancedDataGrid>
+	<s:HGroup width="100%" height="50" horizontalAlign="right" verticalAlign="top">
+		<s:Button label="Save" width="125" height="33" click="saveDataGrid();" chromeColor="0x2a6ebb" color="0xffffff"/>
+		<s:Button label="Close" width="125" height="33" click="closeWindow();" chromeColor="0x2a6ebb" color="0xffffff"/>
+		<s:Line width="20"/>
+	</s:HGroup>
+</s:TitleWindow>

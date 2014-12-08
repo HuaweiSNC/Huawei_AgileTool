@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="100%"
+		 initialize="mainCtrl.onInit(event)"
+		 creationComplete="mainCtrl.onCreate(event)"
+		 xmlns:controller="com.huawei.sdnc.controller.*" xmlns:common="com.huawei.sdnc.view.common.*" 
+		 xmlns:components="com.huawei.sdnc.view.components.*" xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*" xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*" xmlns:virtural="com.huawei.sdnc.view.dataCenter.virtural.*" xmlns:physics="com.huawei.sdnc.view.dataCenter.physics.*" xmlns:ctrlV="com.huawei.sdnc.view.dataCenter.ctrlV.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.view.common.MenuBtn;
+			import com.huawei.sdnc.view.common.optionpanel.OptionPanel;
+			
+			import mx.events.FlexEvent;
+			/**选项面板显示状态，true为显示，false为未显示*/
+			private var __isShowOptions:Boolean;
+			public function menuClickHandler(evt:MouseEvent):void
+			{
+				var cuBtn:MenuBtn = evt.currentTarget as MenuBtn;
+				var leng:int = menuHg.numElements;
+				for(var i:int = 0; i < leng; i++)
+				{
+					if(menuHg.getElementAt(i) is MenuBtn)
+					{
+						var btn:MenuBtn = menuHg.getElementAt(i) as MenuBtn;
+						var state:String = "normal_s";
+						if(cuBtn == btn) state = "click_s";
+						btn.currentState = state;
+					}
+				}
+				this.currentState = cuBtn.id;
+				dispatchEvent(new SdncEvt(SdncEvt.MODULE_CHANGE,this.currentState));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<controller:MainCtrl id="mainCtrl" page="{this}"/>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="physics_view"/>
+		<s:State name="ctrl_view"/>
+		<s:State name="virtual_view"/>
+		<s:State name="ipcore_view"/>
+	</s:states>
+	<s:Group width="100%" height="100%">
+		<s:layout>
+			<s:VerticalLayout/>
+		</s:layout>
+		<!--导航栏-->
+		<s:Group width="100%" height="30" fontSize="15">
+			<s:Rect left="0" right="0" top="0" height="100%">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry ratio=".5" color="0xd1d4db"/>
+						<s:GradientEntry ratio=".51" color="0xc7c9d5"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:HGroup id="menuHg" paddingLeft="56" paddingRight="15" width="100%" height="100%" horizontalAlign="left" verticalAlign="middle">
+				<s:Spacer width="100%"/>
+				<common:SearchBar id="searchBar"/>
+			</s:HGroup>
+		</s:Group>
+		<!--拓扑图等展示区域-->
+		<s:Group id="topoContent" width="100%" height="100%">
+			<physics:PhysicsView id="physicsView" width="100%" height="100%" includeIn="physics_view"/>
+			<ctrlV:CtrlView id="ctrlView" width="100%" height="100%" includeIn="ctrl_view"/>
+			<!--<components:IPCoreView id="ipCoreView" width="100%" height="100%" includeIn="ipcore_view"/>-->
+			<virtural:VirtualView id="virtualView" width="100%" height="100%" includeIn="virtual_view"/>
+		</s:Group>
+	</s:Group>
+	<!--控制面板-->
+	<optionpanel:OptionPanel id="optionPanel" right="22" top="35" visible="false" includeInLayout="false"/>
+	<navpanel:NavPanel id="navPanel" x = "{- navPanel.width + 25}" top="70"/>
+</s:Group>

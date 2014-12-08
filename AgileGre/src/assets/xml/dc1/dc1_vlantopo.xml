@@ -1,0 +1,646 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdn>
+	<sdnl2vlantopo>
+		<vlanInfomation>
+			<vlanId>1</vlanId>
+			<vlanRootFP>1</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/5</localif>
+					<childnodeid>5</childnodeid>
+					<peerif>Interface GigabitEthernet5/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet3/0/4</localif>
+					<childnodeid>4</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/10</localif>
+					<childnodeid>10</childnodeid>
+					<peerif>Interface GigabitEthernet10/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>3</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>7</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>5</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>10</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c04</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>11</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c05</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>7</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c01</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>7</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c012</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>2</vlanId>
+			<vlanRootFP>2</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>14</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>4</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/10</localif>
+					<childnodeid>10</childnodeid>
+					<peerif>Interface GigabitEthernet10/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/9</localif>
+					<childnodeid>9</childnodeid>
+					<peerif>Interface GigabitEthernet9/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>3</vlanId>
+			<vlanRootFP>1</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>14</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>4</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/10</localif>
+					<childnodeid>10</childnodeid>
+					<peerif>Interface GigabitEthernet10/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/9</localif>
+					<childnodeid>9</childnodeid>
+					<peerif>Interface GigabitEthernet9/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>10</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c04</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>9</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c03</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>11</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c05</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>13</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c07</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>14</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c08</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>4</vlanId>
+			<vlanRootFP>1</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>4</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/10</localif>
+					<childnodeid>10</childnodeid>
+					<peerif>Interface GigabitEthernet10/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/9</localif>
+					<childnodeid>9</childnodeid>
+					<peerif>Interface GigabitEthernet9/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>4</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>5</vlanId>
+			<vlanRootFP>2</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>14</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>3</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>8</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>8</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>38ba-5e72-8c02</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>11</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c05</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>13</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c07</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>14</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c08</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>6</vlanId>
+			<vlanRootFP>6</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor><vlantreeNeighbor>
+					<nodeid>3</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>7</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>3</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>8</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>8</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>38ba-5e72-8c02</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>13</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c07</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>11</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c05</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>7</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c012</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>7</nodeid>
+					<localif>Interface GigabitEthernet3/0/7</localif>
+					<childnodeid>38ba-5e72-8c013</childnodeid>
+					<peerif>Interface GigabitEthernet7/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>7</vlanId>
+			<vlanRootFP>1</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>14</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>5</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>5</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>8</vlanId>
+			<vlanRootFP>2</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>12</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>5</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>14</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>3</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>7</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>5</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>9</vlanId>
+			<vlanRootFP>2</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>14</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+		<vlanInfomation>
+			<vlanId>10</vlanId>
+			<vlanRootFP>2</vlanRootFP>
+			<vlantreeNeighbors>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/1</localif>
+					<childnodeid>1</childnodeid>
+					<peerif>Interface GigabitEthernet1/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>2</nodeid>
+					<localif>Interface GigabitEthernet2/0/6</localif>
+					<childnodeid>6</childnodeid>
+					<peerif>Interface GigabitEthernet6/0/2</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/11</localif>
+					<childnodeid>11</childnodeid>
+					<peerif>Interface GigabitEthernet11/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/13</localif>
+					<childnodeid>13</childnodeid>
+					<peerif>Interface GigabitEthernet13/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>6</nodeid>
+					<localif>Interface GigabitEthernet6/0/14</localif>
+					<childnodeid>14</childnodeid>
+					<peerif>Interface GigabitEthernet14/0/6</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet1/0/4</localif>
+					<childnodeid>4</childnodeid>
+					<peerif>Interface GigabitEthernet4/0/1</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/10</localif>
+					<childnodeid>10</childnodeid>
+					<peerif>Interface GigabitEthernet10/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>5</nodeid>
+					<localif>Interface GigabitEthernet4/0/9</localif>
+					<childnodeid>12</childnodeid>
+					<peerif>Interface GigabitEthernet9/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>4</nodeid>
+					<localif>Interface GigabitEthernet4/0/3</localif>
+					<childnodeid>3</childnodeid>
+					<peerif>Interface GigabitEthernet3/0/4</peerif>
+				</vlantreeNeighbor>
+				<vlantreeNeighbor>
+					<nodeid>1</nodeid>
+					<localif>Interface GigabitEthernet3/0/8</localif>
+					<childnodeid>5</childnodeid>
+					<peerif>Interface GigabitEthernet8/0/3</peerif>
+				</vlantreeNeighbor>
+			</vlantreeNeighbors>
+		</vlanInfomation>
+	</sdnl2vlantopo>
+</sdn>

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="730" height="362" backgroundAlpha=".9" backgroundColor="0xcccccc"
+			   borderColor="0x34b5d0" close="PopUpManager.removePopUp(this)"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" title="计算网规" 
+			   fontFamily="微软雅黑" creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.netmanage.controller.CalculatePathForLocal;
+			import com.huawei.sdnc.netmanage.controller.OpsUtil;
+			import com.huawei.sdnc.netmanage.model.NetNode;
+			import com.huawei.sdnc.netmanage.model.NetPlanner;
+			import com.huawei.sdnc.netmanage.model.datas;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			[Bindable]
+			public var mydata:datas = datas.getInstence();
+			public var element:IElement;
+			public var opsUtil:OpsUtil = new OpsUtil;
+			private var __app:sdncui2;
+			[Bindable]
+			public var fields:ArrayCollection = new ArrayCollection;
+			[Bindable]
+			public var pueue:ArrayCollection = new ArrayCollection;
+			protected function init(event:FlexEvent):void
+			{
+				__app=SdncUtil.app;
+				var networkX:NetworkX=__app.ipcore.netManageView.networkX;
+				var nodes:ArrayCollection = new ArrayCollection;
+				networkX.elementBox.forEachByBreadthFirst(function(item:IData):void
+				{
+					if(item is NetNode)
+					{
+						var netNode:NetNode=item as NetNode;
+						var nodeId:int = netNode.nodeId;
+						var nodeType:String = netNode.nodeType;
+						var systemName:String = netNode.systemName;
+						nodes.addItem({
+							id:nodeId,
+							name:systemName
+						})
+					}
+				})
+					left.dataProvider = nodes;
+					right.dataProvider = nodes;
+					
+					var xml:XMLList = mydata.AlgoritmXML.requestcontent.topodata.userLinks;
+					var str:String = xml.foreachuserlink.@describe
+					var names:Array = str.split(",")
+					var str2:String = xml.foreachuserlink.@property
+					var propertys:Array = str2.split(",")
+					var str3:String = xml.foreachuserlink.@must
+					var musts:Array = str3.split(",");
+					if(names.length>propertys.length)
+					{
+						for(var i:int =0;i<(names.length-propertys.length);i++)
+						{
+							names.pop()
+						}
+					}
+					else if(names.length<propertys.length)
+					{
+						for(var i:int = names.length-1;i<propertys.length;i++)
+						{
+							names.push(propertys[i])
+						}
+					}
+					for(var i:int = 0;i<names.length;i++)
+					{
+						if(musts.indexOf(propertys[i],0)!=-1)
+						{
+							
+							fields.addItem({
+								property:propertys[i], 
+								must:"true",  
+								describe:names[i],
+								num:""
+							})
+						}
+						else
+						{
+							fields.addItem({
+								property:propertys[i], 
+								must:"false",  
+								describe:names[i],
+								num:"" 
+							})	
+						}
+					}
+
+			}
+			protected function addnetman_clickHandler(event:MouseEvent):void
+			{
+				__app=SdncUtil.app;
+				var networkX:NetworkX=__app.ipcore.netManageView.networkX;
+				var posutil:OpsUtil = new OpsUtil
+				//var lefti:String = left.selectedItem.id;
+				//var righti:String = right.selectedItem.id;
+				//var bandwithi:String = bandwith.text;
+				//var datas:Object = {"leftnode":lefti,"rightnode":righti};
+				//for (var i:int = 0;i<fields.length;i++)
+				//{
+				//	datas[fields[i].property] = fields[i].num
+				//}
+				
+				var calculatePathForLocal:CalculatePathForLocal= new CalculatePathForLocal;
+				var netPlanner:NetPlanner=new NetPlanner;
+				netPlanner.srcNodeID=Number(pueue[0].leftnode);
+				netPlanner.dstNodeID=Number(pueue[0].rightnode);
+				if(mydata.AlNowID=="nj_xlq")
+				{
+					calculatePathForLocal.CalculatePath(netPlanner,networkX);
+				}
+				else
+				{
+				posutil.makeBody(pueue,networkX);
+				}
+				PopUpManager.removePopUp(this);
+				//Alert.show("添加成功！","提示")
+				mydata.Alpueue = pueue;
+			}
+			
+			protected function addpueue_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				__app=SdncUtil.app;
+				var networkX:NetworkX=__app.ipcore.netManageView.networkX;
+				var posutil:OpsUtil = new OpsUtil
+				var lefti:String = left.selectedItem.id;
+				var righti:String = right.selectedItem.id;
+				var str:String = "";
+				//var bandwithi:String = bandwith.text;
+				var datas:Object = {"leftnode":lefti,"rightnode":righti,"leftname":left.selectedItem.name,"rightname":right.selectedItem.name};
+				for (var i:int = 0;i<fields.length;i++)
+				{
+					datas[fields[i].property] = fields[i].num
+				}
+				for (var i:int = 0;i<fields.length;i++)
+				{
+					str+=[fields[i].describe]+"："+fields[i].num+"；"
+					//datas[fields[i].property] = fields[i].num
+				}
+				datas["conditio"] = str;
+				pueue.addItem(datas);
+				left.selectedIndex=-1;
+				right.selectedIndex=-1;
+				for (var i:int = 0;i<fields.length;i++)
+				{
+					fields[i].num = ""
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:BorderContainer id="bcc" left="10" top="10" width="49%" height="275">
+		<s:Group width="100%" height="32" x="0" y="23">
+			<s:Label text="   源地址 ："  x="46" y="14" textAlign="right"/>
+			<s:ComboBox id="left" x="125" y="7" width="130" labelField="name"/>
+		</s:Group>
+		<s:Group width="100%" height="33" x="0" y="63">
+			<s:Label  text="目的地址 ："  x="46" y="14" textAlign="right"/>
+			<s:ComboBox id="right" x="125" y="7" width="130" labelField="name"/>
+		</s:Group>
+		<s:DataGrid id="dg" left="5" right="5" top="104" bottom="35" dataProvider="{fields}" editable="true"
+					requestedRowCount="4">
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn dataField="describe" headerText="名称" editable="false"></s:GridColumn>
+					<s:GridColumn dataField="num" headerText="值" editable="true"></s:GridColumn>
+				</s:ArrayList>
+			</s:columns>
+		</s:DataGrid>
+		<s:Button id="addpueue" bottom="7" label="添加到计算队列" click="addpueue_clickHandler(event)"  horizontalCenter="-68"/>
+		<s:Button bottom="7" label="重置" click="PopUpManager.removePopUp(this)" horizontalCenter="49"/>
+		<s:Label left="5" top="5" fontWeight="bold" text="添加网规"/>
+	</s:BorderContainer>
+	<s:Button id="addnetman0" bottom="7" label="计算" click="addnetman_clickHandler(event)"  horizontalCenter="-53"/>
+	<s:Button bottom="7" label="取消" click="PopUpManager.removePopUp(this)" horizontalCenter="49"/>
+	<s:BorderContainer id="bcc0" right="10" top="10" width="49%" height="275">
+		<mx:DataGrid id="dldg" left="5" right="5" top="20" bottom="5" dataProvider="{pueue}" sortableColumns="false">
+			<mx:columns>
+					<mx:DataGridColumn dataField="leftname" headerText="源地址" width="70"></mx:DataGridColumn >
+					<mx:DataGridColumn dataField="rightname" headerText="目的地址" width="70"></mx:DataGridColumn >
+					<mx:DataGridColumn dataField="conditio" headerText="约束条件"></mx:DataGridColumn >
+					<mx:DataGridColumn  headerText="操作" width="40">
+						<mx:itemRenderer>
+							<fx:Component>
+								<mx:LinkButton  label="删除" color="#ff0000" buttonMode="true" click="linkbutton1_clickHandler(event)">
+									
+									<fx:Script>
+										<![CDATA[
+											protected function linkbutton1_clickHandler(event:MouseEvent):void
+											{
+												// TODO Auto-generated method stub
+												outerDocument.pueue.removeItemAt(outerDocument.dldg.selectedIndex)
+											}
+										]]>
+									</fx:Script>
+									
+									
+								</mx:LinkButton>
+							</fx:Component>	
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+		<s:Label left="5" top="5" fontWeight="bold" text="计算队列"/>
+	</s:BorderContainer>
+</s:TitleWindow>

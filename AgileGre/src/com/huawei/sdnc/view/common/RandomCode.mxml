@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="onRandomCode()">
+	<s:layout>
+		<s:HorizontalLayout gap="15" verticalAlign="middle"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import spark.components.Label;
+			[Bindable]
+			public var rndCode:String = "";
+			
+			private var degreeArr:Array = [-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80];
+			
+			protected function onRandomCode():void
+			{
+				var number:Number = 0;
+				var base:Array = [97,65];
+				rndCode = "";
+				hg.removeAllElements();
+				for(var i:int = 0; i < 4; i++)
+				{
+					number = Math.floor(Math.random()*1000);
+					if(number % 2 == 0) number = number % 10 + 48;
+					else number = number % 26 + base[number % 2];
+					var cuCode:String = String.fromCharCode(number); 
+					rndCode += cuCode;
+					var l:Label = new Label();
+					l.text = cuCode;
+					var randomDegree:int = Math.random() * int(Math.random() * 17);
+					l.rotation = degreeArr[randomDegree];
+					hg.addElement(l);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup id="hg" width="98" height="41" fontSize="20" gap="0" 
+			  color="white" horizontalAlign="center" verticalAlign="middle"/>
+	<s:Image source="@Embed('assets/imgs/loginImgs/login_refresh.png')" 
+			 click="onRandomCode();" buttonMode="true"/>
+</s:Group>

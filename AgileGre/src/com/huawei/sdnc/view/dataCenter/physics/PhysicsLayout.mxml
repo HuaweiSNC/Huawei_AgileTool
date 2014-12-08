@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<common:MyGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+				implements="com.huawei.sdnc.view.ISerializable"
+				xmlns:common="com.huawei.sdnc.view.common.*"
+				width="100%" height="100%" 
+				creationComplete="cuCtrl.onInit(event)" xmlns:controller="com.huawei.sdnc.controller.*" 
+				xmlns:flowmonitor="com.huawei.sdnc.view.common.flowmonitor.*" xmlns:physics="com.huawei.sdnc.view.physics.*" xmlns:physics1="com.huawei.sdnc.view.dataCenter.physics.*">
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSONDecoder;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.LogUtil;
+			import com.huawei.sdnc.tools.OverlieUtil;
+			import com.huawei.sdnc.tools.PingTestUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.navpanel.MatrixGrid;
+			import com.huawei.sdnc.view.common.node.ServerNode;
+			
+			import mx.controls.Alert;
+			
+			import org.httpclient.events.HttpDataEvent;
+			
+			import twaver.DataBox;
+			import twaver.ElementBox;
+			import twaver.Grid;
+			import twaver.Group;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Styles;
+			import twaver.network.layout.AutoLayouter;
+			import twaver.network.layout.SpringLayouter;
+			/**sdncui*/
+			public var _app:sdncui2;
+//			/**物理视图databox(twaver)*/
+//			public var eBox:ElementBox = new ElementBox();
+			/**自动布局器(twaver) */
+			public var autoLayouter:AutoLayouter = null;
+			/**动态布局器(twaver) */
+			public var springLaouter:SpringLayouter = null;
+			
+			/**当前box*/
+			public var cuNetBox:ElementBox = new ElementBox();
+			/**是否在root界面*/
+			public var isRoot:Boolean;
+			/**已失效..*/
+			public var isOverlieCleared:Boolean;
+			
+			[Bindable]
+			public var pingTestUtil:PingTestUtil = PingTestUtil.getInstence();
+			[Bindable]
+			public var overlieUtil:OverlieUtil = OverlieUtil.getInstence();
+			[Bindable]
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			/**
+			 * 物理视图databox getter
+			 */
+			public function get dataBox():DataBox{				
+				return cuNetBox;
+			}
+			
+			/**
+			 * 隐藏或显示所有组的边框
+			 * @param isHide:true为隐藏，false为显示
+			 */
+			public function hideAllGroupBorder(isHide:Boolean = false):void
+			{
+				var box:ElementBox = network.elementBox;
+				box.forEachByBreadthFirst(function(item:IData):void{
+					if(item is Group)
+					{
+						var g:Group = item as Group;
+						if(isHide)
+						{
+							g.setStyle(Styles.GROUP_OUTLINE_ALPHA,0);
+							g.setStyle(Styles.OUTER_ALPHA,0);
+						}
+						else 
+						{
+							g.setStyle(Styles.GROUP_OUTLINE_ALPHA,0.6);
+							g.setStyle(Styles.OUTER_ALPHA,1);
+						}
+					}
+				});
+			}
+			
+			/**自定义视图布局*/
+			public function customLayout():void
+			{
+				springLaouter.stop();
+//				cuCtrl.topoDoLayout();
+				cuCtrl.deserializeHandle();
+			}
+			
+			/** 
+			 * 自动布局(静态)
+			 * @param layout:布局名字
+			 */
+			public function onLayout(layout:String):void
+			{
+				springLaouter.stop();
+				autoLayouter.animate = false;
+				autoLayouter.doLayout(layout,function():void{
+				});
+				autoLayouter.animate = true;
+			}
+			/**
+			 * 自动布局(动态) 
+			 * @param layout:布局名字 
+			 */
+			public function onLayout1(layout:String):void
+			{
+				network.callLater(function():void{
+					autoLayouter.doLayout(layout, function():void{
+						springLaouter.start();	
+					});					
+				});
+			}
+			
+			/**真假混合工程 获取所有host信息*/
+			public function getHostInfo():void
+			{
+				if(connUtil.tokentId == null || connUtil.tokentId == "") return;
+				var url:String = connUtil.computeUrl + connUtil.hostsUrl;//从XML获取地址
+				connUtil.sendRequest(url,null,onHostResult,function(e:*):void{
+					Alert.show(e.text);
+				},connUtil.tokentId); 
+				connUtil.sendRequest(connUtil.computeUrl + connUtil.serverUrl,null,
+					function(e:HttpDataEvent):void{
+						trace(e.bytes.toString());
+						var dataStr:String = e.bytes.toString(); 
+						dataStr = dataStr.replace( /\s/g, '' );
+						var jd:JSONDecoder = new JSONDecoder(dataStr, false);
+						var obj:Object = jd.getValue();
+						//var obj:Object = JSON.parse(e.bytes.toString()) as Object;
+						var instancesArr:Array = obj.servers as Array;
+						for each(var vmInfo_:Object in instancesArr)
+						{
+							if(vmInfo_.name == overlieUtil.hasVlanEffectVmName) 
+							{
+								var hostName:String = vmInfo_["OS-EXT-SRV-ATTR:host"];
+								overlieUtil.cuVlanlist = overlieUtil.getVlanXML(hostName);
+							}
+						}
+					},function(e:*):void{
+						Alert.show(e.text);
+					},connUtil.tokentId);//获取server信息,用来判断用那个valantopo
+			}
+			
+			private var __isFirstIn:Boolean = true;//（模拟数据专用）是否是第一次进入DC1，若是则读取数据并修改server名
+			private function onHostResult(e:HttpDataEvent):void
+			{
+				var obj:Object = JSON.parse(e.bytes.toString()) as Object;
+				var serverNodeArr:Array=[];
+				var box:ElementBox = network.elementBox;
+				box.forEachByBreadthFirst(function(item:IData):void{
+					if(item is ServerNode)
+					{
+						if(item.name == "server19")
+							serverNodeArr[0] = item;
+						else if(item.name == "server20")
+							serverNodeArr[1] = item;
+						else if(item.name == "server21")
+							serverNodeArr[2] = item;
+					}
+				});
+				if(__isFirstIn)
+				{
+					__isFirstIn = false;
+					var c:int = serverNodeArr.length;
+					var hosts:Array = obj.hosts;	
+					hosts.sortOn("host_name");
+					for(var i:int=0;i<c;i++)
+					{
+						(serverNodeArr[i] as ServerNode).name = obj.hosts[i].host_name;
+					}
+				}
+			}
+			
+			public function overlieVdc(e:SdncEvt):void
+			{
+				var grid:MatrixGrid = e.params as MatrixGrid;
+//				isOverlieCleared = false;
+				overlieUtil.overlieVdc1(grid,e.type);
+			}
+			
+			/** PintTest事件监听  */
+			public function doPingTestHandler(event:Event):void
+			{
+				pingTestUtil.cuNetBox = cuNetBox;
+				if(!pingTestUtil.isReturn)
+					overlieUtil.clearAllOverlie(cuNetBox);
+				pingTestUtil.onPing();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<controller:PhysicsLayoutCtrl id="cuCtrl" page="{this}"/>
+		<fx:XML id="sdnproject" source="assets/xml/sdn_office_project.xml"/>
+		<fx:XML id="changedVlantopo19" source="assets/xml/dc1/dc1_vlantopo.xml"/>
+		<fx:XML id="changedVlantopo20" source="assets/xml/dc1/dc1_vlantopo_change.xml"/>
+	</fx:Declarations>
+	<twaver:NetworkX id="network" width="100%" height="100%"/>
+	<physics1:FlowMonitor id="flowMonitor" visible="false"/>
+</common:MyGroup>

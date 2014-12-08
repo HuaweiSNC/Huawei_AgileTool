@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 fontFamily="微软雅黑"
+		 width="400" height="300" creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.netmanage.model.datas;
+			import com.huawei.sdnc.netmanage.view.NetManageView;
+			import com.huawei.sdnc.netmanage.view.SelectAlgoritm;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.Ipcore;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			public var mydata:datas = datas.getInstence();
+			[Bindable]
+			public var now:String = mydata.AlgNow;
+			public function judgeState():void
+			{
+				if(SdncUtil.app.ipcore.currentState=="physics_view"){
+					this.currentState="physics";
+				}else{
+					this.currentState="panning";
+				}
+			}
+			public function selectAlg(event:MouseEvent):void{
+				var page:NetManageView = SdncUtil.app.ipcore.netManageView; 
+				var selectAlgoritm:SelectAlgoritm=SelectAlgoritm(PopUpManager.createPopUp(page,SelectAlgoritm,false));
+				PopUpManager.centerPopUp(selectAlgoritm);
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				//alnow.text = mydata.AlgNow;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="physics"/>
+		<s:State name="panning"/>
+	</s:states>
+	<s:HGroup  width="100%" height="100%" includeIn="physics">
+		<s:VGroup width="50%" height="100%"  horizontalAlign="center" verticalAlign="middle">
+			<s:Button  width="80" label="定义管道" chromeColor="0x0c6c9e"
+					   click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_PIPELINE_DEFINE))"
+					   color="0xffffff" />
+			<s:Button width="80" label="定义流" chromeColor="0x0c6c9e"
+					  click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_FLOW_EDIT))"
+					  color="0xffffff" />
+			<s:Button  label="导流入管道" chromeColor="0x0c6c9e"
+					   click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_FLOW_ENTER))"
+					   color="0xffffff" />
+		</s:VGroup>
+		<s:VGroup width="50%" height="100%"  horizontalAlign="center" verticalAlign="middle">
+			<s:Button  label="控制台" chromeColor="0x0c6c9e"
+					   click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_CONSOLE))"
+					   color="0xffffff" />
+			<s:Button  label="帮助文档" chromeColor="0x0c6c9e"
+					   click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_HELP))"
+					   color="0xffffff" />
+		</s:VGroup>
+	</s:HGroup>
+	<s:HGroup includeIn="panning" width="98%" height="21" horizontalCenter="0" textAlign="center"
+			  verticalCenter="0">
+	<s:Label includeIn="panning" x="10" y="140" width="60" height="100%" color="#FFFFFF" text="当前算法："
+			 textAlign="right" verticalAlign="middle"/>
+	<s:TextInput id="alnow" includeIn="panning" x="78" y="139" width="98%" height="100%"
+				 borderVisible="false" color="#000000" contentBackgroundColor="#DBDBDB"
+				 editable="false" fontSize="13" text="{mydata.AlgNow}" textAlign="left"/>
+		<s:Button includeIn="panning" width="50" label="变更" chromeColor="0x0c6c9e"
+				  click="selectAlg(event)" color="0xffffff" horizontalCenter="142"
+				  verticalCenter="-3"/>
+	</s:HGroup>
+</s:Group>

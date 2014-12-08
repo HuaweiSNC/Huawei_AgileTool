@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="{Capabilities.screenResolutionX*0.53}" height="{Capabilities.screenResolutionY*0.26}"
+		 creationComplete="init()"
+		 >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			[Bindable]
+			private var arr:ArrayCollection=new ArrayCollection([
+				{FPID:"1",FPName:"fpname1",IPv4AdminIP:"ipv4",FPRole:"fprole",ESN:"esn",FPType:"fptype",long:"45.235",lat:"56.231",leftRouterId:"1",rightRouterId:"3"},
+				{FPID:"2",FPName:"fpname1",IPv4AdminIP:"ipv4",FPRole:"fprole",ESN:"esn",FPType:"fptype",long:"45.235",lat:"56.231",leftRouterId:"1",rightRouterId:"3"},
+			]);
+			private var __app:sdncui2;
+			public function init():void
+			{
+				__app = SdncUtil.app;
+			}
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,1000,1000);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				stopDrag();
+			}
+			public function additem():void
+			{
+				arr.addItem(new Object);
+			}
+			public function deletedata(e:MouseEvent):void
+			{
+				
+				arr.removeItemAt(g.selectedIndex);
+			}
+		]]>
+	</fx:Script>
+	<s:Group width="100%" height="100%">
+		<s:RectangularDropShadow blurX="20" blurY="20"
+								 alpha="0.32" distance="11"
+								 blRadius="0" brRadius="0"
+								 angle="90" color="#000000" left="0" top="0" right="0"
+								 bottom="0"/>
+	</s:Group>
+	
+	<s:VGroup id="titleGroup" right="0" left="0"  height="15%"  mouseDown="beginDrag(event)" mouseUp="endDrag(event)" >
+		<s:Group height="100%" width="100%">
+			<s:Rect left="0" right="0" top="0" bottom="0">
+				<s:fill> 
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0x3276b7"/>
+						<s:GradientEntry color="0x4489ca"/>
+					</s:LinearGradient></s:fill> 
+			</s:Rect> 
+			<s:HGroup  right="15" verticalCenter="0">
+				<s:Image  id="save" source="assets/imgs/ipran/save.png" buttonMode="true" toolTip="save" 
+						  mouseOver="save.filters = [glow]" mouseOut = "save.filters = null"
+						  click="__app.dispatchEvent(new SdncEvt(SdncEvt.SAVE_NEW_ITEM_NODE))"/>
+				<s:Spacer width="4"/>
+				<s:Image  id="close" source="assets/imgs/ipran/close.png" buttonMode="true" toolTip="close"
+						  mouseOver="close.filters = [glow]" mouseOut = "close.filters = null" 
+						  click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_ADDDEVICE_WINDOW))"/>
+			</s:HGroup>
+			<s:Image id="details" left="15" verticalCenter="0" source="assets/imgs/ipran/details.png"/>
+		</s:Group>
+	</s:VGroup>
+	<s:VGroup width="100%" height="{titleGroup.height}" right="0" left="0" >
+		
+	</s:VGroup>
+	<s:VGroup id="contentGroup" paddingTop="{titleGroup.height}" left="0" right="0" height="85%" >
+		<s:DataGrid id="g" top="0" height="100%" width="100%" borderVisible="false" dataProvider="{arr}" horizontalScrollPolicy="off"
+					editable="true" skinClass="com.huawei.sdnc.view.skins.DataGridSkin"   textAlign="center" 
+					horizontalCenter="0" 
+					sortableColumns="false">
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn  headerText="FPID" dataField="FPID" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="FPName" headerText="FPName" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="IPv4AdminIP" headerText="IPv4AdminIP" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="FPRole" headerText="FPRole" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="ESN" headerText="ESN" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="FPType" headerText="FPType" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="long" headerText="经度" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="lat" headerText="纬度" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="leftRouterId" headerText="左节点Id" width="{(g.width-60)/10}"/>
+					<s:GridColumn dataField="rightRouterId" headerText="右节点Id" width="{(g.width-60)/10}"/>
+					<s:GridColumn editable="false" width="60">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:GridItemRenderer>
+									<s:Image id="deleteicon" source="@Embed('assets/imgs/ipran/deleteicon.png')" buttonMode="true" horizontalCenter="0" 
+											 mouseOver="deleteicon.filters = [outerDocument.glow]"  verticalCenter="0"
+											 mouseOut = "deleteicon.filters = null" click="outerDocument.deletedata(event)"/>
+								</s:GridItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+					
+					</s:GridColumn>
+				</s:ArrayList>
+			</s:columns>
+		</s:DataGrid>
+	</s:VGroup>
+	
+	<s:VGroup id="bottomGroup" left="0" right="0"  bottom="0" height="15%" >
+		<s:Group width="100%" height="100%">
+			<s:BitmapImage  width="100%" height="100%"
+							source="@Embed('assets/imgs/ipran/rectbackground.png')"/>
+			<s:Image id="newj"  source="assets/imgs/ipran/new.png" verticalCenter="0" left="{bottomGroup.width/4+30}"/>
+			<s:Image id="newBuilde"  source="assets/imgs/ipran/plus.png" mouseOver="newBuilde.filters = [glow]"  verticalCenter="0" left="{bottomGroup.width/4}"
+					 mouseOut = "newBuilde.filters = null" buttonMode="true" click="__app.dispatchEvent(new SdncEvt(SdncEvt.ADD_NEW_ITEM_NODE))"/>
+			<s:Image id="importFile"  source="assets/imgs/ipran/import.png" mouseOver="importFile.filters = [glow]"  verticalCenter="0"
+					 mouseOut = "importFile.filters = null" buttonMode="true" left="{bottomGroup.width/4*3-60}"
+					 click="__app.dispatchEvent(new SdncEvt(SdncEvt.IMPORT_EXCEL_FILE))"/>
+			<s:Image  source="assets/imgs/ipran/importing.png" verticalCenter="0" left="{bottomGroup.width/4*3-30}"/>
+		</s:Group>
+	</s:VGroup>
+	
+</s:Group>

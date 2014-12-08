@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="700" height="395"
+			   backgroundAlpha=".1"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin"
+			   title="About VRP SDN Office" close="titlewindow1_closeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup top="15" left="100" gap="280">
+		<s:BitmapImage source="@Embed('assets/imgs/huaweilogo.png')"/>
+		<s:BitmapImage source="@Embed('assets/imgs/lkklogo.png')" width="70" height="20" smooth="true"/>
+	</s:HGroup>
+	<s:TextArea id="ta" text="Copyright (C) Huawei Technologies Co.,  Ltd. 2012~2013.  All rights reserved." top="60"
+				width="590" height="270" horizontalCenter="0" contentBackgroundAlpha="0" color="0xffffff" borderVisible="false"/>
+</s:TitleWindow>

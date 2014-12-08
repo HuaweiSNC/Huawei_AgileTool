@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*"
+		 creationComplete="init()"
+		 fontFamily="微软雅黑"
+		 width="100%" height="100%">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.model.Data;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.ipCore_DCI.MyLink;
+			import com.huawei.sdnc.view.ipCore_DCI.PhysicsView;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			import com.sourcestream.flex.http.HttpEvent;
+			
+			import mx.events.MenuEvent;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.Consts;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Styles;
+			private var __app:sdncui2;
+			[Bindable]
+			/**自动布局类型数组*/
+			private var __layoutArr1:Array =["default",
+				Consts.LAYOUT_SYMMETRY,
+				Consts.LAYOUT_BOTTOMTOP,
+				Consts.LAYOUT_TOPBOTTOM,
+				Consts.LAYOUT_RIGHTLEFT, 
+				Consts.LAYOUT_LEFTRIGHT];
+			protected function init():void
+			{
+				__app=SdncUtil.app;
+				layoutChooser.addEventListener("itemClick", doLayout);
+				if(Data.getInstence().delayState){
+					NQAstateSwitch.currentState = "ON";
+				}else{
+					NQAstateSwitch.currentState = "OFF";
+				}
+				if(Data.getInstence().flowState){
+					flowstateSwitch.currentState = "ON";
+				}else{
+					flowstateSwitch.currentState = "OFF";
+				}
+				//				if(SdncUtil.cuProjectType=="test"){
+				//					cpu.visible = true;
+				//				}else{
+				//					cpu.visible = false;
+				//				}
+			}
+			private var centerPoint:Point=new Point(Capabilities.screenResolutionX/2,Capabilities.screenResolutionY/3);
+			private function doLayout(e:Event = null):void{
+				var stateNodes:Array=DataHandleTool.stateNodesArr;
+				var num:int=stateNodes.length-1;
+				var rad:Number=2*Math.PI/num;
+				var initRad:Number=Math.PI/2+rad/2;
+				//半径
+				var radii:Number=200;
+				if(layoutChooser.label=="default"){
+					
+					for(var i:int=0;i<stateNodes.length;i++){
+						var stateNode:StateNode=stateNodes[i] as StateNode;
+						if(i==0){
+							stateNode.location=new Point(centerPoint.x,centerPoint.y);
+						}else{
+							var x:Number=centerPoint.x+radii*Math.cos(initRad+i*rad);
+							var y:Number=centerPoint.y+radii*Math.sin(initRad+i*rad);
+							stateNode.location=new Point(x,y);
+						}
+					}
+				}else{
+					__app.ipcore.physicsView.physicsCtrl.autoLayouter.explicitXOffset = Capabilities.screenResolutionX/3;
+					__app.ipcore.physicsView.physicsCtrl.autoLayouter.explicitYOffset = Capabilities.screenResolutionY/4;
+					__app.ipcore.physicsView.physicsCtrl.autoLayouter.doLayout(this.layoutChooser.label);
+				}
+				
+			}
+
+			
+			protected function NQASwitch(event:MouseEvent):void
+			{
+				var opsIp:String = SdncUtil.opsIp;
+				var body:String = "1";
+				__app.ipcore.physicsView.networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+					if(item is MyLink){
+						var link:MyLink = item as MyLink;
+						link.setStyle(Styles.LINK_COLOR, 0x60c6fb);
+					}
+				});
+				if(NQAstateSwitch.currentState == "ON"){
+					__app.dispatchEvent(new SdncEvt(SdncEvt.SWITCH_NQA,true));
+					//记录状态到OPS
+					var url:String = "http://"+opsIp+"/changestates/delay=on";
+					ConnUtil.getInstence().clientQuery(url,ConnUtil.METHOD_PUT,getAlgResult,getAlgFault,body);
+				}else{
+					__app.dispatchEvent(new SdncEvt(SdncEvt.SWITCH_NQA,false));
+					var url1:String = "http://"+opsIp+"/changestates/delay=off";
+					ConnUtil.getInstence().clientQuery(url1,ConnUtil.METHOD_PUT,getAlgResult,getAlgFault,body);
+				}
+			}
+			protected function flowstatSwitch(event:MouseEvent):void
+			{
+				var opsIp:String = SdncUtil.opsIp;
+				var body:String = "1";
+				if(flowstateSwitch.currentState == "ON"){
+					__app.dispatchEvent(new SdncEvt(SdncEvt.SWITCH_FLOW,true));
+					var url:String = "http://"+opsIp+"/changestates/flow=on";
+					ConnUtil.getInstence().clientQuery(url,ConnUtil.METHOD_PUT,getAlgResult,getAlgFault,body);
+				}else{
+					__app.dispatchEvent(new SdncEvt(SdncEvt.SWITCH_FLOW,false));
+					var url1:String = "http://"+opsIp+"/changestates/flow=off";
+					ConnUtil.getInstence().clientQuery(url1,ConnUtil.METHOD_PUT,getAlgResult,getAlgFault,body);
+				}
+			}
+			private function getAlgResult(e:HttpDataEvent):void
+			{
+				
+				
+			}
+			
+			private function getAlgFault(e:HttpEvent):void
+			{
+				//Alert.show("连接失败！","提示")
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Form  verticalCenter="0" horizontalCenter="0"  textAlign="left" contentBackgroundColor="#666c64">
+		<s:layout> 
+			<s:FormLayout gap="-5" /> 
+		</s:layout> 
+		<s:FormItem id="autoLayoutForm" label="自动布局:"  visible="{true}" includeInLayout="{true}" color="0xfbfafa">
+			<mx:PopUpMenuButton id="layoutChooser" dataProvider="{__layoutArr1}" chromeColor="0x0c6c9e"
+								itemClick="doLayout(event)"/>
+		</s:FormItem>
+		<s:FormItem  label="时延统计:"  visible="{true}" includeInLayout="{true}" color="0xfbfafa">
+			<optionpanel:SwitchBtn id="NQAstateSwitch" verticalCenter="0" horizontalCenter="0" click="NQASwitch(event)"/>
+		</s:FormItem>
+		<!--s:FormItem id="cpu" label="CPU RAM统计:"  visible="{true}" includeInLayout="{true}" color="0xfbfafa">
+		<optionpanel:SwitchBtn id="cpustateSwitch" verticalCenter="0" horizontalCenter="0" click="CPUSwitch(event)"/>
+		</s:FormItem-->
+		<s:FormItem id="flow" label="流量统计:"  visible="{true}" includeInLayout="{true}" color="0xfbfafa">
+			<optionpanel:SwitchBtn id="flowstateSwitch" verticalCenter="0" horizontalCenter="0" click="flowstatSwitch(event)"/>
+		</s:FormItem>
+	</s:Form>
+</s:Group>

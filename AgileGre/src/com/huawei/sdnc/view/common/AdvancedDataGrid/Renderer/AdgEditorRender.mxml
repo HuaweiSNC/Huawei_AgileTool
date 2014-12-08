@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXAdvancedDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark"
+								  xmlns:mx="library://ns.adobe.com/flex/mx" focusEnabled="true"
+								  implements="mx.managers.IFocusManagerComponent">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			
+			import mx.collections.ArrayList;
+			import mx.collections.IList;
+			
+			[Bindable]
+			private var __lbtxt:String = "";
+			
+			private var __portInfo:XML;
+			
+			public override function set data(value:Object):void{
+				super.data = value;
+				var cuPort:Object;
+				if(value is XML)
+					cuPort = value;
+				else
+				{
+					var index:int = listData["dataField"];
+					cuPort = value.ports[index];
+				}
+				if(!cuPort)
+				{
+					__lbtxt = "null";
+				}
+				else  
+				{
+					__portInfo = cuPort as XML;
+					__lbtxt = String(cuPort.portName);
+					var adminStatus:String = String(cuPort.adminStatus);
+				}
+			}
+			
+			protected function editLabel_clickHandler(event:MouseEvent):void
+			{
+				this.parentDocument.dispatchEvent(new SdncEvt(SdncEvt.VIRTUALVIEW_EDIT_PORT,this));
+			}
+			
+			protected function delLabel_clickHandler(event:MouseEvent):void
+			{
+				this.parentDocument.dispatchEvent(new SdncEvt(SdncEvt.VIRTUALVIEW_DEL_PORT,lb.text));
+			}
+			
+			public function get _portInfo():XML
+			{
+				return __portInfo;
+			}
+			
+			public function set _portInfo(value:XML):void
+			{
+				__portInfo = value;
+			}
+			
+			public function get portName():*
+			{
+				return lb.text;
+			}
+			
+			public override function setFocus():void
+			{
+				lb.setFocus();
+			}
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:HorizontalLayout horizontalAlign="left" verticalAlign="middle"/>
+	</s:layout>
+	<s:Label id="lb" textAlign="center" text="{__lbtxt}"/>
+	<s:Button id="btn" label="EDIT" width="48" click="editLabel_clickHandler(event)" buttonMode="true" toolTip="EDIT"/>
+</s:MXAdvancedDataGridItemRenderer>

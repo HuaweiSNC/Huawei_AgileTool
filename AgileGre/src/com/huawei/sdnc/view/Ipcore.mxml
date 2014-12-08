@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:physics="com.huawei.sdnc.view.ipCore_DCI.*"
+		 xmlns:common="com.huawei.sdnc.view.common.*" 
+		 xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*"
+		 xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*"
+		 xmlns:netpanel="com.huawei.sdnc.netmanage.view.*"
+		 xmlns:controller="com.huawei.sdnc.controller.*"
+		 xmlns:netmanage="com.huawei.sdnc.netmanage.view.*"
+		 initialize="ipCoreCtrl.onInit()"
+		 creationComplete="ipCoreCtrl.onCreate()"
+		 width="400" height="300" xmlns:view="com.huawei.sdnc.view.*" xmlns:ipCoreController="com.huawei.sdnc.controller.ipCoreController.*">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.MenuBtn;
+			import mx.events.FlexEvent;
+			/**记录选项面板开关状态*/
+			private var __isShowOptions:Boolean;
+			
+			public function menuClickHandler(evt:MouseEvent):void
+			{
+				var cuBtn:MenuBtn = evt.currentTarget as MenuBtn;
+				var leng:int = menuHg.numElements;
+				for(var i:int = 0; i < leng; i++)
+				{
+					if(menuHg.getElementAt(i) is MenuBtn)
+					{
+						var btn:MenuBtn = menuHg.getElementAt(i) as MenuBtn;
+						var state:String = "normal_s";
+						if(cuBtn == btn) state = "click_s";
+						btn.currentState = state;
+					}
+				}
+				this.currentState = cuBtn.id;
+				ipCoreoptionPanel.curView=cuBtn.id;
+//				dispatchEvent(new SdncEvt(SdncEvt.MODULE_CHANGE,this.currentState));
+			}
+			
+			/**
+			 * 显示或隐藏optionpanel
+			 * */
+			public function setupBtnClickhandler(e:MouseEvent):void
+			{
+				if(!__isShowOptions)
+				{
+					ipCoreoptionPanel.visible=true;
+					ipCoreoptionPanel.includeInLayout = true;
+					__isShowOptions = true;
+				}else
+				{
+					ipCoreoptionPanel.visible = false;
+					ipCoreoptionPanel.includeInLayout = false;
+					__isShowOptions = false;
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<ipCoreController:IpCoreCtrl id="ipCoreCtrl" page="{this}"/>
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("zh_CN")]
+	</fx:Metadata>
+	<s:states>
+		<s:State name="physics_view"/>
+		<s:State name="netManage_view"/>
+	</s:states>
+	<s:Group id ="m" width="100%" height="100%">
+		<s:layout>
+			<s:VerticalLayout/>
+		</s:layout>
+		<!--导航栏-->
+		<s:Group width="100%" height="30" fontSize="15">
+			<s:Rect left="0" right="0" top="0" height="100%">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry ratio=".5" color="0xd1d4db"/>
+						<s:GradientEntry ratio=".51" color="0xc7c9d5"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:HGroup id="menuHg" paddingLeft="56" paddingRight="15" width="100%" height="100%" horizontalAlign="left" verticalAlign="middle">
+				<s:Spacer width="100%"/>
+				<common:SearchBar id="searchBar"/>
+			</s:HGroup>
+			<s:HGroup y="3" right="420">
+				<s:Image id="refresh" source="@Embed('assets/imgs/topoimgs/refresh.png')"
+						 mouseOver="refresh.filters = [glow]" mouseOut = "refresh.filters = null"
+						 buttonMode="true" toolTip="refresh"/>
+			</s:HGroup>
+		</s:Group>
+		<!--拓扑图等展示区域-->
+		<s:Group id="topoContent" width="100%" height="100%">
+			<physics:PhysicsView id="physicsView" width="100%" height="100%" includeIn="physics_view"/>
+			<netmanage:NetManageView id="netManageView" width="100%" height="100%" includeIn="netManage_view"/>
+		</s:Group>
+	</s:Group>
+	<optionpanel:IpCoreOptionPanel id="ipCoreoptionPanel" left="350" top="35" visible="false" includeInLayout="false" />
+	<navpanel:IpCoreNavPanel id="navPanel" x = "{- navPanel.width + 25}" top="70" includeIn="physics_view"/>
+	<netpanel:IpCoreNetPanel id="netpanel" x = "{- navPanel.width + 25}" top="70" includeIn="netManage_view"/>
+	<s:Button id="btn" visible="false"/>
+</s:Group>

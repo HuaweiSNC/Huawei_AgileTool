@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:btn="com.huawei.sdnc.view.ipRan.physics.*"
+		 creationComplete="init()"
+		 width="36%" height="35%">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import spark.components.RadioButton;
+			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.controls.RadioButton;
+			[Bindable]
+			public var dp:ArrayList=new ArrayList();
+			[Bindable]
+			public var dp2:ArrayList=new ArrayList;
+			private var __app:sdncui2;
+			public var textInputIndex:String="0";
+			private function init():void
+			{
+				__app=SdncUtil.app;
+				appbtn.img.source="assets/imgs/ipran/application_text.png";
+				closebtn.img.source="assets/imgs/ipran/close_text.png";
+				
+				focusManager.setFocus(entrance_textInput);
+			}
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,1000,1000);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				stopDrag();
+			}
+			
+			protected function appbtn_clickHandler(event:MouseEvent):void
+			{
+				var entrance_radiobutton=entrance.selection;
+				var export_radiobutton=export.selection;
+				if(entrance_radiobutton==null||export_radiobutton==null)
+				{
+					Alert.show("choose entrance and export");
+					return;
+				}
+				__app.dispatchEvent(new SdncEvt(SdncEvt.CONNECT_ENTRACE_EXPORT_PATH));
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="entrance"/>
+		<s:RadioButtonGroup id="export"/>
+		<s:RadioButtonGroup id="churukou"/>
+
+		<mx:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:Rect width="100%" height="100%" >
+		<s:fill>
+			<s:SolidColor color="0xf0f0f0" alpha="1"/>
+		</s:fill>
+	</s:Rect>
+	<s:RectangularDropShadow blurX="20" blurY="20" width="100%" height="100%"
+							 alpha="0.32" distance="11"
+							 blRadius="0" brRadius="0"
+							 angle="90" color="#000000" left="0" top="0" right="0"
+							 bottom="0"/>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<s:Group id="titlelayer" width="100%" height="13%" left="0"  mouseDown="beginDrag(event)" mouseUp="endDrag(event)">
+			<s:Rect width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient>
+						<s:GradientEntry color="0x3276b7"/>
+						<s:GradientEntry color="0x4489ca"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Image source="@Embed('assets/imgs/ipran/business_issued.png')" verticalCenter="0" left="15"/>
+			<s:Image id="cbtn" source="@Embed('assets/imgs/ipran/close.png')" verticalCenter="0" right="15" 
+					 buttonMode="true" mouseOver="cbtn.filters=[glow]" mouseOut="cbtn.filters=null"
+					 click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_TEST_PATH))"/>
+		</s:Group>
+		<s:HGroup id="contentlayer" width="100%" height="76%" left="0" gap="0">
+			<s:VGroup width="50%" height="100%" focusEnabled="true" focusColor="0x123456" gap="0">
+				<s:Group width="100%" height="15%" left="0" top="0">
+					<s:Rect width="100%" height="100%">
+						<s:fill>
+							<s:SolidColor color="0xe6e6e6"/>
+						</s:fill>
+					</s:Rect>
+					<!--<s:RadioButton  groupName="churukou" left="40" verticalCenter="0" selected="true" value="0"/>-->
+					<s:Image  source="assets/imgs/ipran/entrance_text.png" left="20" verticalCenter="0"/>
+					<s:TextInput id="entrance_textInput" verticalCenter="0" left="100" right="20"  focusColor="0x68b5e0" focusIn="textInputIndex='0'"/>
+				</s:Group>
+				<s:Group id="group1" width="100%"  height="85%">
+					<!--<s:Label id="namelabel1" left="2" fontSize="16" text="NodeName" top="{(group1.height*0.2-namelabel1.height)/2}"/>
+					<s:Label id="name1" right="2" fontSize="16" text="exportNode"  top="{(group1.height*0.2-name1.height)/2}"/>-->
+					<s:List id="list1" width="100%" height="100%" bottom="0" dataProvider="{dp}" borderVisible="false" contentBackgroundColor="0xdde4ea">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:ItemRenderer height="40">
+									<fx:Script>
+										<![CDATA[
+											import mx.collections.ArrayList;
+											override public function set data(value:Object):void
+											{
+												super.data=value;
+												var isSelected:String=value.isSelected;
+												var index:int=outerDocument.list1.dataProvider.getItemIndex(value);
+												if(isSelected=="0")
+												{
+													dd.selected=false;
+												}else
+												{
+													dd.selected=true;
+												}
+											}
+											
+											protected function clickHandler(event:MouseEvent):void
+											{
+												var q:ArrayList=outerDocument.list1.dataProvider as ArrayList;
+												for(var i:int;i<q.length;i++)
+												{
+													var obj:Object=q.getItemAt(i);
+													obj["isSelected"]="0";
+												}
+												
+												var index:int=outerDocument.list1.dataProvider.getItemIndex(data);
+												var d:Object=outerDocument.list1.dataProvider.getItemAt(index);
+												d["isSelected"]="1";
+											}
+										]]>
+									</fx:Script>
+									<s:Line left="0" right="0" bottom="0" height="1">
+										<s:stroke>
+											<s:SolidColorStroke color="0xc8c8c8"/>
+										</s:stroke>
+									</s:Line>
+									<s:RadioButton  id="dd" group="{outerDocument.entrance}"  label="{data.label}" verticalCenter="0" left="40" fontSize="16" click="clickHandler(event)"/>
+								</s:ItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+					</s:List>
+				</s:Group>
+			</s:VGroup>
+			<s:Line rotation="90" top="0" height="100%">
+				<s:stroke>
+					<s:SolidColorStroke color="0xc8c8c8" weight="1"/>
+				</s:stroke>
+			</s:Line>
+			<s:VGroup width="50%" height="100%" focusEnabled="true" focusColor="0x123456" gap="0">
+				<s:Group width="100%" height="15%" left="0" top="0">
+					<s:Rect width="100%" height="100%">
+						<s:fill>
+							<s:SolidColor color="0xe6e6e6"/>
+						</s:fill>
+					</s:Rect>
+					<!--<s:RadioButton  groupName="churukou" left="40"  verticalCenter="0" value="1"/>
+					<s:Image source="assets/imgs/ipran/export_text.png" left="60" verticalCenter="0"/>-->
+					<s:Image source="assets/imgs/ipran/export_text.png" left="20" verticalCenter="0"/>
+					<s:TextInput id="export_textInput" verticalCenter="0" left="100" right="20"  focusColor="0x68b5e0" focusIn="textInputIndex='1'"/>
+				</s:Group>
+				<s:Group id="group2" width="100%"  height="85%">
+					<!--<s:Label id="namelabel2" left="2" fontSize="16" text="NodeName" top="{(group2.height*0.2-namelabel2.height)/2}"/>
+					<s:Label id="name2" right="2" fontSize="16" text="exportNode"  top="{(group2.height*0.2-name2.height)/2}"/>-->
+					<s:List id="list2" width="100%" height="100%" bottom="0" dataProvider="{dp2}" borderVisible="false" contentBackgroundColor="0xdde4ea">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:ItemRenderer height="40">
+									
+									<fx:Script>
+										<![CDATA[
+											import mx.collections.ArrayList;
+											override public function set data(value:Object):void
+											{
+												super.data=value;
+												var isSelected:String=value.isSelected;
+												var index:int=outerDocument.list1.dataProvider.getItemIndex(value);
+												if(isSelected=="0")
+												{
+													export_radio.selected=false;
+												}else
+												{
+													export_radio.selected=true;
+												}
+											}
+											
+											protected function export_radio_clickHandler(event:MouseEvent):void
+											{
+												var q:ArrayList=outerDocument.list2.dataProvider as ArrayList;
+												for(var i:int;i<q.length;i++)
+												{
+													var obj:Object=q.getItemAt(i);
+													obj["isSelected"]="0";
+												}
+												
+												var index:int=outerDocument.list2.dataProvider.getItemIndex(data);
+												var d:Object=outerDocument.list2.dataProvider.getItemAt(index);
+												d["isSelected"]="1";
+											}
+										]]>
+									</fx:Script>
+									
+									<s:Line left="0" right="0" bottom="0" height="1">
+										<s:stroke>
+											<s:SolidColorStroke color="0xc8c8c8"/>
+										</s:stroke>
+									</s:Line>
+									<s:RadioButton id="export_radio" group="{outerDocument.export}" label="{data.label}" 
+												   verticalCenter="0" left="40" fontSize="16" click="export_radio_clickHandler(event)"/>
+								</s:ItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+						
+					</s:List>
+				</s:Group>
+			</s:VGroup>
+		</s:HGroup>
+		
+		
+		<s:HGroup id="bottomlayer" width="100%" height="11%" gap="0">
+				<btn:TestPathBtn id="appbtn" buttonMode="true" width="50%" height="100%" left="0"
+								 mouseOver="appbtn.currentState='hovered'"
+								 mouseDown="appbtn.currentState='down'"
+								 mouseOut="appbtn.currentState='normal'"
+								 mouseUp="appbtn.currentState='hovered'"
+								 click="appbtn_clickHandler(event)"/>
+				<!--<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient>
+							<s:GradientEntry color="0xeaeaea"/>
+							<s:GradientEntry color="0xe2e2e2"/>
+							<s:GradientEntry color="0xdddddd"/>
+						</s:LinearGradient>
+					</s:fill>
+				</s:Rect>-->
+				<btn:TestPathBtn id="closebtn" buttonMode="true" width="50%" height="100%" right="0"
+								 mouseOver="closebtn.currentState='hovered'"
+								 mouseDown="closebtn.currentState='down'"
+								 mouseOut="closebtn.currentState='normal'"
+								 mouseUp="closebtn.currentState='hovered'"
+								 click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_TEST_PATH))"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+	
+</s:Group>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:btn="com.huawei.sdnc.view.ipRan.physics.*"
+		 creationComplete="init()"
+		 width="50%" height="45%"
+		 fontFamily="微软雅黑">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.controls.RadioButton;
+			
+			import spark.components.Label;
+			import spark.components.RadioButton;
+			import spark.components.supportClasses.ItemRenderer;
+			[Bindable]
+			public var dp:ArrayList=new ArrayList();
+			[Bindable]
+			public var dp2:ArrayList=new ArrayList;
+			private var __app:sdncui2;
+			public var textInputIndex:String="0";
+			private function init():void
+			{
+				__app=SdncUtil.app;
+			}
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,Capabilities.screenResolutionX,Capabilities.screenResolutionY);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				this.stopDrag();
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:Rect width="100%" height="100%" >
+		<s:fill>
+			<s:SolidColor color="0xf0f0f0" alpha="1"/>
+		</s:fill>
+	</s:Rect>
+	<s:RectangularDropShadow blurX="20" blurY="20" width="100%" height="100%"
+							 alpha="0.32" distance="11"
+							 blRadius="0" brRadius="0"
+							 angle="90" color="#000000" left="0" top="0" right="0"
+							 bottom="0"/>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<s:Group id="titlelayer" width="100%" height="10%" left="0"  mouseDown="beginDrag(event)" mouseUp="endDrag(event)">
+			<s:Rect width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient>
+						<s:GradientEntry color="0x3276b7"/>
+						<s:GradientEntry color="0x4489ca"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Label text="Flow define" color="0xf9f3f3" verticalCenter="0" left="10" fontSize="16"/>
+			<s:Image id="cbtn" source="@Embed('assets/imgs/ipran/close.png')" verticalCenter="0" right="15" 
+					 buttonMode="true" mouseOver="cbtn.filters=[glow]" mouseOut="cbtn.filters=null"
+					 click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_SETUP_DCI_WINDOW))"/>
+		</s:Group>
+		<s:HGroup id="contentlayer" width="100%" height="13%" left="0" gap="0">
+			<s:Group width="100%" height="16%" left="0"  verticalCenter="0">
+				<s:Rect width="146" height="100%">
+					<s:fill>
+						<s:SolidColor color="0xe6e6e6"/>
+					</s:fill>
+				</s:Rect>
+				<s:Label text="Source Ip"  verticalCenter="0" width="73" textAlign="center"/>
+				<s:TextInput id="Source_Ip" verticalCenter="1" left="80" right="20"  focusColor="0x68b5e0" focusIn="textInputIndex='0'"/>
+			</s:Group>
+			
+			<s:Group width="100%" height="16%" left="0" verticalCenter="0">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:SolidColor color="0xe6e6e6"/>
+					</s:fill>
+				</s:Rect>
+				<s:Label text="DestIp"  verticalCenter="0" width="66" textAlign="center"/>
+				<s:TextInput id="Dest_Ip" verticalCenter="1" left="74" right="20"  focusColor="0x68b5e0" focusIn="textInputIndex='0'"/>
+			</s:Group>
+		</s:HGroup>
+		<s:Group width="100%" height="68%">
+			<s:DataGrid  width="100%" height="100%" borderVisible="false" requestedRowCount="4">
+				<s:columns>
+					<s:ArrayList>
+						<s:GridColumn dataField="tnlName" headerText="tnlName"></s:GridColumn>
+						<s:GridColumn dataField="tnlType" headerText="tnlType"></s:GridColumn>
+						<s:GridColumn dataField="srcType" headerText="srcType"></s:GridColumn>
+						<s:GridColumn dataField="srcIpAddr" headerText="srcIpAddr"></s:GridColumn>
+						<s:GridColumn dataField="srcIfName" headerText="srcIfName"></s:GridColumn>
+						<s:GridColumn dataField="dstVpnName" headerText="dstVpnName"></s:GridColumn>
+						<s:GridColumn dataField="dstIpAddr" headerText="dstIpAddr"></s:GridColumn>
+						<s:GridColumn dataField="keepalvEn" headerText="keepalvEn"></s:GridColumn>
+						<s:GridColumn dataField="keepalvPeriod" headerText="keepalvPeriod"></s:GridColumn>
+						<s:GridColumn dataField="keepalvRetryCnt" headerText="keepalvRetryCnt"></s:GridColumn>
+					</s:ArrayList>
+				</s:columns>
+				<s:typicalItem>
+					<fx:Object dataField1="示例数据" dataField2="示例数据" dataField3="示例数据"></fx:Object>
+				</s:typicalItem>
+				<s:ArrayList>
+					<fx:Object dataField1="数据1" dataField2="数据1" dataField3="数据1"></fx:Object>
+					<fx:Object dataField1="数据2" dataField2="数据2" dataField3="数据2"></fx:Object>
+					<fx:Object dataField1="数据3" dataField2="数据3" dataField3="数据3"></fx:Object>
+					<fx:Object dataField1="数据4" dataField2="数据4" dataField3="数据4"></fx:Object>
+				</s:ArrayList>
+			</s:DataGrid>
+		</s:Group>
+		<!--两个按钮-->
+		<s:Group id="bottomlayer"  height="11%" width="100%">
+			<s:Button right="88" y="0" label="OK"/>
+			<s:Button right="10" y="0" label="CANCLE"/>
+		</s:Group>
+	</s:VGroup>
+</s:Group>

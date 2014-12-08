@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="380" height="528" backgroundAlpha=".9" backgroundColor="0xcccccc"
+			   borderColor="0x34b5d0" close="PopUpManager.removePopUp(this)"
+			   creationComplete="init()" fontFamily="微软雅黑"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" title="编辑管道"
+			   width.srcIfName="366" height.srcIfName="432"
+			   width.srcIpAddrF="366" height.srcIpAddrF="432"
+			   keyUp="onKeyUp(event)"
+			   >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.model.GreTunnel;
+			import com.huawei.sdnc.model.ifm.Interface;
+			import com.huawei.sdnc.model.ifm.ifmAm4.IfmAm4;
+			import com.huawei.sdnc.model.ifm.ifmAm4.am4CfgAddr.Am4CfgAddr;
+			import com.huawei.sdnc.service.SdnUIService;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.PopupManagerUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			
+			import spark.components.DataGrid;
+			
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			public var element:IElement;
+			public var piplineDefine:PipelineDefine;
+			public var __app:sdncui2;
+			public var tnlgrid:DataGrid;
+			private var queryedTnl:Object;
+			private var tnlobj:Object
+			private var greTunneln:GreTunnel;
+			public function init():void
+			{
+				__app=SdncUtil.app;
+				var networkX:NetworkX=__app.ipcore.physicsView.networkX;
+				var tnls:Array=element.getClient("tnls");
+				
+			  
+				tnlobj=tnlgrid.selectedItem;
+				if(SdncUtil.cuProjectType=="test"){
+					var tnlobjName:String=tnlobj["tnlName"];
+					for each(var tnl:Object in tnls){
+						var tnlName1:String=tnl["tnlName"];
+						if(tnlobjName==tnlName1){
+							var tnlName_str:String=tnl["tnlName"];
+							var tnlType_str:String=tnl["tnlType"];
+							var dstIpAddr_str:String=tnl["dstIpAddr"];
+							var srcType_str:String=tnl["srcType"];
+							if(srcType_str=="隧道源接口名称"){
+								currentState="srcIfName";
+							}
+							var src_value:String=tnl["src_value"];
+							
+							tnlName.text=tnlName_str;
+							tnlType.text=tnlType_str;
+							dstIpAddr.text=dstIpAddr_str;
+							
+							if(srcType_str=="隧道源ip"){
+								srcType_ip.selected=true;
+								srcIpAddr.text=src_value;
+							}else if(srcType_str=="隧道源接口名称"){
+								srcType_name.selected=true;
+								srcIfName.text=src_value;
+								trace(srcIfName.text);
+							}
+							queryedTnl=tnl;
+							break;
+						}
+					}
+				}else{
+					//从ifm里面取出入口ip和掩码的值
+					var ifIp:String;
+					var subnetM:String;
+					var device:Device = element.getClient("device");
+					var interfArr:Array = device.ifm.interfaces;
+					for each(var i:Interface in interfArr){
+						var ifName:String = i.ifName;
+						if(ifName == tnlobj["tnlName"]){
+							var am4CfgAddrs:Array = i.ifmAm4.am4CfgAddrs;
+							for each(var am4:Am4CfgAddr in am4CfgAddrs){
+								ifIp = am4.ifIpAddr;
+								subnetM = am4.subnetMask;
+							}
+							break;
+						}
+					}
+					var tnlNameE:String=tnlobj["tnlName"];
+					var tnlTypeE:String=tnlobj["tnlType"];
+					var srcTypeE:String=tnlobj["srcType"];
+					var src_value1:String=tnlobj["src_value"];
+					var srcIpAddrE:String=tnlobj["srcIpAddr"];
+					var srcIfNameE:String=tnlobj["srcIfName"];
+					var dstIpAddrE:String=tnlobj["dstIpAddr"];
+					var dstVpnNameE:String=tnlobj["dstVpnName"];
+					
+					tnlName.text=tnlNameE;
+					tnlType.text=tnlTypeE;
+					dstIpAddr.text=dstIpAddrE;
+					ifIpAddr.text=ifIp;
+					subnetMask.text = subnetM;
+					
+					if(srcTypeE=="ip_address"){
+						srcType_ip.selected=true;
+						srcIpAddr.text=src_value1;
+					}else{
+						srcType_name.selected=true;
+						srcIfName.text=src_value1;
+					}
+					
+				}
+				
+			}
+			protected function selectSrcType(event:ItemClickEvent):void
+			{
+				var str:String=event.label;
+				if(str=="ip地址"){
+					this.currentState="srcIpAddrF";
+				}else if(str=="接口名称"){
+					this.currentState="srcIfName";
+				}
+			}
+			protected function saveEditTnl(e:MouseEvent):void
+			{
+				if(!valicate(srcIpAddr.text,dstIpAddr.text,ifIpAddr.text,subnetMask.text)){
+					return;
+				}
+				if(SdncUtil.cuProjectType=="test"){
+					queryedTnl["tnlName"]=tnlName.text;
+					queryedTnl["tnlType"]=tnlType.text;
+					queryedTnl["dstIpAddr"]=dstIpAddr.text;
+					var srcTypeV:String=srcTypeGroup.selectedValue as String
+					queryedTnl["srcType"]=srcTypeV;
+					queryedTnl["src_value"]=srcTypeV=="ip地址"?srcIpAddr.text:srcIfName.text;
+					Alert.show("保存成功","提示",Alert.OK,this,closeFunction);
+				}else{
+					var obj:Object=tnlgrid.selectedItem;
+					var tnlNameE:String=tnlName.text;
+					var tnlTypeE:String=tnlType.text;
+					var dstIpAddrE:String=dstIpAddr.text;
+					
+					var srcTypeV1:String=srcTypeGroup.selectedValue as String;
+					var srcTypeE:String=srcTypeV1=="ip地址"?"ip_address":"";
+					
+					var srcIpAddrE:String="";
+					var srcIfNameE:String="";
+					if(currentState=="srcIpAddrF"){
+						srcIpAddrE=srcIpAddr.text;
+						srcIfNameE=obj["srcIfName"];
+					}else{
+						srcIpAddrE=obj["srcIpAddr"];
+						srcIfNameE=srcIfName.text;
+					}
+					if(srcIpAddrE==dstIpAddrE){
+						Alert.show("源地址目的地址不能相同");
+						return;
+					}
+					
+					//发送请求
+					PopupManagerUtil.getInstence().popupLoading(this.parent);
+					var sdnUIService:SdnUIService=new SdnUIService;
+					var opsIp:String=SdncUtil.opsIp;
+					var id:String=element.getClient("id");
+					var param:String=
+						"[{\"tnlName\":\""+tnlNameE+"\"},"
+						+"{\"tnlType\":\""+tnlTypeE+"\"},"
+						+"{\"srcType\":\""+srcTypeE+"\"},"
+						+"{\"srcIpAddr\":\""+srcIpAddrE+"\"},"
+						+"{\"dstVpnName\":\""+"_public_"+"\"},"
+						+"{\"dstIpAddr\":\""+dstIpAddrE+"\"},"
+						+"{\"keepalvEn\":\""+false+"\"},"
+						+"{\"keepalvPeriod\":\""+5+"\"},"
+						+"{\"keepalvRetryCnt\":\""+3+"\"}]";
+					greTunneln = new GreTunnel();
+					greTunneln.tnlName = tnlNameE;
+					greTunneln.tnlType = tnlTypeE;
+					greTunneln.srcType = srcTypeE;
+					greTunneln.srcIpAddr = srcIpAddrE;
+					greTunneln.dstIpAddr = dstIpAddrE;
+					var uri:String="http://"+opsIp+"/devices/"+id+"/gre/greTunnels/greTunnel";
+					sdnUIService.ipcoreRequest(uri,onAddTnlSuccess,onPutGreDefault,ConnUtil.METHOD_PUT,param);
+				}
+				
+			}
+			private function onAddTnlSuccess(evt:HttpDataEvent):void{
+				var str:String=evt.bytes.toString();
+				var index:int=str.indexOf("error");
+				if(index!=-1){
+					Alert.show(str,"提示");
+				}else{
+					var body:String=
+						"<ifName>"+tnlName.text+"</ifName>"
+						+"<ifmAm4>"
+						+"<am4CfgAddrs>"
+						+"<am4CfgAddr>"
+						+"<ifIpAddr>"+ifIpAddr.text+"</ifIpAddr>"
+						+"<addrType>main</addrType>"
+						+"<subnetMask>"+subnetMask.text+"</subnetMask>"
+						+"</am4CfgAddr>"
+						+"</am4CfgAddrs>"
+						+"</ifmAm4>";
+					var device:Device=element.getClient("device");
+					trace("****************"+element.getClient("devicename"));
+					device.putIfmIp(body,putIfmIpRen);
+				}
+				trace(str);
+			}
+			private function putIfmIpRen():void{
+				var  self:* =this;
+				var oldFromN:StateNode = DataHandleTool.findNodeByDstIp(tnlobj["srcIpAddr"],__app.ipcore.physicsView.networkX);
+				var oldToN:StateNode = DataHandleTool.findNodeByDstIp(tnlobj["dstIpAddr"],__app.ipcore.physicsView.networkX);
+				var oldLink:MyLink = DataHandleTool.findLink(oldFromN,oldToN,__app.ipcore.physicsView.networkX);
+				if(oldLink!=null){
+					__app.ipcore.physicsView.networkX.elementBox.remove(oldLink);
+				}
+				var fromN:StateNode=DataHandleTool.findNodeByDstIp(greTunneln.srcIpAddr,__app.ipcore.physicsView.networkX);
+				var toN:StateNode=DataHandleTool.findNodeByDstIp(greTunneln.dstIpAddr,__app.ipcore.physicsView.networkX);
+				if(fromN!=null&&toN!=null){
+					var newLink:MyLink=new MyLink(fromN,toN);
+					__app.ipcore.physicsView.networkX.elementBox.add(newLink);
+				}
+				var device:Device=element.getClient("device");
+				device.getIfm(false,function():void{
+					PopupManagerUtil.getInstence().closeLoading();
+					Alert.show("保存成功","提示");
+					piplineDefine.refreshTnlList();
+					PopUpManager.removePopUp(self);
+				});
+			}
+			
+			private function onPutGreDefault(e:Event):void{
+				Alert.show("获取失败");
+			}
+			/**
+			 * 关闭编辑窗口
+			 * */
+			private function closeFunction(e:CloseEvent):void
+			{
+				piplineDefine.refreshTnlList();
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.keyCode==Keyboard.ESCAPE){
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+			private function valicate(srcIpAddr:String,dstIpAddr:String,ifIpAddr:String,subnetMask:String):Boolean{
+				var ip:RegExp =/^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/; 
+				if(!srcIpAddr.match(ip)){
+					Alert.show("隧道源ip格式不正确","格式错误");
+					return false;
+				}
+				if(!dstIpAddr.match(ip)){
+					Alert.show("隧道目的ip格式不正确","格式错误");
+					return false;
+				}
+				if(!ifIpAddr.match(ip)){
+					Alert.show("入口ip格式不正确","格式错误");
+					return false;
+				}
+				if(!subnetMask.match(ip)){
+					Alert.show("掩码格式不正确","格式错误");
+					return false;
+				}
+				if(srcIpAddr==dstIpAddr){
+					Alert.show("源IP和目的IP不能相同","格式错误");
+					return false;
+				}
+				return true;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:RadioButtonGroup id="srcTypeGroup" itemClick="selectSrcType(event)"/>
+	</fx:Declarations>
+	<s:states>
+		<s:State id="s1" name="srcIpAddrF"/>
+		<s:State id="s2" name="srcIfName"/>
+	</s:states>
+	<s:BorderContainer id="bcc" top="10" width="95%" height="90%" hideEffect="fadeout"
+					   horizontalCenter="0" showEffect="fadeIn" >
+		<s:VGroup width="95%" height="90%" horizontalCenter="0" top="20" gap="10" bottom="20">
+			<s:Group width="100%" height="5%">
+				<s:Label text="　　管道名称:" verticalCenter="0" left="20"/>
+				<s:TextInput id="tnlName"  width="126" verticalCenter="0" left="130" enabled="false"/>
+			</s:Group>
+			<s:Group width="100%" height="5%">
+				<s:Label text="　　管道类型:" verticalCenter="0" left="20"/>
+				<s:TextInput id="tnlType" width="126" verticalCenter="0" left="130"/>
+		 	</s:Group>
+			<s:Group width="100%" height="5%">
+				<s:Label text="　　　源类型:" verticalCenter="0" left="20"/>
+				<s:HGroup width="126" left="130">
+					<s:RadioButton id="srcType_ip" label="ip地址" groupName="srcTypeGroup" x="134" y="7" selected="true"/>
+					<s:RadioButton id="srcType_name"  label="接口名称" groupName="srcTypeGroup" x="219" y="8" enabled="false"/>
+				</s:HGroup>
+			</s:Group>
+			<s:Group includeIn="srcIpAddrF" width="100%" height="5%">
+				<s:Label  text="　　隧道源ip:" verticalCenter="0" left="20"/>
+				<s:TextInput id="srcIpAddr" width="126" verticalCenter="0" left="130" />
+			</s:Group>
+			<s:Group includeIn="srcIfName" width="100%" height="5%">
+				<s:Label text="隧道接口名称:" verticalCenter="0" left="20"/>
+				<s:TextInput id="srcIfName" width="126" verticalCenter="0" left="130"/>
+			</s:Group>
+		<s:Group width="100%"  height="5%">
+			<s:Label text="　隧道目的ip:" verticalCenter="0" left="20"/>
+			<s:TextInput id="dstIpAddr" width="126" verticalCenter="0" left="130"/>
+		</s:Group>
+		<s:Group width="100%" height="5%">
+			<s:Label text="　　　入口ip:" verticalCenter="0" left="20"/>
+			<s:TextInput id="ifIpAddr" width="126" verticalCenter="0" left="130"/>
+		</s:Group>
+		
+		<s:Group width="100%" height="5%">
+			<s:Label text="　　　掩码:" verticalCenter="0" left="20"/>
+			<s:TextInput id="subnetMask" width="126" verticalCenter="0" left="130"/>
+		</s:Group> 
+		</s:VGroup>
+	</s:BorderContainer>
+	<s:Group width="100%" height="10%" bottom="0">
+	<s:HGroup horizontalCenter="0" gap="20" verticalCenter="0">
+		<s:Button bottom="15" label="确定" click="saveEditTnl(event)" horizontalCenter="-52"/>
+		<s:Button bottom="15" label="取消" click="PopUpManager.removePopUp(this)" horizontalCenter="50"/>
+	</s:HGroup>
+	</s:Group>
+</s:TitleWindow>

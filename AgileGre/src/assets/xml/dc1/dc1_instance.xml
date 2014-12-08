@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instances>
+	<instance>
+		<vm_netinfo>[u'192.168.0.131']</vm_netinfo>
+		<instance_mac_address>[u'fa:16:3e:da:4c:6d']</instance_mac_address>
+		<name>test_vm</name>
+		<id>4311ff3f-6a19-4fab-8252-9483d490e389</id>
+		<host_ip>10.68.167.0</host_ip>
+		<host_mac_address>e6:a1:d9:0e:83:2c</host_mac_address>
+	</instance>
+	<instance>
+		<vm_netinfo>[u'1.0.0.4']</vm_netinfo>
+		<instance_mac_address>[u'fa:16:3e:2f:d9:db']</instance_mac_address>
+		<name>test_vm4</name>
+		<id>80c347aa-52a7-423d-9f5b-6615a72f0017</id>
+		<host_ip>10.68.167.0</host_ip>
+		<host_mac_address>e6:a1:d9:0e:83:2c</host_mac_address>
+	</instance>
+	<instance>
+		<vm_netinfo>[u'1.0.0.3']</vm_netinfo>
+		<instance_mac_address>[u'fa:16:3e:d4:8b:fa']</instance_mac_address>
+		<name>test_vm3</name>
+		<id>d32ff50a-4ff4-415f-8842-feb63e613e56</id>
+		<host_ip>10.68.167.0</host_ip>
+		<host_mac_address>e6:a1:d9:0e:83:2c</host_mac_address>
+	</instance>
+	<instance>
+		<vm_netinfo>[u'192.168.0.132']</vm_netinfo>
+		<instance_mac_address>[u'fa:16:3e:1c:b7:11']</instance_mac_address>
+		<name>test_vm2</name>
+		<id>e1ed42e9-39eb-4914-8b9a-d19ef1b4644d</id>
+		<host_ip>10.68.167.0</host_ip>
+		<host_mac_address>e6:a1:d9:0e:83:2c</host_mac_address>
+	</instance>
+</instances>

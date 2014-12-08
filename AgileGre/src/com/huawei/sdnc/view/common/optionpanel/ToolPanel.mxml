@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		 xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*" color="0xffffff"
+		 creationComplete="creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.events.FlexEvent;
+			
+			private var __app:sdncui2;
+			[Bindable]
+			private var __dcFlag:Boolean;
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				__app = SdncUtil.app;
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_DC_CHANGE,onDcChange);
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_BACK_TO_ROOT,onBackToRoot);
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_PING_START,onPingStart);
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_PING_END,onPingEnd);
+				onMoudleChange(__app.main.currentState);
+			}
+			/**切换工具面板的状态*/
+			public function onMoudleChange(cuState:String):void
+			{
+				var stateS:String = "";
+				if(cuState == "physics_view") 
+				{
+					stateS = "tool_physics";
+					if(__app.main.physicsView.dataCenter.isRoot) __dcFlag = false;
+					else __dcFlag = true; 
+				}
+				else if(cuState == "virtual_view") stateS = "tool_virtual";
+				else stateS = "tool_ctrl";
+				this.currentState = stateS;
+			}
+			
+			protected function createVdcWindow(event:MouseEvent):void
+			{
+				__app.main.virtualView.dispatchEvent(new SdncEvt(SdncEvt.POPUP_CREATEVDC_WINDOW));
+			}
+			
+			protected function pingTest_clickHandler(event:MouseEvent):void
+			{
+				__app.dispatchEvent(new SdncEvt(SdncEvt.PHYSICSVIEW_PING_START));
+			}
+			
+			protected function onPingStart(event:SdncEvt):void
+			{
+				vmPing.enabled =false;
+			}
+			
+			protected function onPingEnd(event:Event):void
+			{
+				vmPing.enabled =true;
+			}
+			
+			protected function onDcChange(event:Event):void
+			{
+				if(SdncUtil.currentDcName == "dc") return;
+				__dcFlag = true;
+			}
+			
+			protected function onBackToRoot(event:Event):void
+			{
+				__dcFlag = false;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="tool_virtual"/>
+		<s:State name="tool_physics"/>
+		<s:State name="tool_ctrl"/>
+	</s:states>
+	<s:layout>
+		<s:VerticalLayout horizontalAlign="center" paddingTop="8"/>
+	</s:layout>
+	<s:HGroup verticalAlign="middle" excludeFrom="tool_virtual">
+		<s:Label text="CPU and RAM used:" color="0xffffff"/>
+		<optionpanel:SwitchBtn id="stateSwitch" verticalCenter="0" horizontalCenter="0" click="this.parentDocument.stateSwitch_clickHandler(event)"/>
+	</s:HGroup>
+	<s:Group>
+		<s:layout>
+			<s:TileLayout requestedColumnCount="2" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5" columnAlign="justifyUsingWidth"/>
+		</s:layout>
+		<!--<mx:Panel title="Create Virtual View" includeIn="tool_virtual"
+				  layout="horizontal" backgroundColor="0x4578a5"
+				  left="10" right="10" top="10" bottom="10">
+		</mx:Panel>-->
+		<!--<optionpanel:ToolBtn id="flowMonitorBtn" btnLabelText="FlowMonitor" includeIn="tool_physics"
+							 click="this.parentDocument.flowMonitorBtnClickHandler(event)"/>-->
+		<s:Button label="Flow Monitor" height="33" includeIn="tool_physics"
+				  chromeColor="0x0c6c9e" click="this.parentDocument.flowMonitorBtnClickHandler(event)"/>
+		<s:Button id="vmPing" label="VM Ping Test" height="33" includeIn="tool_physics" visible="{__dcFlag}" includeInLayout="{__dcFlag}"
+				  chromeColor="0x0c6c9e" click="pingTest_clickHandler(event)"/>
+		<s:Button label="manage VDC" height="33" horizontalCenter="0" verticalCenter="0" includeIn="tool_virtual"
+				  chromeColor="0x0c6c9e" click="createVdcWindow(event)"/>
+		</s:Group>
+</s:Group>

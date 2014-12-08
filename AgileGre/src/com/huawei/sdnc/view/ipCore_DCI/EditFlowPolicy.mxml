@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   close="closewin()"
+			   width="618" height="528" 
+			   creationComplete="init()"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" 
+			   borderColor="0x34b5d0"
+			   backgroundColor="0xcccccc" backgroundAlpha=".9"
+			   title="编辑流策略"
+			   fontFamily="微软雅黑"
+			   keyUp="onKeyUp(event)"
+			   >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.model.GreTunnel;
+			import com.huawei.sdnc.model.QosItem;
+			import com.huawei.sdnc.model.acl.aclRuleBas4.AclRuleAdv4;
+			import com.huawei.sdnc.service.SdnUIService;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			import com.hurlant.util.der.Integer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.EffectEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.DataGrid;
+			import spark.components.DropDownList;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			[Bindable]
+			private var policyNameStr:String;
+			[Bindable]
+			private var srcIpStr:String;
+			[Bindable]
+			private var desIpStr:String;
+			public var ddl:DropDownList; 
+			public var g:DataGrid;
+			public var item:Object;
+			public var element:IElement;
+			public var __app:sdncui2;
+			[Bindable]
+			public var flowType:ArrayCollection=new ArrayCollection([
+				{id:0,label:'begin'},
+				{id:1,label:'middle'},
+				{id:2,label:'end'}
+			]);
+			[Bindable]
+			private var proType:ArrayCollection = new ArrayCollection([
+				{id:1,label:'ip协议',value:'0'},
+				{id:2,label:'gre协议',value:'47'},
+				{id:3,label:'icmp协议',value:'1'},
+				{id:4,label:'igmp协议',value:'2'},
+				{id:5,label:'ipinip协议',value:'4'},
+				{id:6,label:'tcp协议',value:'6'},
+				{id:7,label:'udp协议',value:'17'},
+				{id:8,label:'ospf协议',value:'89'}
+			]);
+			[Bindable]
+			public var tnlList:ArrayCollection=new ArrayCollection([]);
+			private var pilic:Object;
+			public var flowDefine:FlowDefine;
+			public function init():void
+			{
+				flowDefine.visible=false;
+				__app=SdncUtil.app;
+				var networkX:NetworkX=__app.ipcore.physicsView.networkX;
+				if(SdncUtil.cuProjectType=="test"){
+					var policyes:Array=element.getClient("policyes");
+					
+					var tnls:Array=element.getClient("tnls");
+					var tnlsArr:Array=tnls.slice(0);
+					
+					var obj:Object=new Object;
+					obj["tnlName"]="无";
+					tnlsArr.push(obj);
+					
+					tnlList=new ArrayCollection(tnlsArr);
+					
+					var item:Object=g.selectedItem;
+					var itemName:String=item["policyName"];
+					if(itemName==""){
+						
+					}else{
+						
+					}
+					for each(var policy:Object in policyes){
+						var pname:String=policy["policyName"];
+						if(itemName==pname){
+							pilic=policy;
+							var sp:String=policy["srcIp"];
+							srcIp.text=sp;
+							var policyType1:String=policy["policyType"];
+							for(var j:int=0;j<flowType.length;j++){
+								var type:Object=flowType.getItemAt(j);
+								var typestr:String=type["label"];
+								if(policyType1==typestr){
+									policyType.selectedIndex=j;
+									break;
+								}
+							}
+							policyName.text=policy["policyName"];
+							
+							var tnlName1:String=policy["tnlName"];
+							if(tnlName1==""){
+								tnlName.selectedIndex=tnlName.dataProvider.length-1;
+								tnlInformation.text="";
+							}else{
+								for(var ii:int=0;ii<tnls.length;ii++){
+									var tnlName2:String=tnls[ii]["tnlName"];
+									if(tnlName1==tnlName2){
+										tnlName.selectedIndex=ii;
+										var tnlinfo:Object=tnls[ii];
+										tnlInformation.text="管道名称　　:"+tnlinfo["tnlName"]+"\n\n"
+											+"管道类型　　:"+tnlinfo["tnlType"]+"\n\n"
+											+"目的地址　　:"+tnlinfo["dstIpAddr"]+"\n\n"
+											+"源接口类型　:"+tnlinfo["srcType"]+"\n\n"
+											+"源接口　　　:"+tnlinfo["src_value"];
+									}
+								}
+							}
+							srcPop.text=policy["srcPop"];
+							
+							var si:Object=policy["xType"];
+							if(si!=null){
+								xType.selectedIndex=int(si["id"]);
+							}
+							desIp.text=policy["desIp"];
+							desPop.text=policy["desPop"];
+							break;
+						}
+					}
+				}else{
+					//首先计算出所有的流起始节点
+					DataHandleTool.qosCalculate.qosItemArr=[];
+					DataHandleTool.qosCalculate.qosStartArr=[];
+					__app.ipcore.physicsView.networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+						if(item is StateNode){
+							var stateNode:StateNode=item as StateNode;
+							var device:Device=stateNode.getClient("device");
+							if(device!=null){
+								// 计算当前设备的qos
+								device.addQosList(DataHandleTool.qosCalculate);
+							}
+						}
+					});
+					DataHandleTool.qosCalculate.calculate();
+					
+					policyTypeId.visible=false;
+					var selectedItem:Object=g.selectedItem;
+					var policyNameE:String=selectedItem["policyName"];
+					var aclSourceIp:String=selectedItem["srcIp"];
+					var aclDestIp:String=selectedItem["desIp"];
+					var aclSrcPortOp:String=selectedItem["srcPop"];
+					var aclDestPortOp:String=selectedItem["desPop"];
+					var aclProtocol:String=selectedItem["xType"];
+					var curDeviceName:String=element.getClient("devicename");
+					curDevice.text=curDeviceName;
+					
+					var qosItem:QosItem=DataHandleTool.qosCalculate.getQosItem(policyNameE,aclSourceIp,aclDestIp);
+					var policyList:Array=DataHandleTool.qosCalculate.calculateList(qosItem);
+					var qosList:Array=[];
+					
+					for each(var qosItemx:QosItem in policyList){
+						var itemObj:Object=new Object;
+						itemObj["policyName"]=qosItemx.qosName;
+						itemObj["srcIp"]=qosItemx.qosSrcIp;
+						itemObj["desIp"]=qosItemx.qosdestIp;
+						itemObj["tnlName"]=qosItemx.ifName;
+						
+						itemObj["deviceName"] = qosItemx.devicename;
+						itemObj["qosItem"]=qosItemx;
+						qosList.push(itemObj);
+					}
+					datagrid.dataProvider=new ArrayCollection(qosList);
+					datagrid.selectedIndex=0;
+					setInfo();
+				}
+			}
+			/**
+			 * 显示详细信息
+			 * */
+			private function setInfo():void
+			{
+				var itemObj:Object=datagrid.selectedItem;
+				var qosItem:QosItem=itemObj["qosItem"] as QosItem;
+				var stateNode:StateNode=qosItem.stateNode;
+				if(qosItem.aclGroup!=null){
+					var aclRuleAdv4:AclRuleAdv4=qosItem.aclGroup.aclRuleAdv4s[0] as AclRuleAdv4;
+					
+					srcIp.text=aclRuleAdv4.aclSourceIp;
+					desIp.text=aclRuleAdv4.aclDestIp;
+					srcPop.text=aclRuleAdv4.aclSrcPortOp==""?"0":aclRuleAdv4.aclSrcPortOp;
+					desPop.text=aclRuleAdv4.aclDestPortOp==""?"0":aclRuleAdv4.aclDestPortOp;
+					aclSrcWild.text = aclRuleAdv4.aclSrcWild;
+					aclDestWild.text = aclRuleAdv4.aclDestWild;
+					var aclProtocolValue:String=aclRuleAdv4.aclProtocol;
+				}
+				policyName.text=qosItem.qosName;
+				curDevice.text=stateNode.getClient("ip");
+				//初始化协议类型
+				for(var i:int=0;i<proType.length;i++){
+					var type2:Object=proType[i];
+					var value:String=type2["value"];
+					if(aclProtocolValue==value){
+						xType.selectedIndex=i;
+						break;
+					}
+				}
+			   //tnl  tnlInf()
+				//舒适化tnl下拉列表
+				var device:Device=stateNode.getClient("device");
+				var tnlsreal1:Array=[];
+				if(device!=null){
+					for each(var greTunnel:GreTunnel in device.gre.greTunnels){
+						var tnl:Object=new Object;
+						var tnlType:String=greTunnel.tnlType;
+						tnl["tnlType"]=tnlType;
+						var srcType:String=greTunnel.srcType;
+						tnl["srcType"]=srcType;
+						var srcIpAddr:String=greTunnel.srcIpAddr;
+						tnl["srcIpAddr"]=srcIpAddr;
+						var srcIfName:String=greTunnel.srcIfName;
+						tnl["srcIfName"]=srcIfName;
+						var dstVpnName:String=greTunnel.dstVpnName;
+						tnl["dstVpnName"]=dstVpnName;
+						var dstIpAddr:String = greTunnel.dstIpAddr;
+						tnl["dstIpAddr"]=dstIpAddr;
+						var tnlNameE:String=greTunnel.tnlName;
+						tnl["tnlName"]=tnlNameE;
+						tnlsreal1.push(tnl);
+					}
+				}
+				
+				tnlList=new ArrayCollection(tnlsreal1);
+				for(var j:int=0;j<tnlsreal1.length;j++){
+					var tnlo:Object=tnlsreal1[j];
+					var ifN:String=tnlo["tnlName"];
+					if(ifN==qosItem.ifName){
+						tnlName.selectedIndex=j;
+						tnlInf();
+						break;
+					}
+				}
+			}
+			
+			
+			/**
+			 * 保存修改后的数据
+			 * */
+			private var flow_devices:Array=[];
+			private var flow_device_obj:Object;
+			private var sdnService:SdnUIService=new SdnUIService;
+			public function saveEdited():void
+			{
+				var sNode:StateNode=element as StateNode;
+				flow_device_obj=new Object;
+				flow_device_obj["stateNode"]=sNode;
+				flow_device_obj["srcIp"]=srcIp.text;
+				flow_device_obj["policyType"]=policyType.selectedItem["label"];
+				flow_device_obj["policyName"]=policyName.text;
+				flow_device_obj["tnlName"]=tnlName.selectedItem["tnlName"]=="无"?"":tnlName.selectedItem["tnlName"];
+				flow_device_obj["srcPop"]=srcPop.text;
+				flow_device_obj["xType"]=xType.selectedItem;
+				flow_device_obj["desIp"]=desIp.text;
+				flow_device_obj["desPop"]=desPop.text;
+				flow_device_obj["deviceName"]=curDevice.text;
+				
+				flow_device_obj["classifierName"]=policyName.text;
+				flow_device_obj["behaviorName"]=policyName.text+"_action";
+				
+				flow_devices.push(flow_device_obj);
+				
+				if(SdncUtil.cuProjectType=="test"){
+					for each(var flow_device:Object in flow_devices){
+						var stateNode:StateNode=flow_device["stateNode"];
+						
+						var policyes:Array=stateNode.getClient("policyes");
+						var policy:Object=new Object;
+						policy["srcIp"]=flow_device["srcIp"];
+						policy["policyType"]=flow_device["policyType"];
+						policy["policyName"]=flow_device["policyName"];
+						policy["tnlName"]=flow_device["tnlName"];
+						policy["srcPop"]=flow_device["srcPop"];
+						policy["xType"]=flow_device["xType"];
+						policy["desIp"]=flow_device["desIp"];
+						policy["desPop"]=flow_device["desPop"];
+						if(policyes==null){
+							policyes=[];
+							stateNode.setClient("policyes",policyes);
+						}
+						policyes.push(policy);
+					}
+				}else{
+					var opsIp:String=SdncUtil.opsIp;
+					for each(var flowobj:Object in flow_devices){
+						var stateNode1:StateNode=flowobj["stateNode"];
+						var device:Device=stateNode1.getClient("device");
+						//下发五元组
+						var aclRuleNameE:String=flowobj["aclName"];
+						var aclSourceIp:String=flowobj["srcIp"];
+						
+						var aclDestIp:String=flowobj["desIp"];
+						var aclSrcPortOp:String=flowobj["srcPop"];
+						var aclDestPortOp:String=flowobj["desPop"];
+						var aclProtocol:String=flowobj["xType"];
+						var classifierNameE:String=flowobj["classifierName"];
+						
+						var id:String=stateNode1.getClient("id");
+						
+						//device.putAcl(flowobj);
+//						var sdnuiService:SdnUIService=new SdnUIService;
+//						sdnuiService.stateNode=stateNode1;
+//						sdnuiService.putAcl(flowobj);
+//						
+//						
+//						//下发流分类         将流分类名称与五元组名称下发
+//						var qosClassifierUrl:String="http://"+opsIp+":8080/devices/"+id+"/qos/qosCbQos/qosClassifiers/qosClassifier";
+//						sdnService.ipcoreRequest();
+//						//下发流行为      将流行为名称和tnlname下发
+//						var tnlNameE:String=tnlName.selectedItem["tnlName"]=="无"?"":tnlName.selectedItem["tnlName"];
+						
+					}
+				}
+			}
+			/**关闭编辑窗口*/
+			public function closeFunction(e:CloseEvent):void
+			{
+				flowDefine.refreshPolicyList();
+				flowDefine.visible=true;
+				PopUpManager.removePopUp(this);
+			}
+			protected function tnlInf():void
+			{
+				tnlInformation.text="";
+				var tnl:Object=tnlName.selectedItem;
+				var tnlNamestr:String=tnl["tnlName"];
+				if(tnlNamestr!="无"){
+					var tnlType:String=tnl["tnlType"];
+					var dstIpAddr:String=tnl["dstIpAddr"];
+					var srcType:String=tnl["srcType"];
+					var src_value:String=tnl["src_value"];
+					var node:StateNode=DataHandleTool.findNodeByDstIp(dstIpAddr,__app.ipcore.physicsView.networkX);
+//					var desDeviceIp:String="没有找到设备";
+					var devicename:String ="没有找到设备";
+					if(node!=null){
+//						desDeviceIp=node.getClient("ip");
+						devicename = node.getClient("devicename");
+					}
+					tnlInformation.text="管道名称　　:"+tnlNamestr+"\n"
+						+"管道类型　　:"+tnlType+"\n"
+						+"目的地址　　:"+dstIpAddr+"\n"+"　　　　　　  ("+devicename+")\n"
+						+"源接口类型　:"+srcType+"\n"
+						+"源接口　　　:"+src_value;
+				}
+				
+			}
+			
+			public function showeffect(e:EffectEvent):void
+			{
+				fadeIn.play([bcc],false);
+			}
+			protected function next():void
+			{
+				fadeout.play([bcc],false); 
+			}
+			protected function fadeInEnd(e:EffectEvent):void
+			{
+//				upbtn.enabled=true;
+				//先保存上一步的设置
+				var sNode:StateNode=element as StateNode;
+				flow_device_obj=new Object;
+				flow_device_obj["stateNode"]=sNode;
+				flow_device_obj["srcIp"]=srcIp.text;
+				flow_device_obj["policyType"]=policyType.selectedItem["label"];
+				flow_device_obj["policyName"]=policyName.text;
+				flow_device_obj["tnlName"]=tnlName.selectedItem["tnlName"]=="无"?"":tnlName.selectedItem["tnlName"];
+				flow_device_obj["srcPop"]=srcPop.text;
+				flow_device_obj["xType"]=xType.selectedItem;
+				flow_device_obj["desIp"]=desIp.text;
+				flow_device_obj["desPop"]=desPop.text;
+				flow_device_obj["deviceName"]=curDevice.text;
+				flow_devices.push(flow_device_obj);
+				
+				var tnl:Object=tnlName.selectedItem;
+				var dstIpAddr:String=tnl["dstIpAddr"];
+				if(dstIpAddr==null)
+					return;
+				var stateNode:StateNode=DataHandleTool.findNode(dstIpAddr,__app.ipcore.physicsView.networkX);
+				element=stateNode;
+				init();
+			}
+			private function closewin():void
+			{
+				PopUpManager.removePopUp(this);
+				flowDefine.visible=true;
+			}
+			
+			public function turnToUp():void
+			{
+				
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.keyCode==Keyboard.ESCAPE){
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Fade id="fadeout" duration="500" alphaFrom="1.0" alphaTo="0.0" effectEnd="showeffect(event)" />
+		<s:Fade id="fadeIn" duration="500" alphaFrom="0.0" alphaTo="1.0"  effectEnd="fadeInEnd(event)"/>
+	</fx:Declarations>
+	<s:BorderContainer horizontalCenter="0" top="10" width="95%" height="90%"  id="bcc"  >
+		<s:VGroup  width="100%" height="100%" gap="0">
+			<s:Group id="t" width="100%" height="15%" >
+				<s:Label x="14" text="策略名称:" verticalCenter="0"  left="20"/>
+				<s:TextInput id="policyName" x="103" width="127" verticalCenter="0" left="130"/>
+				
+				<s:Label x="14" text="当前设备:" verticalCenter="0"  right="170"/>
+				<s:TextInput id="curDevice"  width="127" verticalCenter="0" right="20" editable="false"/>
+			</s:Group>
+			<s:Group width="100%">
+				<s:Line  width="94%"  horizontalCenter="0" >
+					<s:stroke> 
+						<s:SolidColorStroke color="0x898c95" weight="1"/> 
+					</s:stroke>
+				</s:Line>
+			</s:Group>
+			
+			<s:HGroup width="100%" height="50%" gap="0">
+				
+				<s:VGroup width="50%" height="100%" gap="5">
+					<s:Group width="100%" height="5%">
+						<s:Label left="18" fontWeight="bold" horizontalCenter="-110" text="流分类"
+								 verticalCenter="5"/>
+					</s:Group>
+					<s:Group width="100%" height="5%">
+						<s:Label text="　　　源地址　:"  verticalCenter="0" left="20"/>
+						<s:TextInput id="srcIp"  width="126" verticalCenter="0" left="130"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="5%">
+						<s:Label text=" 　 源反掩码　:"  verticalCenter="0" left="20"/>
+						<s:TextInput id="aclSrcWild"  width="126" verticalCenter="0" left="130"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="5%">
+						<s:Label text="　　目的地址　:"  verticalCenter="0" left="20"/>
+						<s:TextInput id="desIp"  width="126" verticalCenter="0" left="130"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="5%">
+						<s:Label text="目的反掩码　　:"  verticalCenter="0" left="20"/>
+						<s:TextInput id="aclDestWild"  width="126" verticalCenter="0" left="130" />
+					</s:Group>
+					
+					<s:Group width="100%" height="5%">
+						<s:Label text="　　源端口号　:"  verticalCenter="0" left="20"/>
+						<s:TextInput id="srcPop"  width="126" verticalCenter="0" left="130"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="5%">
+						<s:Label text="　目的端口号　:"  verticalCenter="0" left="20"/>
+						<s:TextInput id="desPop"  width="126" verticalCenter="0" left="130"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="5%">
+						<s:Label text="　　协议类型　:"  verticalCenter="0" left="20"/>
+						<s:ComboBox  id="xType" width="128" dataProvider="{proType}" selectedIndex="0" left="130" verticalCenter="0"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="5%" id="policyTypeId">
+						<s:Label text="　　　流类型　:"  verticalCenter="0" left="20"/>
+						<s:DropDownList id="policyType"  width="130" dataProvider="{flowType}" selectedIndex="0" left="130" verticalCenter="0"></s:DropDownList>
+					</s:Group>
+					<s:Group height="10"/>
+				</s:VGroup>
+				<s:Line width="1" height="100%">
+					<s:stroke> 
+						<s:SolidColorStroke color="0x898c95" weight="1" alpha="0.5"/> 
+					</s:stroke>
+				</s:Line>
+				<s:VGroup  width="50%" height="100%" gap="15">
+					<s:Group width="100%" height="5%">
+						<s:Label left="15" fontWeight="bold" horizontalCenter="-112" text="流行为"
+								 verticalCenter="5"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="5%">
+						<s:Label text="　　选择管道　:" verticalCenter="0" left="12"/>
+						<s:DropDownList id="tnlName" width="127"  verticalCenter="0" 
+										requireSelection="true" labelField="tnlName" dataProvider="{tnlList}" left="120" change="tnlInf()"/>
+					</s:Group>
+					
+					<s:Group width="100%" height="50%" >
+						<s:Label y="15" left="38" text="管道信息"/>
+						<s:TextArea y="30" width="80%" borderVisible="true" editable="false" id="tnlInformation" height="90%"
+									horizontalCenter="0"/>
+					</s:Group>
+				</s:VGroup>
+			</s:HGroup>
+			
+			<s:Group width="100%">
+				<s:Line  width="94%"  horizontalCenter="0">
+					<s:stroke> 
+						<s:SolidColorStroke color="0x898c95" weight="1"/> 
+					</s:stroke>
+				</s:Line>
+			</s:Group>
+			<s:Group  width="100%" height="35%" >
+				<s:DataGrid width="94%" height="100%" horizontalCenter="0" bottom="5" id="datagrid" click="setInfo()">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn dataField="policyName" headerText="流名称" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn dataField="srcIp" headerText="源ip" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn dataField="desIp" headerText="目的ip" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn dataField="tnlName" headerText="管道名称" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+							<s:GridColumn dataField="deviceName" headerText="设备名称" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader"/>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+		</s:VGroup>
+	</s:BorderContainer>
+	<s:Group width="95%" height="10%"  bottom="0" horizontalCenter="0">
+		<s:HGroup verticalCenter="0" height="50%" horizontalCenter="0" gap="5">
+			<!--<s:Button id="upbtn"   label="上一步"  verticalCenter="0" click="turnToUp()"/>
+			<s:Button id="nextbtn"   label="下一步"  verticalCenter="0" click="next()"/>
+			<s:Button id="savebtn"   label="完成" click="saveEdited()" verticalCenter="0"/>-->
+			<s:Button id="cancelbtn"   label="取消" click="closewin()"  verticalCenter="0" />
+		</s:HGroup>
+	</s:Group>
+</s:TitleWindow>

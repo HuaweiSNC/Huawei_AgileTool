@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		 creationComplete="phyCtrl.init()"
+		 xmlns:ns="http://www.servasoftware.com/2009/twaver/flex"
+		 xmlns:physicsCtrl="com.huawei.sdnc.controller.ipRanController.*"
+		 xmlns:btn="com.huawei.sdnc.view.ipRan.physics.*"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import baidu.map.basetype.LngLat;
+			import baidu.map.basetype.Size;
+			import baidu.map.control.base.Navigator;
+			import baidu.map.core.Map;
+			import baidu.map.event.MapEvent;
+			import baidu.map.layer.Layer;
+			import baidu.map.layer.RasterLayer;
+			
+			import com.huawei.sdnc.controller.ipRanController.CtrlVisibleSwitch;
+			
+			import flashx.textLayout.elements.BreakElement;
+			
+			import twaver.ElementBox;
+			import twaver.IElement;
+			private var map:Map;
+			private var __box:ElementBox = new ElementBox();
+			public var showCtrl:Boolean=true;
+			private function switchState():void
+			{
+				if(this.currentState=="withoutMap"){
+					this.currentState="withMap";
+					phyCtrl.drawTopoWithMap();
+					this.withmapbtn.changeState();
+				}else{
+					this.currentState="withoutMap";
+					phyCtrl.drawTopoWithoutMap();
+					this.withoutmapbtn.changeState();
+				}
+				
+			}
+			
+			private function ctrlVisibleSwitch(event:MouseEvent):void
+			{
+				var target:CtrlVisibleSwitchBtn_withoutMap=event.currentTarget as CtrlVisibleSwitchBtn_withoutMap;
+				ctrlVisiSwitch.eBox = network_noMap.elementBox;
+				if(showCtrl)
+				{
+					target.currentState="openctrl";
+					ctrlVisiSwitch.hideCtrl();
+					showCtrl=false;
+				}else
+				{
+					target.currentState="closectrl";
+					ctrlVisiSwitch.showCtrl();
+					showCtrl=true;
+				}
+				
+			}
+			private function ctrlVisibleSwitch_map(event:MouseEvent):void
+			{
+				var target:CtrlVisibleSwitchBtn_withMap=event.currentTarget as CtrlVisibleSwitchBtn_withMap;
+					ctrlVisiSwitch.eBox = network.elementBox;
+				if(showCtrl)
+				{
+					target.currentState="openctrl";
+					ctrlVisiSwitch.hideCtrl();
+					showCtrl=false;
+				}else
+				{
+					target.currentState="closectrl";
+					ctrlVisiSwitch.showCtrl();
+					showCtrl=true;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<physicsCtrl:PhysicsLayoutCtrl1 id="phyCtrl" page="{this}" />
+		<physicsCtrl:Break_addNode id="breakAddNode" page="{this}" />
+		<physicsCtrl:CtrlVisibleSwitch id="ctrlVisiSwitch" page="{this}" />
+	</fx:Declarations>
+	<s:states>
+		<s:State name="withMap"/>
+		<s:State name="withoutMap"/>
+	</s:states>
+	<s:SpriteVisualElement id="mapE" includeIn="withMap"  width="100%" height="100%"/>
+	<ns:NetworkX width="100%" height="100%" id="network" />
+	<ns:NetworkX width="100%" height="100%" id="network_noMap" visible="false" />
+	
+	<s:Group id="daohang" width="137" height="197" includeIn="withMap">
+		<btn:MapNavButton page="{this}" horizontalCenter="0"/>
+		<s:Image id="zoomIn" x="56" y="47" click="phyCtrl.map.zoom += 1;slider.value=phyCtrl.map.zoom" mouseDown="zoomIn.alpha = .7;"
+				 mouseUp="zoomIn.alpha = 1;" source="assets/imgs/topoimgs/ico_zoom_in.png"/>
+		
+		
+		<s:Image id="zoomOut" x="55" y="168" click="phyCtrl.map.zoom += -1;slider.value=phyCtrl.map.zoom" mouseDown="zoomOut.alpha = .7;"
+				 mouseUp="zoomOut.alpha = 1;" source="assets/imgs/topoimgs/ico_zoom_out.png"/>
+		<s:VSlider id="slider" x="63" y="71" maximum="16" minimum="6"
+				   mouseUp="phyCtrl.map.zoom=slider.value" value="12"/>
+	</s:Group>
+	<s:Group id="addNode" includeIn="withoutMap" right="21" top="174" width="100" height="69">
+		<s:Image id="btnCreateNode" x="34" y="0" mouseDown="breakAddNode.drag(event)"
+				 mouseOut="addnodeTip.visible=false" mouseOver="addnodeTip.visible=true"
+				 source="@Embed('assets/imgs/ipran/addnode.png')"/>
+		<s:Image id="addnodeTip" x="2" y="36" source="@Embed('assets/imgs/ipran/addnode_tip.png')" visible="false"/>
+	</s:Group>
+	<s:Group right="33" top="2">
+		<s:Group horizontalCenter="0">
+		    <s:Image source.withMap="@Embed('assets/imgs/ipran/closemap_eye.png')" source.withoutMap="@Embed('assets/imgs/ipran/openmap_eye.png')" verticalCenter="0" horizontalCenter="0" buttonMode="true" 
+				     click="switchState()" mouseOut="tipGroup.visible=false" mouseOver="tipGroup.visible=true"/>
+		</s:Group>
+		<s:Group id="tipGroup" visible="false" left="0" top="41">
+		    <s:Image id="tip" source.withMap="@Embed('assets/imgs/ipran/closemap_tip.png')" source.withoutMap="@Embed('assets/imgs/ipran/openmap_tip.png')"/>
+		</s:Group>
+	</s:Group>
+	<btn:CtrlVisibleSwitchBtn_withoutMap id="withoutmapbtn" right="20" top="87" includeIn="withoutMap" click="ctrlVisibleSwitch(event)" />
+	<btn:CtrlVisibleSwitchBtn_withMap id="withmapbtn" right="20" top="87" includeIn="withMap" click="ctrlVisibleSwitch_map(event)"/>
+</s:Group>

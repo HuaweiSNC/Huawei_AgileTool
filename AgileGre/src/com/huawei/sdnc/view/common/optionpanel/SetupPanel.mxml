@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx"
+					xmlns:common="com.huawei.sdnc.view.common.*"
+					creationComplete="init(event)" width="100%" height="100%" color="0xffffff">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.tools.VMMoveUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.dataCenter.ctrlV.CtrlView;
+			import com.huawei.sdnc.view.dataCenter.physics.PhysicsLayout;
+			import com.huawei.sdnc.view.dataCenter.physics.PhysicsView;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.MenuEvent;
+			
+			import twaver.Consts;
+			import twaver.ElementBox;
+			import twaver.Group;
+			import twaver.IData;
+			import twaver.Node;
+			import twaver.Styles;
+			[Bindable]
+			private var __executeFlag:Boolean = false;
+			[Bindable]
+			private var __dcFlag:Boolean = false;
+			[Bindable]
+			private var __isTowerLayoutStyle:Boolean = false;
+			[Bindable]
+			/**布局视图类型*/
+			private var __layoutArr:Array =["Complanation","tower"];
+			[Bindable]
+			/**自动布局类型数组*/
+			private var __layoutArr1:Array =["default",
+				Consts.LAYOUT_SYMMETRY,
+				Consts.LAYOUT_BOTTOMTOP,
+				Consts.LAYOUT_TOPBOTTOM,Consts.LAYOUT_RIGHTLEFT, 
+				Consts.LAYOUT_LEFTRIGHT];
+			[Bindable]
+			/**节点标签显示类型*/
+			private var __nodeLabelTypeArr:Array = ["type&id","sysname","IP"];
+			[Bindable]
+			/**VM节点标签显示类型*/
+			private var __vmLabelTypeArr:Array = ["name","vm_netinfo","hostname","id"];
+			private var __physicsView:PhysicsView;
+			private var __ctrlView:CtrlView;
+			private var __app:sdncui2;
+			protected function init(event:FlexEvent):void
+			{
+				__app = SdncUtil.app;
+				__physicsView = __app.main.physicsView;
+				__app.addEventListener(SdncEvt.TOPO_SELECTED_ITEM,onTopoSelected);
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_DC_CHANGE,enterSubHandler);
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_BACK_TO_ROOT,onBackToRoot);
+				if(!__app.main.physicsView.dataCenter.isRoot)
+				{
+					__dcFlag = true;
+					__executeFlag = true;
+				}
+				onStates(__app.main.currentState);
+			}
+			/**切换设置面板的状态  */
+			public function onStates(state:String):void
+			{
+				var stateS:String = "";
+				if(state == "physics_view")
+				{
+					stateS = "physics_s";
+					/*  if(SdncUtil.cuProjectType == "normal")
+					{
+						layoutStyleItem.visible = false;
+						layoutStyleItem.includeInLayout = false;
+					}  */
+				}
+				else if(state == "virtual_view") stateS = "virtual_s";
+				else stateS = "control_s";
+				this.currentState = stateS;
+			}
+			
+			private function onTopoSelected(evt:SdncEvt):void
+			{
+				__executeFlag = true;
+				/* if(evt.params != null && evt.params is Group)
+				{
+					hideBorder.enabled = true;
+					borderalpha.enabled = hideBorder.selected;
+					var g:Group = evt.params as Group;
+					if(g.getStyle(Styles.GROUP_OUTLINE_ALPHA)>0)
+					{
+						hideBorder.selected = true;
+						borderalpha.value = g.getStyle(Styles.GROUP_OUTLINE_ALPHA);
+					}else
+					{
+						hideBorder.selected = false;
+					}
+				}else
+				{
+					hideBorder.enabled = false;
+					borderalpha.enabled = false;
+				} */
+			}
+			
+			/**塔式布局与平面布局切换*/
+			private function switchStyle(event:MenuEvent):void
+			{
+				if( layoutStyle.label == "Complanation" )
+				{
+					__physicsView.currentState = "p_dc_s";
+					autoLayoutForm.visible =autoLayoutForm.includeInLayout = true;
+					fpLabelForm.visible = fpLabelForm.includeInLayout = true;
+					vmLabelForm.visible = vmLabelForm.includeInLayout = true;
+					animateForm.visible = animateForm.includeInLayout = true;
+				}
+				
+				else
+				{
+					__physicsView.currentState = "p_tower_s";
+					autoLayoutForm.visible = autoLayoutForm.includeInLayout = false;
+					fpLabelForm.visible =fpLabelForm.includeInLayout = false;
+					vmLabelForm.visible = vmLabelForm.includeInLayout = false;
+					animateForm.visible = animateForm.includeInLayout = false;
+				}
+			}
+			
+			private function doLayout(event:MenuEvent):void
+			{
+				var physicsLayout:PhysicsLayout = __physicsView.dataCenter;
+				if(layoutChooser.label == "default")
+				{
+					animate.selected = false;
+//					if(SdncUtil.cordinateFlag)
+//					{
+//						
+//					}
+//					else
+//					{
+//						physicsLayout.customLayout();
+//					}
+					physicsLayout.customLayout();
+				}
+				else
+				{
+					physicsLayout.autoLayouter.explicitXOffset = 350;
+					physicsLayout.autoLayouter.repulsion = 1;
+					physicsLayout.autoLayouter.groupLayoutTypeFunction = function(group:twaver.Group):String{
+						return null;
+					};
+					physicsLayout.autoLayouter.doLayout(layoutChooser.label,function():void{
+						physicsLayout.autoLayouter.groupLayoutTypeFunction = null;
+					});
+				}
+				VMMoveUtil.getInstence().clearGrids();
+			}
+			
+			private function enterSubHandler(evt:SdncEvt):void
+			{
+				if(__app.main.physicsView.dataCenter.isRoot) return;
+				__dcFlag = true;
+			} 
+			
+			protected function animate_clickHandler(event:MouseEvent):void
+			{
+				var physicsLayout:PhysicsLayout = __physicsView.dataCenter;
+//				physicsLayout.autoLayouter.explicitXOffset = 0;
+//				physicsLayout.autoLayouter.repulsion = 2;
+				if(animate.selected)
+				{
+					physicsLayout.onLayout1(layoutChooser.label);
+				}
+				else
+				{
+					physicsLayout.onLayout(layoutChooser.label);
+				}
+			}
+			
+			protected function hideAllBorderHandler(event:MouseEvent):void
+			{
+				__physicsView.dataCenter.hideAllGroupBorder(hideAllBorder.selected);				
+			}
+			
+			protected function ctrlLayoutChange(event:Event):void
+			{
+				__app.main.ctrlView.dispatchEvent(new SdncEvt(SdncEvt.CTRL_LAYOUT_CHANGE,event));
+			}
+			
+			protected function changeNodeLabelType(event:MenuEvent):void
+			{
+				__app.dispatchEvent(new SdncEvt(SdncEvt.CHANGE_NODE_LABEL_TYPE,nodeLabelType.label));
+			}
+			
+			protected function changeVmLabelType(event:MenuEvent):void
+			{
+				__app.dispatchEvent(new SdncEvt(SdncEvt.CHANGE_VM_LABEL_TYPE,vmLabelType.label));
+			}
+			
+			protected function onBackToRoot(event:Event):void
+			{
+				__dcFlag = false;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="physics_s"/>
+		<s:State name="virtual_s"/>
+		<s:State name="control_s"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Form left="1" right="1" top="1" bottom="1" textAlign="right" contentBackgroundColor="#666c64">
+		<s:FormItem id="layoutStyleItem" label="Layout Style:" enabled="{__dcFlag}" visible="{__dcFlag}" includeInLayout="{__dcFlag}" height="65" includeIn="physics_s">
+			<s:layout>
+				<s:HorizontalLayout verticalAlign="middle"/>
+			</s:layout>
+			<mx:PopUpMenuButton id="layoutStyle" dataProvider="{__layoutArr}" chromeColor="0x0c6c9e"
+								itemClick="switchStyle(event)"/>
+		</s:FormItem>
+		<s:FormItem id="autoLayoutForm" label="Auto Layout:" enabled="{__dcFlag}" visible="{__dcFlag}" includeInLayout="{__dcFlag}" includeIn="physics_s">
+			<mx:PopUpMenuButton id="layoutChooser" dataProvider="{__layoutArr1}" chromeColor="0x0c6c9e"
+								itemClick="doLayout(event)"/>
+		</s:FormItem>
+		<s:FormItem id="fpLabelForm" label="FP Label Type:" excludeFrom="virtual_s">
+			<mx:PopUpMenuButton id="nodeLabelType" dataProvider="{__nodeLabelTypeArr}" chromeColor="0x0c6c9e" 
+								itemClick="changeNodeLabelType(event)"/>
+		</s:FormItem>
+		<s:FormItem id="vmLabelForm" label="VM Label Type:" includeIn="physics_s">
+			<mx:PopUpMenuButton id="vmLabelType" chromeColor="0x0c6c9e" dataProvider="{__vmLabelTypeArr}" 
+								itemClick="changeVmLabelType(event)"/>
+		</s:FormItem>
+		<s:FormItem id="animateForm" label="animate:" enabled="{__executeFlag}" visible="{__dcFlag}" includeInLayout="{__dcFlag}" includeIn="physics_s">
+			<s:CheckBox id="animate" enabled="{layoutChooser.label != 'default'}" click="animate_clickHandler(event)"/>
+		</s:FormItem>
+		<s:FormItem label="Hide All Border:" enabled="{__executeFlag}" includeIn="physics_s" visible="{!__dcFlag}" includeInLayout="{!__dcFlag}">
+			<s:CheckBox id="hideAllBorder" click="hideAllBorderHandler(event)"/>
+		</s:FormItem>
+		<s:FormItem label="Center X:" includeIn="control_s">
+			<s:NumericStepper id="centerX" width="60" minimum="1" maximum="1680" value="640" change="ctrlLayoutChange(event)"/>
+		</s:FormItem>
+		<s:FormItem label="Center Y:" includeIn="control_s">
+			<s:NumericStepper id="centerY" width="60" minimum="1" maximum="1080" value="460" change="ctrlLayoutChange(event)"/>
+		</s:FormItem>
+		<s:FormItem label="Horizontal Gap:" includeIn="control_s">
+			<s:NumericStepper id="horizontalGap" width="60" minimum="1" maximum="200" value="150" change="ctrlLayoutChange(event)"/>
+		</s:FormItem>
+		<s:FormItem label="Vertical Gap:" includeIn="control_s">
+			<s:NumericStepper id="verticalGap"  width="60" minimum="1" maximum="200" value="115" change="ctrlLayoutChange(event)"/>
+		</s:FormItem>
+		<s:FormItem includeIn="control_s">
+			<s:Button label="layout" chromeColor="0x0c6c9e" click="ctrlLayoutChange(event)"/>
+		</s:FormItem>
+	</s:Form>
+</s:Group>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 fontFamily="微软雅黑"
+		 creationComplete="init(event)"
+		 width="400" height="300">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.controller.SaveTopoLocation;
+			import com.huawei.sdnc.controller.ipCoreController.IpcoreRefresh;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.netmanage.controller.ExportTopo;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.events.FlexEvent;
+			
+			import twaver.networkx.NetworkX;
+			private var _app:sdncui2;
+			private var refreshTopo:IpcoreRefresh;
+			protected function refresh(event:MouseEvent):void
+			{
+				refreshTopo = new IpcoreRefresh();
+				refreshTopo.init();
+			}
+			private function saveTopo(event:MouseEvent):void
+			{
+				var saveTopoLocation:SaveTopoLocation=new SaveTopoLocation;
+				saveTopoLocation.saveLocation(_app.ipcore.physicsView.networkX);
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				_app=SdncUtil.app;
+			}
+			public function judgeState():void
+			{
+				if(_app.ipcore.currentState=="physics_view"){
+					this.currentState="physics";
+				}else{
+					this.currentState="panning";
+				}
+			}
+			private function importToPlanning(event:MouseEvent):void
+			{
+				var networkX:NetworkX=_app.ipcore.netManageView.networkX;
+				networkX.elementBox.clear();
+				var export:ExportTopo=new ExportTopo;
+				export.exportTopo(_app.ipcore.physicsView.networkX,_app.ipcore.netManageView.networkX);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="physics"/>
+		<s:State name="panning"/>
+	</s:states>
+	<s:HGroup  horizontalCenter="0" verticalCenter="0">
+		<s:VGroup horizontalCenter="0" verticalCenter="0">
+			<s:Button  label="管理设备" chromeColor="0x0c6c9e"
+					   click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_SETUP_DEVICES_WINDOW))"
+					   color="0xffffff" includeIn="physics"/>
+			<!--<s:Button  label="系统还原" chromeColor="0x0c6c9e"
+					   click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_SYSTEM_ROLLBACK_WINDOW))"
+					   color="0xffffff" includeIn="physics"/>-->
+		</s:VGroup>
+		<s:VGroup horizontalCenter="0" verticalCenter="0">
+			<s:Button  label="刷新topo" chromeColor="0x0c6c9e"
+					   click="refresh(event)"
+					   color="0xffffff" includeIn="physics"/>
+			<s:Button  label="保存布局" chromeColor="0x0c6c9e"
+					   click="saveTopo(event)"
+					   color="0xffffff" includeIn="physics"/>
+		</s:VGroup>
+	</s:HGroup>
+		
+	<s:VGroup horizontalCenter="0" verticalCenter="0">
+	<s:Button  label="导入规划视图" chromeColor="0x0c6c9e"
+			   click="importToPlanning(event)"
+			   color="0xffffff" includeIn="panning"/>
+	</s:VGroup>
+</s:Group>

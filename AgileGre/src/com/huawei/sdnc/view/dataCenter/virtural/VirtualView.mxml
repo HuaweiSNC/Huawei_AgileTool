@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<common:MyGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:common="com.huawei.sdnc.view.common.*"
+				xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+				implements="com.huawei.sdnc.view.ISerializable"
+				xmlns:controller="com.huawei.sdnc.controller.*"
+				width="100%" height="100%" 
+				initialize="cuCtrl.onInit(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			
+			import mx.core.IFlexDisplayObject;
+			import mx.managers.PopUpManager;
+			
+			import twaver.DataBox;
+			import twaver.ElementBox;
+			
+			private var __point1:Point = new Point();
+			
+			private var __box:ElementBox = new ElementBox();
+			
+			public function get dataBox():DataBox{				
+				return __box;
+			}
+			
+			public function showCreateVdcWindow(e:SdncEvt):void {
+				var editVdcV:VDCEditWindow = VDCEditWindow(PopUpManager.createPopUp(this, VDCEditWindow , true));
+				PopUpManager.centerPopUp(editVdcV);
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<controller:VirtualCtrl id="cuCtrl" page="{this}"/>
+	</fx:Declarations>
+	<twaver:NetworkX id="network" width="100%" height="100%"/>
+	<s:Label id="tip" text="double click to manage VDC" color="0xffffff" visible="false"/>
+</common:MyGroup>

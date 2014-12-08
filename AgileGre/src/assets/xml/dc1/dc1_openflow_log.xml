@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<syslogs>
+<syslog>
+	<sequence>1008</sequence>
+	<levelEnum>Info</levelEnum>
+	<logType>OpenFlow</logType>
+	<logContent><![CDATA[ [OFC-0x809c043a] [8:17:32:44] <center/ofc_ccc.c:59>:OFC_CCC_ProcHaStartWorkMsg Begin.]]> </logContent>
+</syslog>
+<syslog>
+	<sequence>1009</sequence>
+	<levelEnum>Info</levelEnum>
+	<logType>OpenFlow-CTRL</logType>
+	<logContent><![CDATA[ [OFC-0x809c043a] [8:17:32:45] <center/ofc_ccc.c:90>:OFC_CCC_ProcHaStartWorkMsg End.  ]]> </logContent>
+</syslog>
+<syslog>
+	<sequence>5001</sequence>
+	<levelEnum>Info</levelEnum>
+	<logType>OpenFlow</logType>
+	<logContent><![CDATA[ [OFA-0x809d0418] [7:25:29:13] <center/ofa_ccc.c:59>:OFA_CCC_ProcHaStartWorkMsg Begin. ]]> </logContent>
+</syslog>
+<syslog>
+	<sequence>5002</sequence>
+	<levelEnum>Info</levelEnum>
+	<logType>OpenFlow-AGENT</logType>
+	<logContent><![CDATA[ [OFA-0x809d0418] [7:25:29:13] <center/ofa_ccc.c:90>:OFA_CCC_ProcHaStartWorkMsg End.   ]]> </logContent>
+</syslog>
+</syslogs>

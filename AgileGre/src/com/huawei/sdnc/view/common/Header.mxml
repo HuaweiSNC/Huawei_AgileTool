@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="init(event)"
+		 width="100%" height="40" fontSize="15" color="0xc2c0c0">
+	<s:layout>
+		<s:HorizontalLayout paddingTop="5" verticalAlign="middle"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.controller.ipRanController.IpRanCtrl;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.Ipcore;
+			import com.huawei.sdnc.view.common.optionpanel.OptionPanel;
+			import com.huawei.sdnc.view.ipCore_DCI.ChangePassword;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.graphics.SolidColorStroke;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			/**用户名*/
+			public var username:String = "";
+			[Bindable]
+			/**当前时间*/
+			public var cuTimeStr:String = "";
+
+			private var __timer:Timer;
+			private var __cuDt:Date = null;
+			private var __app:sdncui2;
+			public var __app2:sdncui2;
+			private var __optionPanel:OptionPanel;
+			/**选项栏显示状态，true为显示，false为未显示*/
+			private var __isShowOptions:Boolean;
+			protected function init(event:FlexEvent):void
+			{
+				__timer = new Timer(2000);
+				__timer.addEventListener(TimerEvent.TIMER,onTimer);
+				__timer.start();
+				
+				__cuDt = new Date();
+				cuTimeStr = SdncUtil.getFormatStr("YYYY-MM-DD  JJ:NN",__cuDt);
+				__app = SdncUtil.app;
+			}
+			
+			private function onTimer(evt:TimerEvent):void
+			{
+				__cuDt.seconds = __cuDt.seconds + 2;
+				cuTimeStr = SdncUtil.getFormatStr("YYYY-MM-DD  JJ:NN",__cuDt);
+			}
+			
+			protected function logoutBtn_clickHandler(event:MouseEvent):void
+			{
+				Alert.show("Are you sure you want to quit?","Warning",1|2,null,closeHandler);
+			}
+			
+			private function closeHandler(event:CloseEvent):void
+			{
+				if(event.detail == Alert.YES)
+				{
+					/* __app.currentState = "login_state";
+					
+					this.currentState = "logout"; */
+					//app.main.setupBtnClickhandler(null);
+					var  request:URLRequest  =  new  URLRequest(" javascript:window.opener = null ;window.close()");  
+					navigateToURL(request,"_self"); 
+				}
+			}
+			private function choseClick(event:MouseEvent):void
+			{
+				if(SdncUtil.curEntry=="ipran")
+				{
+					__app.ipRan.ipRanCtrl.setupBtnClickhandler(event);
+					
+				}if(SdncUtil.curEntry=="ipcore")
+				{
+					__app.ipcore.setupBtnClickhandler(event);
+				}else
+				{
+					__app.main.mainCtrl.setupBtnClickhandler(event);
+				}
+			}
+//			[Bindable]
+//			public var page:Ipcore = new Ipcore;
+			protected function uname_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var changePW:ChangePassword=ChangePassword(PopUpManager.createPopUp(__app2,ChangePassword,true));
+				changePW.Uname = uname.label;
+				PopUpManager.centerPopUp(changePW);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="logout"/>
+		<s:State name="login"/>
+	</s:states>
+	<!--LOGO及时间-->
+	<s:HGroup gap="5" paddingLeft="5" verticalAlign="middle">
+		<s:Image source="@Embed(source='assets/imgs/huawei_logo.png')"/>
+		<s:Label id="companyNameLabel" text="HUAWEI" color="0xffffff" fontWeight="bold" alpha=".7"/>
+		<s:Label id="softwareNameLabel" text="VRP SND Office"/>
+	</s:HGroup>
+	<!--<s:Spacer width="100%"/>-->
+	<s:HGroup fontSize="14" gap="15" paddingRight="30" verticalAlign="middle"
+			  width.logout="356">
+		<s:Label alpha=".8" text="  |  User:"
+				 text.logout="  |  User:"/>
+		<mx:LinkButton id="uname" label="{username}" alpha=".8" buttonMode="true"
+					   click="uname_clickHandler(event)" color="#00CCFF" textDecoration="underline"
+					   paddingLeft="0" paddingRight="7"/>
+		<s:Label text="{cuTimeStr}" alpha=".8"/>
+		<s:Image id="setupBtn" source="@Embed('assets/imgs/button_setup.png')" includeIn="login" 
+				 mouseOver="setupBtn.filters = [glow]" mouseOut = "setupBtn.filters = null"
+				 buttonMode="true" click="choseClick(event)" toolTip="options"/>
+		<s:Image id="fullScreen" source="@Embed('assets/imgs/fullscreen.png')" buttonMode="true"
+				 mouseOver="fullScreen.filters = [glow]" mouseOut = "fullScreen.filters = null"
+				 click="SdncUtil.fullScreen()" toolTip.logout="Full Screen"/>
+		<s:Label text="[English]" alpha=".8" buttonMode="true"/>
+		<s:Label text="                                             "/>
+		<s:Image id="logoutBtn" source="@Embed('assets/imgs/button_logout.png')" includeIn="login" 
+				 mouseOver="logoutBtn.filters = [glow]" mouseOut = "logoutBtn.filters = null"
+				 click="logoutBtn_clickHandler(event)" buttonMode="true" toolTip="logout"/>
+	</s:HGroup>
+</s:Group>

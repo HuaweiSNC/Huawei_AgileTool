@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 color="0xffffff" xmlns:common="com.huawei.sdnc.view.common.*" 
+		 xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*"
+		 creationComplete="init()"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenMax;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.model.QosItem;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import twaver.IData;
+			import twaver.networkx.NetworkX;
+			[Bindable]
+			private var arr:ArrayCollection=new ArrayCollection([
+				//{flow:"flowdad1"},{flow:"flowadfe2"},{flow:"flowadf3"},{flow:"floweeaw4"}
+			]);
+			/**展开状态,true为展开，false为未展开*/
+			private var __isExtended:Boolean;
+			private var __app:sdncui2;
+			protected function init():void
+			{
+				__app=SdncUtil.app;
+			}
+			
+			protected function doClickHandler(event:MouseEvent):void
+			{
+				if(__isExtended)
+				{
+					__isExtended = false;
+					TweenMax.to(this,0.6,{x:-this.width + 25});
+					openBtn.rotation = 180;
+				}else
+				{
+					__isExtended = true;
+					TweenMax.to(this,0.6,{x:0});
+					openBtn.rotation = 0; 
+					refreshFlowList();
+				}
+			}
+			/**
+			 * 刷新流列表
+			 * 
+			 */
+			public function refreshFlowList():void
+			{
+				if(SdncUtil.cuProjectType=="test"){
+					var beginPolicyes:Array=[];
+					var network:NetworkX=__app.ipcore.physicsView.networkX;
+					network.elementBox.forEachByBreadthFirst(function(item:IData):void{
+						if(item is StateNode){
+							var policyes:Array=item.getClient("policyes");
+							for each(var policy:Object in policyes){
+								var policyName:String=policy["policyName"];
+								var policyType:String=policy["policyType"];
+								var tnlName:String=policy["tnlName"];
+								var srcIp:String=policy["srcIp"];
+								var desIp:String = policy["desIp"];
+								if(policyType=="begin"){
+									beginPolicyes.push(policy);
+								}
+							}
+							arr=new ArrayCollection(beginPolicyes);
+						}
+					});
+				}else{
+					DataHandleTool.qosCalculate.qosItemArr=[];
+					DataHandleTool.qosCalculate.qosStartArr=[];
+					__app.ipcore.physicsView.networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+						if(item is StateNode){
+							var stateNode:StateNode=item as StateNode;
+							var device:Device=stateNode.getClient("device");
+							if(device!=null){
+								// 计算当前设备的qos
+								device.addQosList(DataHandleTool.qosCalculate);
+							}
+						}
+					});
+					DataHandleTool.qosCalculate.calculate();
+					var qosStartArr:Array=DataHandleTool.qosCalculate.qosStartArr;
+					var policyList:Array=[];
+					for each(var qosItem:QosItem in qosStartArr){
+						var po:Object=new Object;
+						po["policyName"]=qosItem.qosName;
+						po["srcIp"]=qosItem.qosSrcIp;
+						po["desIp"]=qosItem.qosdestIp;
+						po["qosItem"]=qosItem;
+						policyList.push(po);
+					}
+					arr=new ArrayCollection(policyList);
+				}
+			}
+			/**
+			 * 查找流策略
+			 */
+			public function queryPolicy():void
+			{
+				var index:int=g.selectedIndex;
+				var beginPolicy:Object=g.selectedItem;
+				if(SdncUtil.cuProjectType=="test"){
+					DataHandleTool.drawLineByPolicyTnl(beginPolicy,__app.ipcore.physicsView.networkX);
+				}else{
+					DataHandleTool.drawLineByPolicyforReal(beginPolicy,__app.ipcore.physicsView.networkX);
+//					__app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_FLOW_CHART));
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:Image id="bk" source="@Embed('assets/imgs/navpanel/nav_panel_bg.png')"/>
+	<s:Group id="content" left="11" top="2" width="{bk.width*0.8}" height="370">
+		<s:Rect x="-10" width="319" height="403">
+			<s:fill>
+				<s:SolidColor color="0x283855" alpha="1"/>
+			</s:fill>
+		</s:Rect>
+		<s:DataGrid id="g" width="289" height="376"  	verticalCenter="15" horizontalCenter="10" requestedRowCount="4" dataProvider="{arr}" 
+					color="0x000000" textAlign="left">
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn  headerText="流列表" dataField="policyName"  headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:GridItemRenderer click="outerDocument.queryPolicy()" minWidth="60" height="25">
+									<s:Label text="{data.policyName}" verticalCenter="0" />
+								</s:GridItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+					</s:GridColumn>
+					
+					<s:GridColumn  headerText="源IP地址" dataField="srcIp" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:GridItemRenderer click="outerDocument.queryPolicy()" minWidth="100" height="25">
+									<s:Label text="{data.srcIp}"  verticalCenter="0" />
+								</s:GridItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+					</s:GridColumn>
+					<s:GridColumn  headerText="目的IP地址" dataField="desIp" headerRenderer="com.huawei.sdnc.view.common.render.dgheaderReader">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:GridItemRenderer click="outerDocument.queryPolicy()" minWidth="100" height="25">
+									<s:Label text="{data.desIp}"  verticalCenter="0" />
+								</s:GridItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+					</s:GridColumn>
+				</s:ArrayList>
+			</s:columns>
+		</s:DataGrid>
+	</s:Group>
+	<s:Image id="openBtn" right="8" top="188" rotation="180"
+			 source="@Embed('assets/imgs/navpanel/button_trangle.png')"
+			 click="doClickHandler(event)" buttonMode="true"/>
+</s:Group>

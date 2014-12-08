@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--表头居中呈现器-->
+<s:DefaultGridHeaderRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx" clipAndEnableScrolling="true">
+	<s:labelDisplay>  
+		<s:Label left="0" right="0" id="labelDisplay" verticalCenter="1"  textAlign="center" fontFamily="微软雅黑" verticalAlign="middle"  />  
+	</s:labelDisplay>  
+	<!--left="0" right="0" top="0" bottom="0"   maxDisplayedLines="1" showTruncationTip="true"  -->
+</s:DefaultGridHeaderRenderer>

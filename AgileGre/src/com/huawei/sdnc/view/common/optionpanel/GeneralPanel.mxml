@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.AboutWindow;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			private var aboutWindow:AboutWindow;
+			protected function init(event:FlexEvent):void
+			{
+				curProjectName.text = "Project : " + SdncUtil.cuProjectName;
+			}
+			
+			protected function aboutBtn_clickHandler(event:MouseEvent):void
+			{
+				if(aboutWindow == null)
+				{
+					aboutWindow = new AboutWindow();
+					aboutWindow.addEventListener(CloseEvent.CLOSE,onAboutWindowClose);
+					PopUpManager.addPopUp(aboutWindow,SdncUtil.app.main);
+					PopUpManager.centerPopUp(aboutWindow);
+				}else
+				{
+					PopUpManager.removePopUp(aboutWindow);
+					aboutWindow = null;
+				}
+			}
+			
+			protected function onAboutWindowClose(event:CloseEvent):void
+			{
+				aboutWindow = null;
+			}
+			
+			protected function refresh_clickHandler(event:MouseEvent):void
+			{
+				var app:sdncui2 = this.parentApplication as sdncui2;
+				app.main.dispatchEvent(new SdncEvt(SdncEvt.SYSTEM_REFRESH));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup bottom="15" left="5" right="5" horizontalAlign="center" gap="10">
+		<!--<s:Button id="saveBtn" label="save coordinate" chromeColor="0x0c6c9e" color="0xffffff"/>-->
+		<s:Button id="refresh" label="Refresh" chromeColor="0x0c6c9e" width="120" height="30" color="0xffffff" click="refresh_clickHandler(event)"/>
+		<s:Button label="About SDN Office" chromeColor="0x0c6c9e" width="120" height="30" color="0xffffff" click="aboutBtn_clickHandler(event)"/>
+		<s:Label id="curProjectName" color="0xffffff" fontSize="12" fontWeight="bold"/>
+	</s:VGroup>
+</s:Group>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="380" height="382" backgroundAlpha=".9" backgroundColor="0xcccccc"
+			   borderColor="0x34b5d0" close="PopUpManager.removePopUp(this)"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" title="增加线"
+			   fontFamily="微软雅黑" creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.netmanage.controller.ChangeTopo;
+			import com.huawei.sdnc.netmanage.model.NetNode;
+			import com.huawei.sdnc.netmanage.model.datas;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.events.DataGridEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.DataGrid;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			public var mydata:datas = datas.getInstence();
+			public var element:IElement;
+			public var networkx:NetworkX;
+			[Bindable]
+			public var dp:ArrayList=new ArrayList();
+			[Bindable]
+			public var dp2:ArrayList=new ArrayList;
+			private var __app:sdncui2;
+			
+			public var fields:ArrayCollection = new ArrayCollection;
+			protected function init(event:FlexEvent):void
+			{
+				__app=SdncUtil.app;
+				networkx=__app.ipcore.netManageView.networkX;	
+				var nodes:ArrayCollection = new ArrayCollection;
+				networkx.elementBox.forEachByBreadthFirst(function(item:IData):void
+				{
+					if(item is NetNode){
+						var netNode:NetNode=item as NetNode;
+						var nodeId:int = netNode.nodeId;
+						var nodeType:String = netNode.nodeType;
+						var systemName:String = netNode.systemName;
+						nodes.addItem({
+							id:nodeId,
+							name:systemName
+						})
+					}
+				})
+				left.dataProvider = nodes;
+				right.dataProvider = nodes;
+				
+				if(element !=null)
+				{
+					var netNode:NetNode=element as NetNode;
+					var nodeindex:int = 0;
+					for(var i:int = 0;i<nodes.length;i++)
+					{
+						if(netNode.nodeId==nodes.getItemAt(i).id)
+						{
+							nodeindex=i;
+						}
+					}
+					left.selectedIndex = nodeindex;
+				}
+				
+				
+				var xml:XMLList = mydata.AlgoritmXML.requestcontent.topodata.topo.topoLinks;
+				var str:String = xml.foreachlink.@describe
+				var names:Array = str.split(",")
+				var str2:String = xml.foreachlink.@property
+				var propertys:Array = str2.split(",")
+				var str3:String = xml.foreachuserlink.@must
+				var musts:Array = str3.split(",");
+				if(names.length>propertys.length)
+				{
+					for(var i:int =0;i<(names.length-propertys.length);i++)
+					{
+						names.pop()
+					}
+				}
+				else if(names.length<propertys.length)
+				{
+					for(var i:int = names.length-1;i<propertys.length;i++)
+					{
+						names.push(propertys[i])
+					}
+				}
+				for(var i:int = 0;i<names.length;i++)
+				{
+					if(musts.indexOf(propertys[i],0)!=-1)
+					{
+						
+						fields.addItem({
+							property:propertys[i], 
+							must:"true",  
+							describe:names[i],
+							num:""
+						})
+					}
+					else
+					{
+						fields.addItem({
+							property:propertys[i], 
+							must:"false",  
+							describe:names[i],
+							num:"" 
+						})	
+					}
+				}
+			}
+			
+			protected function save_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				__app=SdncUtil.app;
+				if(left.selectedItem.id!=right.selectedItem.id && left.selectedItem!=null && right.selectedItem!=null)
+				{
+					//var datas:Object = {"cost":cont.text,"bandwidth":bandwidth.text,"leftnodeID":left.selectedItem.id,"rightnodeID":right.selectedItem.id};
+					//var changei:ChangeTopo = new ChangeTopo;
+					//changei.addLink(datas,networkx);
+					//PopUpManager.removePopUp(this);
+					mydata.Acldatas= {"startnodeid":left.selectedItem.id,"endnodeid":right.selectedItem.id}
+						
+						for(var i:int = 0;i<fields.length;i++)
+						{
+							mydata.Acldatas[fields[i].property] = fields[i].num
+						}
+						var changei:ChangeTopo = new ChangeTopo;
+						changei.addLink(mydata.Acldatas,networkx);
+						PopUpManager.removePopUp(this);
+				}
+				else if(left.selectedItem.id==right.selectedItem.id)
+				{
+					Alert.show("左节点与右节点不能相同!","提示")
+				}
+				else if(left.selectedItem!=null || right.selectedItem!=null)
+				{
+					Alert.show("左节点与右节点不能为空!","提示")
+				}
+			}
+			
+//			protected function propertys_clickHandler(event:MouseEvent):void
+//			{
+//				// TODO Auto-generated method stub
+//				Alert.show((event.target as DataGrid).selectedItem.num)
+//			}
+			
+			protected function propertys_itemEditEndHandler(event:DataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				(event.currentTarget as spark.components.DataGrid).selectedIndex
+				if(event.dataField == "num")
+				{
+					var cols:DataGridColumn=propertys.columns[event.columnIndex];
+					//编辑后新的值
+					var newValue:String=propertys.itemEditorInstance[cols.editorDataField];
+					
+				
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<fx:XML id="project" source="assets/xml/sdn_office_project.xml"/>
+	</fx:Declarations>
+	<s:BorderContainer id="bcc" top="10" width="95%" height="295" hideEffect="fadeout"
+					   horizontalCenter="0" showEffect="fadeIn" >
+		
+		<s:Group width="100%" height="32" x="0" y="13">
+			<s:Label text="   左节点 ："  x="46" y="14" textAlign="right"/>
+			<s:ComboBox id="left" labelField="name" x="125" y="7" width="130"/>
+		</s:Group>
+		<s:Group width="100%" height="33" x="0" y="63">
+			<s:Label  text="   右节点 ："  x="46" y="14" textAlign="right"/>
+			<s:ComboBox id="right" labelField="name" x="125" y="7" width="130"/>
+		</s:Group>
+		<mx:DataGrid id="propertys" left="0" right="0" top="118" bottom="0" 
+					 rowCount="4" editable="true" dataProvider="{fields}"> 
+			<mx:columns>
+					<mx:DataGridColumn dataField="describe" headerText="名称" editable="false"></mx:DataGridColumn>
+					<mx:DataGridColumn dataField="num" headerText="值" editable="true"></mx:DataGridColumn>
+			</mx:columns>
+		</mx:DataGrid>
+	</s:BorderContainer>
+	<s:Button id="save" bottom="15" label="确定"  horizontalCenter="-52" click="save_clickHandler(event)" />
+	<s:Button bottom="15" label="取消" click="PopUpManager.removePopUp(this)" horizontalCenter="50"/>
+</s:TitleWindow>

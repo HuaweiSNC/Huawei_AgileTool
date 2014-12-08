@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<fx:Script>
+		<![CDATA[
+			protected function slider_clickHandler(event:MouseEvent):void
+			{
+				this.currentState = this.currentState == "OFF" ? "ON":"OFF";
+			}
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="OFF"/>
+		<s:State name="ON"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BitmapImage source="assets/imgs/optionpanel/setPan_sliderbg.png"/>
+	<s:Label id="state" x="27" x.ON="7" y="8" color="0xffffff" fontSize="10" text="OFF" text.ON="ON"/>
+	<s:Image id="slider" x="1" x.ON="26" y="1" source="assets/imgs/optionpanel/setPan_slider.png" click="slider_clickHandler(event)" buttonMode="true"/>
+</s:Group>

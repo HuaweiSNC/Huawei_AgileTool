@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<devices>
+	<device>
+		<devicename>10.137.208.27</devicename>
+		<username>netconf</username>
+		<passwd></passwd>
+		<ip>10.137.208.27</ip>
+		<version>3.0</version>
+		<productType>NE5000E</productType>
+		<id>156</id>
+
+		<policys>
+			<policy>
+				<policyName>flow3</policyName>
+				<policyType>middle</policyType>
+				<srcIp>10.111.10.10</srcIp>
+				<tnlName>tnl20</tnlName>
+				<desIp>10.111.21.10</desIp>
+			</policy>
+			<policy>
+				<policyName>flow2</policyName>
+				<policyType>end</policyType>
+				<srcIp>10.111.70.0</srcIp>
+				<tnlName></tnlName>
+				<desIp>10.137.208.10</desIp>
+			</policy>
+		</policys>
+
+		<greTunnels>
+			<greTunnel>
+				<tnlName>tnl19</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.27</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.22</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl20</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.27</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.118</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl21</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.27</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.131.231</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl22</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.27</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>172.40.22.2</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl23</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.27</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.111.86.148</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl24</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.27</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.210.122</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+		</greTunnels>
+
+	</device>
+
+	<device>
+		<devicename>10.137.210.122</devicename>
+		<username>netconf</username>
+		<passwd></passwd>
+		<ip>10.137.210.122</ip>
+		<version>3.0</version>
+		<productType>NE5000E</productType>
+		<id>159</id>
+
+
+		<policys>
+			<policy>
+				<policyName>flow2</policyName>
+				<policyType>begin</policyType>
+				<srcIp>10.111.70.0</srcIp>
+				<tnlName>tnl17</tnlName>
+				<desIp>10.137.208.10</desIp>
+			</policy>
+		</policys>
+
+		<greTunnels>
+			<greTunnel>
+				<tnlName>tnl16</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.210.122</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.111.86.148</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl17</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.210.122</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl18</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.210.122</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.22</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+		</greTunnels>
+	</device>
+
+	<device>
+		<devicename>10.137.208.22</devicename>
+		<username>netconf</username>
+		<passwd></passwd>
+		<ip>10.137.208.22</ip>
+		<version>3.0</version>
+		<productType>NE5000E</productType>
+		<id>160</id>
+
+		<policys>
+			<policy>
+				<policyName>flow1</policyName>
+				<policyType>begin</policyType>
+				<srcIp>10.224.208.10</srcIp>
+				<tnlName>tnl1</tnlName>
+				<desIp>10.144.30.10</desIp>
+			</policy>
+		</policys>
+
+		<greTunnels>
+			<greTunnel>
+				<tnlName>tnl1</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.22</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.118</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl2</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.22</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl3</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.111.10.10</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.210.122</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+		</greTunnels>
+	</device>
+
+	<device>
+		<devicename>10.137.208.118</devicename>
+		<username>netconf</username>
+		<passwd></passwd>
+		<ip>10.137.208.118</ip>
+		<version>3.0</version>
+		<productType>NE5000E</productType>
+		<id>161</id>
+		<policys>
+			<policy>
+				<policyName>flow1</policyName>
+				<policyType>middle</policyType>
+				<srcIp>10.224.208.10</srcIp>
+				<tnlName>tnl6</tnlName>
+				<desIp>10.144.30.10</desIp>
+			</policy>
+			<policy>
+				<policyName>flow3</policyName>
+				<policyType>end</policyType>
+				<srcIp>10.111.10.10</srcIp>
+				<tnlName></tnlName>
+				<desIp>10.111.21.10</desIp>
+			</policy>
+		</policys>
+
+		<greTunnels>
+			<greTunnel>
+				<tnlName>tnl4</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.118</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.22</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl5</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.118</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl6</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.208.118</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.131.231</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+		</greTunnels>
+	</device>
+
+	<device>
+		<devicename>10.137.131.231</devicename>
+		<username>netconf</username>
+		<passwd></passwd>
+		<ip>10.137.131.231</ip>
+		<version>3.0</version>
+		<productType>NE5000E</productType>
+		<id>162</id>
+		<policys>
+			<policy>
+				<policyName>flow1</policyName>
+				<policyType>end</policyType>
+				<srcIp>10.224.208.10</srcIp>
+				<tnlName></tnlName>
+				<desIp>10.144.30.10</desIp>
+			</policy>
+		</policys>
+		<greTunnels>
+			<greTunnel>
+				<tnlName>tnl7</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.131.231</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.118</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl8</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.131.231</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl9</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.137.131.231</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>172.40.22.2</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+		</greTunnels>
+	</device>
+
+	<device>
+		<devicename>172.40.22.2</devicename>
+		<username>netconf</username>
+		<passwd></passwd>
+		<ip>172.40.22.2</ip>
+		<version>3.0</version>
+		<productType>NE5000E</productType>
+		<id>163</id>
+		<policys>
+			<policy>
+				<policyName></policyName>
+				<policyType></policyType>
+				<srcIp></srcIp>
+				<tnlName></tnlName>
+			</policy>
+		</policys>
+		<greTunnels>
+			<greTunnel>
+				<tnlName>tnl10</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>172.40.22.2</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.131.231</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl11</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>172.40.22.2</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl12</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>172.40.22.2</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.111.86.148</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+		</greTunnels>
+	</device>
+
+	<device>
+		<devicename>10.111.86.148</devicename>
+		<username>netconf</username>
+		<passwd></passwd>
+		<ip>10.111.86.148</ip>
+		<version>3.0</version>
+		<productType>NE5000E</productType>
+		<id>164</id>
+		<policys>
+			<policy>
+				<policyName>flow3</policyName>
+				<policyType>begin</policyType>
+				<srcIp>10.111.10.10</srcIp>
+				<tnlName>tnl14</tnlName>
+				<desIp>10.111.21.10</desIp>
+			</policy>
+		</policys>
+
+		<greTunnels>
+			<greTunnel>
+				<tnlName>tnl13</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.111.86.148</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>172.40.22.2</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl14</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.111.86.148</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.208.27</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+			<greTunnel>
+				<tnlName>tnl15</tnlName><!-- tnl唯一标识 -->
+				<tnlType>gre</tnlType>
+				<srcType>隧道源ip</srcType>
+				<srcIpAddr>10.111.86.148</srcIpAddr>
+				<srcIfName>src1</srcIfName>
+				<dstVpnName>public</dstVpnName>
+				<dstIpAddr>10.137.210.122</dstIpAddr><!-- 重要 -->
+				<keepalvEn>false</keepalvEn><!-- 默认 -->
+				<keepalvPeriod></keepalvPeriod>
+				<keepalvRetryCnt></keepalvRetryCnt>
+				<greKeepalvInfo></greKeepalvInfo>
+			</greTunnel>
+		</greTunnels>
+	</device>
+</devices>

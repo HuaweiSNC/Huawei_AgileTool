@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="500" height="400" backgroundAlpha=".9" backgroundColor="0xcccccc"
+			   borderColor="0x34b5d0" close="PopUpManager.removePopUp(this)"
+			   skinClass="com.huawei.sdnc.view.skins.TitleWindowSkin" title="选择算法"  
+			   fontFamily="微软雅黑" creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.netmanage.model.datas;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.ErrorCodeUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.HierarchicalData;
+			import mx.controls.Alert;
+			import mx.controls.Tree;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpResponseEvent;
+			[Bindable]
+			public var itree:XMLList;
+			[Bindable]
+			public var algoritmsList:ArrayCollection = new ArrayCollection();
+			public var opsIp:String=SdncUtil.opsIp;
+			private function init(event:FlexEvent):void{
+				//获取所有算法
+				getAlgoritms(); 
+			}
+			public function getAlgoritms():void{
+				var opsIp:String = SdncUtil.opsIp;
+				var url:String = "http://"+opsIp+"/arithmetics/allArithmetics.xml";
+				ConnUtil.getInstence().clientQuery(url,ConnUtil.METHOD_GET,getAlgResult,getAlgFault);
+			}
+			
+			private function getAlgResult(e:HttpResponseEvent,data:ByteArray):void
+			{
+				var errorcode:ErrorCodeUtil = new ErrorCodeUtil;
+				if(!errorcode.parse(e,data)){
+					trace("获取topo所有算法失败");
+					return;
+				}
+				var tree:XMLList = XML(data.toString()).children()
+				
+				itree = tree.copy();
+				for(var i:int = 0;i<itree.length();i++)
+				{
+					//var stree:XML = itree[i]
+					for(var j:int = 0;itree[i].children().length()!=0;j++)
+					{
+						delete itree[i].children()[0];
+					}
+				}
+				for(var a:int = 0;a<tree.length();a++)
+				{
+					var vtree:XMLList = tree[a].children().copy();
+					for(var b:int = 0;b<vtree.length();b++)
+					{
+						var istr:String
+						var suanfa:XML = new XML;;
+						suanfa = XML("<classify id='' aname='' writer='' filename='' description=''/>");
+						var bb:String = vtree[b].@id[0];
+						suanfa.@id = vtree[b].@id[0];
+						suanfa.@aname = vtree[b].name.children()[0].toString();
+						suanfa.@writer = vtree[b].writer.children()[0].toString();
+						suanfa.@filename = vtree[b].filename.children()[0].toString();
+						suanfa.@description = vtree[b].description.children()[0].toString();
+						itree[a].appendChild(XML(suanfa))
+					}
+				}
+
+			}
+			
+			private function getAlgFault():void
+			{
+				Alert.show("连接失败！","提示")
+			}
+			
+			public function saveSelect(event:MouseEvent):void{
+				var url:String = "http://"+opsIp+"/arithmetics/"+adg1.selectedItem.@filename;
+				ConnUtil.getInstence().clientQuery(url,ConnUtil.METHOD_GET,getOneAlgReslut,getAlgFault);	
+			}
+			[Bindable]
+			public var mydata:datas = datas.getInstence();
+			private function getOneAlgReslut(e:HttpResponseEvent,data:ByteArray):void
+			{
+				// TODO Auto Generated method stub
+				mydata.AlgoritmXML = XML(data.toString())
+				PopUpManager.removePopUp(this);
+				mydata.AlgNow = adg1.selectedItem.@aname
+				mydata.AlNowID = adg1.selectedItem.@id
+					//Alert.show(mydata.AlgNow)
+			}
+			
+			
+			protected function adg1_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				description.text = adg1.selectedItem.@description;
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this)
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer id="bcc" left="10" right="10" top="10" bottom="44" hideEffect="fadeout"
+					   showEffect="fadeIn">
+		<mx:AdvancedDataGrid id="adg1" left="-1" right="-1" top="-1" bottom="135"  change="adg1_changeHandler(event)"
+							 designViewDataType="tree" sortableColumns="false" sortExpertMode="true" dataProvider="{new HierarchicalData(itree)}">
+				
+			<mx:columns>
+				<mx:AdvancedDataGridColumn dataField="@name" headerText="分类" width="100"/>
+				<mx:AdvancedDataGridColumn dataField="@aname" headerText="算法名" width="278"/>
+				<mx:AdvancedDataGridColumn dataField="@writer" headerText="作者" width="60"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+		<s:Label x="15" y="193" text="算法简介："/>
+		<s:TextArea id="description" left="10" right="10" bottom="10" height="89" borderVisible="false"
+					contentBackgroundColor="#DDDDDD" editable="false"/>
+		<!--s:HGroup  horizontalCenter="0" verticalCenter="41">
+		<s:Label height="18" text="topo算法 ：" textAlign="right" verticalAlign="middle"/>
+		<s:ComboBox id="algoritms" dataProvider="{algoritmsList}" labelField="name" />
+		</s:HGroup-->
+	</s:BorderContainer>
+	<s:Button id="save" bottom="15" label="选择"  click="saveSelect(event)"  horizontalCenter="-53"/>
+	<s:Button x="267" y="331" label="取消" click="button1_clickHandler(event)"/>
+</s:TitleWindow>

@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:carousel="com.pricklythistle.carousel.*"
+		 initialize="onInit(event)"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.vo.TopoXmlVo;
+			import com.imageVO;
+			import com.pricklythistle.Event.CarMoveEvent;
+			import com.pricklythistle.utils.DataUtil;
+			import com.pricklythistle.utils.LineUtil;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.effects.easing.Back;
+			import mx.effects.easing.Bounce;
+			import mx.effects.easing.Circular;
+			import mx.effects.easing.Cubic;
+			import mx.effects.easing.Elastic;
+			import mx.effects.easing.Exponential;
+			import mx.effects.easing.Linear;
+			import mx.effects.easing.Quadratic;
+			import mx.effects.easing.Quartic;
+			import mx.effects.easing.Quintic;
+			import mx.effects.easing.Sine;
+			import mx.events.FlexEvent;
+			
+			import spark.collections.Sort;
+			import spark.collections.SortField;
+			
+			[Bindable]
+			/**第一层节点数组*/
+			private var __firtArr:ArrayCollection;	//第一个
+			
+			[Bindable]
+			/**第二层节点数组*/
+			private var __secondArr:ArrayCollection; //第二个
+			
+			[Bindable]
+			/**第三层节点数组*/
+			private var __thirdArr:ArrayCollection; //第三个
+			
+			[Bindable]
+			/**第四层节点数组*/
+			private var __fourArr:ArrayCollection; //第四个
+			
+			private var __lineUtil:LineUtil;
+			private var __id:int 	//个数ID
+			
+			[Bindable]
+			private var _easingFunctions:ArrayCollection;
+			private var __iconArr:ArrayCollection;
+			private var __lineArr:Array = new Array();
+			private var __LineArr:Array = new Array();
+			private var __secondLine:Array = new Array();
+			private var __linendex:int=0;
+			private var __carArr:Array = ["firt_car","second_car","third_car","four_car"];
+			private var linkString:String;
+			private var _l2TopoXml:XML;
+			private var _lldpXml:XML;
+			private var dcName:String;
+
+			public function get dcXml():XML
+			{
+				return _l2TopoXml;
+			}
+
+			public function set dcXml(value:XML):void
+			{
+				_l2TopoXml = value;
+				topoInit(dcXml);
+				resetTopo();
+			}
+
+			/**
+			 * 初始化拓扑图
+			 */
+			protected function onInit(event:FlexEvent):void
+			{
+				__firtArr = new ArrayCollection();
+				__secondArr = new ArrayCollection();
+				__thirdArr = new ArrayCollection();
+				__fourArr = new ArrayCollection();
+				__lineUtil = new LineUtil();
+				dcName = SdncUtil.currentDcName;
+				var topoXmlVo:TopoXmlVo = SdncUtil.dcTopoXmlDic[dcName];
+				_l2TopoXml  = topoXmlVo._l2topoXml;
+				_lldpXml = topoXmlVo._lldpXml;
+				_l2TopoXml = l2topo.sdnl2topo[0];
+				_lldpXml = lldp;
+				topoInit(dcXml); 
+			}
+			
+			private function onCarMove(e:CarMoveEvent):void {
+				if(firt_line) {
+					__linendex= 0
+					moveLine(linkString);
+				}
+			}
+			/**
+			 * 根据DCXML初始化TOPO图
+			 * @param xml dc l2拓扑关系XML
+			 */
+			private function topoInit(xml:XML):void
+			{
+				var imagePath:String;
+				for each(var nodeXml:XML in xml.l2toponodes.l2toponode)
+				{
+					if(nodeXml.nodeType == "CORE" || nodeXml.nodeType == "UPE")
+					{
+						__id++;
+						imagePath = "assets/imgs/towerimages/icon_core.png";
+						__firtArr.addItem(new imageVO(imagePath,1,nodeXml.systemName,nodeXml.fpID,firt_car.x,firt_car.y));
+					}
+					if(nodeXml.nodeType == "AGG")
+					{
+						__id++;
+						imagePath = "assets/imgs/towerimages/icon_agg.png";
+						__secondArr.addItem(new imageVO(imagePath,2,nodeXml.systemName,nodeXml.fpID,second_car.x,second_car.y));
+					}
+					if(nodeXml.nodeType == "TOR")
+					{
+						__id++;
+						imagePath = "assets/imgs/towerimages/icon_tor.png";
+						__thirdArr.addItem(new imageVO(imagePath,3,nodeXml.systemName,nodeXml.fpID,third_car.x,third_car.y));
+					}
+				}
+				
+				
+				var linkXmlLen:int = xml.l2topolinks.l2topolink.length();
+				linkString = "";
+				var i:int = 0;
+				for each(var linkXml:XML in xml.l2topolinks.l2topolink)
+				{
+					if(i == 0)
+					{
+						linkString += linkXml.leftFPID + "," +linkXml.rigthFPID;
+					}else
+					{
+						linkString += "," + linkXml.leftFPID + "," +linkXml.rigthFPID;
+					}
+					i++;
+				}
+				/* for(var i:int = 0; i < linkXmlLen; i++)
+				{
+					var linkXml:XML = xml.l2topolinks.l2topolink[i];
+					if(i == 0)
+					{
+						linkString += linkXml.leftFPID + "," +linkXml.rigthFPID;
+					}else
+					{
+						linkString += "," + linkXml.leftFPID + "," +linkXml.rigthFPID;
+					}
+				}  */
+				if(!_lldpXml)return;
+				for each(var lldpXml:XML in _lldpXml.lldpIfsTopo.lldpIfTopo)
+				{
+					__id++;
+					imagePath = "assets/imgs/towerimages/icon_computer.png";
+					__fourArr.addItem(new imageVO(imagePath,4,"shelf",__id,four_car.x,four_car.y));
+					linkString += "," + lldpXml.fpID + "," + String(__id);
+				}
+			}
+			
+			/**
+			 * 添加线
+			 * @param value:由节点ID组成的连线数组
+			 */ 
+			public function setLine(value:String):void {
+				var lineArr:Array =  value.split(",");
+				if(lineArr.length & 1) {
+					Alert.show("Even number only")
+				}else {
+					var o:int=0;
+					for(var i:int=0;i<lineArr.length;i++)  {
+						if(i & 1) {
+							
+						}else {
+							var c:int=0;
+							__lineArr = [];
+							for(var b:int=0;b<__iconArr.length;b++) {
+								if(__iconArr[b].id ==lineArr[i]) {
+									__lineArr.push(__iconArr[b])
+									c++
+								}
+								if(__iconArr[b].id ==lineArr[i+1]) {
+									__lineArr.push(__iconArr[b])
+									c++
+								}
+								
+								if(c == 2) {
+									__lineArr =	__lineArr.sortOn("type",Array.NUMERIC)
+									addLine(__lineArr)
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			/**
+			 * 移动线
+			 * @param value:由节点ID组成的连线数组
+			 */ 
+			public function moveLine(value:String):void {
+				var lineArr:Array =  value.split(",");
+				if(lineArr.length & 1) {
+					Alert.show("Even number only")
+				}else {
+					var o:int=0; 
+					for(var i:int=0;i<lineArr.length;i++)  {
+						if(i & 1) {
+							
+						}else {
+							var c:int=0;
+							__lineArr = [];
+							for(var b:int=0;b<__iconArr.length;b++) {
+								if(__iconArr[b].id ==lineArr[i]) {
+									__lineArr.push(__iconArr[b])
+									c++
+								}
+								if(__iconArr[b].id ==lineArr[i+1]) {
+									__lineArr.push(__iconArr[b])
+									c++
+								}
+								
+								if(c == 2) {
+									__lineArr =	__lineArr.sortOn("type",Array.NUMERIC)
+									upLine(__lineArr)
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			/**
+			 * 更新线的连接
+			 * @param value 连线的数组
+			 */
+			public function upLine(value:Array):void {
+				if(__LineArr) {
+					__LineArr[__linendex].graphics.clear();
+					__LineArr[__linendex].graphics.lineStyle(value[0].thickness,0x03bbff,value[0].alpha);
+					
+					if(value[0].type != value[1].type) {
+						__LineArr[__linendex].graphics.moveTo(value[0].x,value[0].y);
+						__LineArr[__linendex].graphics.lineTo(value[1].x,value[1].moy);
+					}else {
+						if(value[0].x < value[1].x) {
+							__LineArr[__linendex].graphics.moveTo(value[0].xl,value[0].yz);
+							__LineArr[__linendex].graphics.lineTo(value[1].xr,value[1].yz);
+						}else {
+							__LineArr[__linendex].graphics.moveTo(value[1].xl,value[1].yz);
+							__LineArr[__linendex].graphics.lineTo(value[0].xr,value[0].yz);
+						}
+					}
+					__linendex++
+				}
+			}
+			
+			public function addLine(value:Array):void {
+				var lineui:UIComponent = new UIComponent();
+				lineui.graphics.clear();
+				lineui.graphics.lineStyle(value[0].thickness,0x03bbff,value[0].alpha);
+				if(value[0].type != value[1].type) {
+					lineui.graphics.moveTo(value[0].x,value[0].y);
+					lineui.graphics.lineTo(value[1].x,value[1].moy);
+				}else {
+					if(value[0].x < value[1].x) {
+						lineui.graphics.moveTo(value[0].xl,value[0].yz);
+						lineui.graphics.lineTo(value[1].xr,value[1].yz);
+					}else {
+						lineui.graphics.moveTo(value[1].xl,value[1].yz);
+						lineui.graphics.lineTo(value[0].xr,value[0].yz);
+					}
+				}
+				
+				
+				switch (value[0].type) {
+					case 1:
+						firt_line.addElement(lineui);
+						break;
+					case 2:
+						second_line.addElement(lineui);
+						break;
+					case 3:
+						third_line.addElement(lineui);
+						break;
+				}
+				__LineArr.push(lineui)
+			}
+			
+			protected function resetTopo():void
+			{
+				firt_line.removeAllElements();
+				second_line.removeAllElements();
+				__LineArr= [];
+				setLine(linkString);
+			}
+			
+			/**
+			 * 获取所有Icon数据
+			 */ 
+			private function fourCar_CompleteHand():void {
+				__iconArr = DataUtil.getInstance().getData();
+				for(var i:int=0;i<__carArr.length;i++)
+					this[__carArr[i]].addEventListener(CarMoveEvent.EVENT_CAR_MOVEEVENT,onCarMove);
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				firt_line.removeAllElements();
+				second_line.removeAllElements();
+				__LineArr= [];
+				setTimeout(function():void{setLine(linkString);},500);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<fx:XML id="l2topo" source="assets/xml/dc1/dc1_l2topo.xml"/>
+		<fx:XML id="lldp" source="assets/xml/dc1/dc1_lldp.xml"/>
+	</fx:Declarations>
+	<s:Group y="-70">
+		<s:Group id="firt_line" width="100%" height="100%"/>
+		<s:BitmapImage x="579" y="188" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/circlebottom_first.png')"/>
+		<s:Group id="second_line" width="100%" height="100%"/>
+		<s:BitmapImage x="485" y="351" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/circlebottom_second.png')"/>
+		<s:Group id="third_line" width="100%" height="100%"/>
+		<s:BitmapImage x="386" y="536" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/circlebottom_third.png')"/>
+		<s:BitmapImage x="231" y="738" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/circlebottom_four.png')"/>
+		<s:BitmapImage x="816" y="253" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/text_core.png')"/>
+		<s:BitmapImage x="822" y="436" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/text_agg.png')"/>
+		<s:BitmapImage x="800" y="874" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/text_computer.png')"/>
+		<s:BitmapImage x="813" y="646" smooth="true"
+					   source="@Embed('assets/imgs/towerimages/text_tor.png')"/>
+	<carousel:Carousel id="firt_car" x="584" visible="true" y="134" width="474" height="119"
+						   backScale="0.86" dataprovider="{__firtArr}" easingFunction="{mx.effects.easing.Sine.easeIn}"
+						   duration="1000" elevation="150"
+						   frontScale="1.26" itemHeight="75"
+						   itemWidth="50" maxItems="2"/>
+	<!--	<carousel:Carousel id="second_car" x="535" y="320" width="620" height="132"
+						   backScale="{sldBackScale.value}" dataprovider="{__secondArr}"
+						   duration="{sldDuration.value}" elevation="{sldElevation.value}"
+						   frontScale="0.66" itemHeight="{sldItemHeight.value}"
+						   itemWidth="{sldItemWidth.value}" maxItems="29"/>-->
+		<carousel:Carousel id="second_car" x="474" y="304" width="692" height="132"
+				backScale="0.86" dataprovider="{__secondArr}"  visible="true"
+				duration="1200" elevation="150" easingFunction="{mx.effects.easing.Sine.easeIn}"
+				frontScale="1.26" itemHeight="75"
+				itemWidth="50" maxItems="4"/>
+		<carousel:Carousel id="third_car" x="377" y="497" width="883" height="132"
+						   backScale="0.37" dataprovider="{__thirdArr}" visible="true"
+						   duration="3000" elevation="150" easingFunction="{mx.effects.easing.Sine.easeIn}"
+						   frontScale="0.66" itemHeight="114" 
+						   itemWidth="97" maxItems="8"/>
+		<carousel:Carousel id="four_car" x="282" y="722" width="1077" height="132"
+						   backScale="0.37" dataprovider="{__fourArr}"
+						   duration="5000" elevation="150" easingFunction="{mx.effects.easing.Sine.easeIn}"
+						   frontScale="0.66" itemHeight="114" creationComplete="fourCar_CompleteHand()"
+						   itemWidth="100" maxItems="8"/>
+		
+		<!--<mx:VBox width="273" height="299">
+			<mx:HBox height="100%">
+				<mx:Label text="1" />
+				<mx:HSlider id="sldItemWidth1" value="2" minimum="2" maximum="4" liveDragging="true" toolTip="Item Width" />
+			</mx:HBox>
+			<s:TextInput id="text_input" text="3,1,3,2,4,1,4,2,5,1,5,2,6,1,6,2,7,4,7,6,8,4,9,4,9,3,13,3,10,5,11,5,12,5,13,6,14,6,8,15,14,15,7,16,9,16,8,17,10,17,9,18,11,18,10,19,12,19,11,20,13,20,12,21,14,21,13,22,15,22"/>
+			<mx:HBox height="100%">
+				<mx:Label text="2" />
+				<mx:HSlider id="sldItemWidth2" value="4" minimum="2" maximum="8" liveDragging="true" toolTip="Item Width" />
+			</mx:HBox>
+			<mx:HBox height="100%">
+				<mx:Label text="3" />
+				<mx:HSlider id="sldItemWidth3" value="8" minimum="2" maximum="20" liveDragging="true" toolTip="Item Width" />
+			</mx:HBox>
+			<mx:HBox height="100%">
+				<mx:Label text="4" />
+				<mx:HSlider id="sldItemWidth4" value="8" minimum="2" maximum="20" liveDragging="true" toolTip="Item Width" />
+			</mx:HBox>
+		</mx:VBox>-->
+		<!--<s:Button x="324" y="10" click="button1_clickHandler(event)"/>-->
+	</s:Group>		
+</s:Group>

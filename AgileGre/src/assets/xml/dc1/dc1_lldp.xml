@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<networklldp>
+	<lldpIfsTopo>
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet7/0/1</ifName>
+			<fpID>7</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet7/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c01</chassisId>
+					<remMacAddress>e6:a1:d9:0e:83:2c</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet15/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server15</systemName>
+					<systemDescription>shelf:shelf1/server:15</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+				<lldpRemoteInfo>
+					<nbIndex>2</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c011</chassisId>
+					<remMacAddress>38ba-5e72-8c011</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet15/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server151</systemName>
+					<systemDescription>shelf:shelf1/server:15</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+				<lldpRemoteInfo>
+					<nbIndex>3</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c012</chassisId>
+					<remMacAddress>38ba-5e72-8c012</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet15/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server152</systemName>
+					<systemDescription>shelf:shelf1/server:15</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+				<lldpRemoteInfo>
+					<nbIndex>4</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c013</chassisId>
+					<remMacAddress>38ba-5e72-8c013</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet15/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server153</systemName>
+					<systemDescription>shelf:shelf1/server:15</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+				<lldpRemoteInfo>
+					<nbIndex>5</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c014</chassisId>
+					<remMacAddress>38ba-5e72-8c014</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet15/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server154</systemName>
+					<systemDescription>shelf:shelf1/server:15</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet8/0/1</ifName>
+			<fpID>8</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet8/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c02</chassisId>
+					<remMacAddress>38ba-5e72-8c02</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet16/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server16</systemName>
+					<systemDescription>description for server</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet9/0/1</ifName>
+			<fpID>9</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet9/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c03</chassisId>
+					<remMacAddress>38ba-5e72-8c03</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet17/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server17</systemName>
+					<systemDescription>description for server</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet10/0/1</ifName>
+			<fpID>10</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet10/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c04</chassisId>
+					<remMacAddress>38ba-5e72-8c04</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet18/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server18</systemName>
+					<systemDescription>description for server</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+		
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet11/0/1</ifName>
+			<fpID>11</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet11/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c05</chassisId>
+<!-- 					<remMacAddress>38ba-5e72-8c05</remMacAddress> -->
+					<remMacAddress>b2:27:ed:00:cd:83</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet19/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server19</systemName>
+					<systemDescription>description for server</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet12/0/1</ifName>
+			<fpID>12</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet12/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c06</chassisId>
+<!-- 					<remMacAddress>38ba-5e72-8c06</remMacAddress> -->
+					<remMacAddress>5a:6a:28:90:1c:0c</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet20/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server20</systemName>
+					<systemDescription>description for server</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+		
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet13/0/1</ifName>
+			<fpID>13</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet13/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c07</chassisId>
+					<remMacAddress>38ba-5e72-8c07</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet21/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server21</systemName>
+					<systemDescription>description for server</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+		<lldpIfTopo>
+			<ifName>Interface GigabitEthernet14/0/1</ifName>
+			<fpID>14</fpID>
+			<nodeType>TOR</nodeType>
+			<lldpIfInfo>
+				<portIdSubtype>5</portIdSubtype>
+				<portId>Interface GigabitEthernet14/0/1</portId>
+				<portDescription>description for interface</portDescription>
+			</lldpIfInfo>
+			<lldpRemoteInfos>
+				<lldpRemoteInfo>
+					<nbIndex>1</nbIndex>
+					<chassisIdSubtype>4</chassisIdSubtype>
+					<chassisId>38ba-5e72-8c08</chassisId>
+					<remMacAddress>38ba-5e72-8c08</remMacAddress>
+					<portIdSubtype>5</portIdSubtype>
+					<portId>Interface GigabitEthernet22/0/1</portId>
+					<portDescription></portDescription>
+					<systemName>server22</systemName>
+					<systemDescription>description for server</systemDescription>
+					<expiredTime>30</expiredTime>
+					<discoveredTime></discoveredTime>
+				</lldpRemoteInfo>
+			</lldpRemoteInfos>
+		</lldpIfTopo>
+	</lldpIfsTopo>
+</networklldp>

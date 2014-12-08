@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 color="0xffffff" xmlns:common="com.huawei.sdnc.view.common.*" 
+		 xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*"
+		 creationComplete="init(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenMax;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.LinkButton;
+			import mx.events.FlexEvent;
+			
+			import spark.components.CheckBox;
+			import spark.components.Label;
+			import spark.components.RadioButton;
+			/**展开状态,true为展开，false为未展开*/
+			private var __isExtended:Boolean;
+			private var __app:sdncui2;
+			private var __currentPvDc:String = "Root";
+//			[Bindable]
+//			public var dcAc:ArrayCollection = new ArrayCollection();
+			private var __pathArr:Array = ["LOC","Root"];
+			protected function init(event:FlexEvent):void
+			{
+				__app = SdncUtil.app;
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_DC_CHANGE,onDcorVdcChange);
+				__app.addEventListener(SdncEvt.VIRTUALVIEW_VDC_CHANGE,onDcorVdcChange);
+				__app.main.addEventListener(SdncEvt.MODULE_CHANGE,onModulechange);
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_PING_START,onPingStart);
+				__app.addEventListener(SdncEvt.PHYSICSVIEW_PING_END,onPingEnd);
+				 __app.addEventListener(SdncEvt.PHYSICSVIEW_BACK_TO_ROOT,function(e:SdncEvt):void{
+					pathBtns.visible = true;
+					__currentPvDc = "Root";
+//					initPathBtns();
+					pathBtns.array = ["LOC","Root"];
+				}); 
+				vdcAndDC.label = "VDC&DC";
+			}
+			
+			protected function doClickHandler(event:MouseEvent):void
+			{
+				if(__isExtended)
+				{
+					__isExtended = false;
+					TweenMax.to(this,0.6,{x:-this.width + 25});
+					openBtn.rotation = 180;
+				}else
+				{
+					__isExtended = true;
+					TweenMax.to(this,0.6,{x:0});
+					openBtn.rotation = 0; 
+				}
+			}
+			
+			protected function rootBtn_clickHandler(event:MouseEvent):void
+			{
+				if(__pathArr.length == 2)//单击pathbtns时如果只有2个按钮，表示在root界面
+				{
+					 __app.dispatchEvent(new SdncEvt(SdncEvt.PHYSICSVIEW_BACK_TO_ROOT,null));
+					  if(__app.main.currentState != "physics_view")
+					 {
+						 /* __app.main.currentState = "physics_view";
+						 __app.main.dispatchEvent(new SdncEvt(SdncEvt.MODULE_CHANGE,"physics_view")); */
+						 __app.main.menuHg.getElementAt(0).dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+					 } 
+				}
+			}
+			
+			protected function onDcorVdcChange(event:SdncEvt):void
+			{
+				while(__pathArr.length > 2)
+				{
+					__pathArr.pop();
+				}
+				if(event.type == SdncEvt.VIRTUALVIEW_VDC_CHANGE)
+					__pathArr.push(String(event.params.vdcName));
+				else
+				{
+					__pathArr.push(String(event.params));
+					__currentPvDc = String(event.params);
+				}
+				pathBtns.array = __pathArr;
+			}
+			
+			protected function onModulechange(event:SdncEvt):void
+			{
+				this.currentState = event.params;
+				if(event.params == "ctrl_view") 
+				{
+					pathBtns.visible = false;
+					//createDcNameBtns();
+				}
+				else pathBtns.visible = true;
+				if(event.params == "physics_view")
+				{
+					if(__currentPvDc != "Root")
+					{
+						__pathArr = ["LOC","Root",__currentPvDc];
+						pathBtns.array = __pathArr;
+						var len:int = matrixSelector.dcNames.numElements;
+						for(var i:int = 0 ; i < len ; i++)
+						{
+							var dcNameBtn:NameBtn = matrixSelector.dcNames.getElementAt(i) as NameBtn;
+							if(dcNameBtn.label == __currentPvDc)
+							{
+								dcNameBtn.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+							}
+						}
+					}
+				}
+			}
+			
+			/**控制视图状态下创建DC名字按钮*/
+			public function createDcNameBtns(isFirstInit:Boolean = true):void
+			{
+				if(isFirstInit)
+				{
+					for each(var o:Object in SdncUtil.dcMap)
+					{
+						var dcNameBtn:CtrlVNameBtn = new CtrlVNameBtn();
+						dcNameBtn.label = o.desc;
+						dcNameBtn.btnId = o.name;
+						dcNameBtn.addEventListener(MouseEvent.CLICK,dcNameBtnClickHandler);
+						if(o.hasOwnProperty("datafile"))
+							dcNameBtn.hasData = true;
+						else
+							dcNameBtn.toolTip += "--no data";
+						dcNameBtn.width = 140;
+						ctrlVBtns.addElement(dcNameBtn); 
+					}	
+				}
+				for(var i:int = 0;i<ctrlVBtns.numElements;i++)
+				{
+					var ctrlBtn:CtrlVNameBtn = ctrlVBtns.getElementAt(i) as CtrlVNameBtn;
+					if(ctrlBtn.hasData)
+					{
+						ctrlBtn.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+						break;
+					}
+				}
+			} 
+			
+			protected function dcNameBtnClickHandler(event:MouseEvent):void
+			{
+				var dcNameBtn:CtrlVNameBtn = event.currentTarget as CtrlVNameBtn;
+				var len:int = ctrlVBtns.numElements;
+				if(!SdncUtil.dcUrlInfos[dcNameBtn.btnId])
+				{
+					Alert.show(dcNameBtn.label + " No data!","Info");
+					return;
+				}
+				for(var i:int = 0; i < len ; i++)
+				{
+					var btn:CtrlVNameBtn = ctrlVBtns.getElementAt(i) as CtrlVNameBtn;
+					var state:String = "unselected";
+					if(btn == dcNameBtn) 
+					{
+						state = "selected";
+					}
+					btn.currentState = state;
+				}
+				__app.dispatchEvent(new SdncEvt(SdncEvt.CTRLVIEW_DC_CHANGE, dcNameBtn.btnId));
+			} 
+			
+			/**数据变更时，更新矩阵 */
+			public function updataMatrixSelector():void
+			{
+				matrixSelector.vdcNameArr = SdncUtil.vdcNameArr;
+				matrixSelector.initMatrixSelector();
+			}
+			
+			protected function onPingStart(event:Event):void
+			{
+				matrixSelector.enabled = false;
+			}
+			
+			protected function onPingEnd(event:Event):void
+			{
+				matrixSelector.enabled = true;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace common "com.huawei.sdnc.view.common.*";
+		.customStyles
+		{
+			skin:ClassReference("com.huawei.sdnc.view.skins.NavHeaderSkin");
+			fontSize:17;
+			fontWeight:bold;
+			textAlign:center;
+		}
+	</fx:Style>
+	<fx:Declarations>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="physics_view"/>
+		<s:State name="ctrl_view"/>
+		<s:State name="virtual_view"/>
+	</s:states>
+	<s:Image source="@Embed('assets/imgs/navpanel/nav_panel_bg.png')"/>
+<!--	<s:Label id="pathLabel" text="Loc:" text.ctrl_view="Current Data Center:" top="13" left="7" fontWeight="bold" excludeFrom="ctrl_view"/>-->
+	<!--<s:HGroup id="pathBtns" top="4" left="32" height="25" gap="0" verticalAlign="middle" excludeFrom="ctrl_view">
+		<mx:LinkButton id="rootBtn" label="root" width="41.5" height="20" click="rootBtn_clickHandler(event)"/>
+	</s:HGroup>-->
+	<!---导航条-->
+	<common:HNavigation id="pathBtns"  top="4" click="rootBtn_clickHandler(event)"/>
+	<mx:Accordion id="nacAcc" width="90%" height="370" verticalCenter="13" verticalCenter.ctrl_view = "0" horizontalCenter="-10" contentBackgroundAlpha="0"
+				  headerHeight="35" headerStyleName="customStyles" borderAlpha="0">
+		
+		<s:NavigatorContent id="vdcAndDC" label.ctrl_view="Data Center" width="100%" height="100%" backgroundColor="0x2c3b59" backgroundAlpha="0.9">
+			<!---矩阵-->
+			<navpanel:MatrixSelector id="matrixSelector" left="5" top="10" right="10" excludeFrom="ctrl_view"/>
+			<!--<s:List id="dcList" dataProvider="{dcAc}"  left="13" 
+					itemRenderer="com.huawei.sdnc.view.common.DcItemrenderer"
+					contentBackgroundAlpha="0" borderColor="0x6485a1" borderAlpha="0" includeIn="ctrl_view">
+				<s:layout>
+					<s:TileLayout requestedColumnCount="2"/>
+				</s:layout>
+			</s:List>-->
+			<s:Group id="ctrlVBtns" left="11" top="8" includeIn="ctrl_view">
+				<s:layout>
+					<s:TileLayout requestedColumnCount="2"/>
+				</s:layout>
+			</s:Group>
+		</s:NavigatorContent>
+	</mx:Accordion>
+	<s:Image id="openBtn" right="8" top="188" rotation="180"
+			 source="@Embed('assets/imgs/navpanel/button_trangle.png')"
+			 click="doClickHandler(event)" buttonMode="true"/>
+</s:Group>

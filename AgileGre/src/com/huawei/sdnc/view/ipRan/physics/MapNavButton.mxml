@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 mouseUp="mouseUpHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			private var curBg:BitmapImage;
+			public var page:PhysicsView;
+			protected function mouseDownHandler(event:MouseEvent):void
+			{
+				 var img:Image = event.currentTarget as Image;
+				 switch(String(img.id))
+				 {
+					 case "rightBtn":
+						 rightbg.alpha = 1;
+						 curBg = rightbg;
+						 break;
+					 case "leftBtn":
+						 leftbg.alpha = 1;
+						 curBg = leftbg
+						 break;
+					 case "upBtn":
+						 upbg.alpha = 1
+						 curBg = upbg;
+						 break;
+					 case "downBtn":
+						 downbg.alpha = 1;
+						 curBg = downbg;
+						 break;
+				 }
+				 
+			}
+			
+			protected function mouseUpHandler(event:MouseEvent):void
+			{
+				if(curBg)
+				{
+					curBg.alpha = 0;
+					curBg = null;
+				}
+			}
+			private function group1_clickHandler(e:int):void
+			{
+				page.phyCtrl.movemap(e);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BitmapImage source="@Embed('assets/imgs/mapnavbutton/navbutton_bg.png')" smooth="true"/>
+	<s:BitmapImage id="leftbg" x="0" y="7" alpha="0"
+				   source="@Embed('assets/imgs/mapnavbutton/mapnav_leftbtnbg.png')"/>
+	<s:BitmapImage id="rightbg" x="20" y="6" alpha="0"
+				   source="@Embed('assets/imgs/mapnavbutton/mapnav_rightbtnbg.png')"/>
+	<s:BitmapImage id="upbg" x="5" y="1" alpha="0"
+				   source="@Embed('assets/imgs/mapnavbutton/mapnav_upbtnbg.png')"/>
+	<s:BitmapImage id="downbg" x="6" y="20" alpha="0"
+				   source="@Embed('assets/imgs/mapnavbutton/mapnav_downbtnbg.png')"/>
+	<s:Image id="leftBtn" x="6" y="14" mouseDown="mouseDownHandler(event)" click="group1_clickHandler(2)"
+			 smooth="true" source="@Embed('assets/imgs/mapnavbutton/mapnav_leftbtn.png')"/>
+	<s:Image id="upBtn" x="15" y="4" mouseDown="mouseDownHandler(event)" click="group1_clickHandler(0)"
+			 smooth="true" source="@Embed('assets/imgs/mapnavbutton/mapnav_upbtn.png')"/>
+	<s:Image id="rightBtn" x="29" y="15" mouseDown="mouseDownHandler(event)" click="group1_clickHandler(3)"
+			 smooth="true" source="@Embed('assets/imgs/mapnavbutton/mapnav_rightbtn.png')"/>
+	<s:Image id="downBtn" x="16" y="29" mouseDown="mouseDownHandler(event)" click="group1_clickHandler(1)"
+			 smooth="true" source="@Embed('assets/imgs/mapnavbutton/mapnav_downbtn.png')"/>
+</s:Group>

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					 xmlns:s="library://ns.adobe.com/flex/spark" 
+					 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:common="com.huawei.sdnc.view.common.*"
+					 width="{btns.width + 4}" height="150" height.setup="{setupPage.height + 10}" height.tools="180" 
+					 xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*"
+					 creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.MyGroup;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.dataCenter.physics.FlowMonitor;
+			import com.huawei.sdnc.view.dataCenter.physics.PhysicsView;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.states.State;
+			
+			import twaver.ElementBox;
+			import twaver.ICollection;
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.Link;
+			import twaver.Node;
+			import twaver.Styles;
+			import twaver.networkx.NetworkX;
+			import twaver.networkx.interaction.InteractionEvent;
+			private var __app:sdncui2;
+			private var __curBox:ElementBox;
+			private var __curNetwork:NetworkX;
+			private var __curFlowMonitor:FlowMonitor;
+			private var __isFlowMonitorShow:Boolean;
+			private var __lastLink:Link;
+			private var __curView:MyGroup;
+			private var __isStateOn:Boolean;
+			protected function init(event:FlexEvent):void
+			{
+				__app = SdncUtil.app;
+				__app.main.addEventListener(SdncEvt.MODULE_CHANGE,onModuleChange);
+				this.addEventListener(SdncEvt.SET_SWITCHBTN_STATE,onSetSwitchBtnState);
+				__app.addEventListener(SdncEvt.CLOSE_FLOWMONITOR,onFlowMClose);
+				__app.addEventListener(SdncEvt.OPEN_FLOWMONITOR,onFlowMOpen);
+				__curBox = new ElementBox();
+			}
+			
+			protected function tabBtnClickHandler(event:MouseEvent):void
+			{
+				var curBtn:TabBtn = event.currentTarget as TabBtn;
+				for(var i:int = 0;i < btns.numElements; i++)
+				{
+					var btn:TabBtn = btns.getElementAt(i) as TabBtn;
+					var stateStr:String = "unSelected";
+					if(btn == curBtn)stateStr = "selected";
+					btn.currentState = stateStr;
+				}
+				this.currentState = String(curBtn.id);
+			}
+			
+			public function stateSwitch_clickHandler(event:MouseEvent):void
+			{
+				getCurBox();
+				 __curBox.forEachByBreadthFirst(function(item:IData):void{
+					if(item is StateNode)
+					{
+						if(toolPanel.stateSwitch.currentState == "ON") (item as StateNode).setClient("state",true);
+						else (item as StateNode).setClient("state",false);
+					}
+				});  
+				__app.dispatchEvent(new SdncEvt(SdncEvt.REFRESH_NODES_STATE,toolPanel.stateSwitch.currentState));
+			}
+			/**获取当前box、network和流量监视器(只在物理视图下)*/
+			private function getCurBox():void
+			{
+				switch(__app.main.currentState)
+				{
+					case "physics_view":
+						__curBox = __app.main.physicsView.dataCenter.cuNetBox;
+						__curNetwork = __app.main.physicsView.dataCenter.network;
+						__curFlowMonitor = __app.main.physicsView.dataCenter.flowMonitor;
+						break;
+					case "ctrl_view":
+						__curBox = __app.main.ctrlView.curBox;
+						__curNetwork = __app.main.ctrlView.network;
+						break;
+				}
+				if(__curNetwork) __curNetwork.addInteractionListener(itemSelectedHandler);
+			}
+			
+			public function flowMonitorBtnClickHandler(event:MouseEvent):void
+			{
+				openFlowMonitor();
+			}
+			
+			protected function onFlowMOpen(event:SdncEvt):void
+			{
+				openFlowMonitor(event.params as Point);
+			}
+			
+			protected function itemSelectedHandler(event:InteractionEvent):void
+			{
+				if(__app.main.currentState != "physics_view") return;
+				
+				if(event.kind == InteractionEvent.CLICK_ELEMENT && event.element is Link)
+				{
+					var link:Link = event.element as Link;
+					__lastLink = link;
+//					var p:Point = __curNetwork.getLogicalPoint(event.mouseEvent);
+					var p:Point = new Point(event.mouseEvent.localX,event.mouseEvent.localY);
+					if(__curFlowMonitor)
+					{
+						changeFlowMonitorData(link);
+						__curFlowMonitor.x = p.x;
+						__curFlowMonitor.y = p.y;
+					}
+				}else
+				{
+					__lastLink = null;
+				}
+			}
+			private function openFlowMonitor(point:Point = null):void
+			{
+				if(!__lastLink)
+				{
+					Alert.show("Please select a line!","Warning");
+					return;
+				}
+				getCurBox();
+				if(!__isFlowMonitorShow && !__app.main.physicsView.dataCenter.isRoot)
+				{
+					if(point)
+					{
+						__curFlowMonitor.x = point.x;
+						if(__curFlowMonitor.x>__app.width - __curFlowMonitor.width - 10)
+							__curFlowMonitor.x = __app.width - __curFlowMonitor.width - 10;//超出右边界时的处理
+						__curFlowMonitor.y = point.y;
+					}
+					if(__lastLink)
+					{
+						var link:Link = __lastLink;
+						changeFlowMonitorData(link);
+					} 
+					__curFlowMonitor.visible = true;
+					__curFlowMonitor.includeInLayout = true;
+					__curFlowMonitor.initCharts(true);
+					__isFlowMonitorShow = true;
+				}			
+			}
+			
+			/**切换流量监视器数据
+			 * @param link:所选连线
+			 * @param isShow:是否显示监视器，true为显示，false为不显示
+			 */
+			private function changeFlowMonitorData(link:Link):void
+			{
+					var strArr:Array = String(link.fromNode.id).split("_"); 
+					__curFlowMonitor.curDCName = strArr[0]; 
+					__curFlowMonitor.initCharts(true);
+					__curFlowMonitor.title = link.fromNode.name + " to " + link.toNode.name;
+					__curFlowMonitor.leftIfName = link.getClient("leftIfName");
+					__curFlowMonitor.leftTitle = "Left Node:" + link.fromNode.name + " Left Interface:" + link.getClient("leftIfName");
+					__curFlowMonitor.rightIfName =  link.getClient("rightIfName");
+					__curFlowMonitor.rightTitle = "Right Node:" + link.toNode.name + " right Interface:" + link.getClient("rightIfName");
+					/* __curFlowMonitor.leftIfName = "Ethernet1/0/0";
+					__curFlowMonitor.rightIfName = "Ethernet1/0/1"; */
+					if(SdncUtil.cuProjectType == "test" || SdncUtil.cuProjectType == "commix")
+					{
+						__curFlowMonitor.leftIfName = "GigabitEthernet1/0/1";
+						__curFlowMonitor.leftTitle = "Left Node:" + link.fromNode.name + " Left Interface:" + "GigabitEthernet1/0/1";
+						__curFlowMonitor.rightIfName = "GigabitEthernet4/0/1";
+						__curFlowMonitor.rightTitle = "Right Node:" + link.toNode.name + " right Interface:" + "GigabitEthernet4/0/1";
+					}
+			}
+			
+			protected function onFlowMClose(event:SdncEvt):void
+			{
+				__curFlowMonitor.visible = false;
+				__curFlowMonitor.includeInLayout = false;
+				__curFlowMonitor.initCharts(false);
+				__isFlowMonitorShow = false;
+			}
+			
+			public function onModuleChange(event:SdncEvt):void
+			{
+				if(event.params != "virtual_view") onSetSwitchBtnState();
+				if(setupPage) setupPage.onStates(event.params);
+				if(toolPanel) toolPanel.onMoudleChange(event.params);
+			}
+			
+			private function onSetSwitchBtnState(event:SdncEvt = null):void
+			{
+				getCurBox();
+				if(!toolPanel || !toolPanel.stateSwitch) return;
+				toolPanel.onMoudleChange(__app.main.currentState);
+				 if(!__curBox)//如果当前BOX不存在，说明页面之前还没有初始化过，所以状态开关肯定为OFF
+				{
+					toolPanel.stateSwitch.currentState = "OFF";
+					return;
+				} 
+				__curBox.forEach(function(element:IData):void{
+					if(element is StateNode)
+					{
+						var node:StateNode = element as StateNode;
+						if(node.getClient("state") == true)
+						{
+							toolPanel.stateSwitch.currentState = "ON";
+						}else
+						{
+							toolPanel.stateSwitch.currentState = "OFF";
+						}
+						return;
+					}
+				});
+				if(toolPanel.stateSwitch.currentState == "ON")__app.dispatchEvent(new SdncEvt(SdncEvt.REFRESH_NODES_STATE,toolPanel.stateSwitch.currentState));
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="general"/>
+		<s:State name="setup"/>
+		<s:State name="tools"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0"/>
+		</s:fill>
+		<s:stroke>
+			<s:LinearGradientStroke rotation="175" weight="2">
+				<s:GradientEntry color="0xb4becc"/>
+				<s:GradientEntry color="0x57b0c9"/>
+				<s:GradientEntry color="0x21a9c9"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<s:VGroup left="1" right="1" top="1" bottom="1" gap="-1">
+		<s:HGroup id="btns" height="23" gap="0">
+			<optionpanel:TabBtn id="general" text="General" click="tabBtnClickHandler(event)" currentState="selected"/>
+			<optionpanel:TabBtn id="setup" text="Setup" click="tabBtnClickHandler(event)"/>
+			<optionpanel:TabBtn id="tools" text="Tools" click="tabBtnClickHandler(event)"/>
+		</s:HGroup>
+		<optionpanel:GeneralPanel id="generanlPanel" width="100%" height="100%" includeIn="general"/>
+		<optionpanel:SetupPanel id="setupPage" width="100%" height="100%" includeIn="setup"/>
+		<optionpanel:ToolPanel id="toolPanel" width="100%" height="100%" includeIn="tools"/>
+	</s:VGroup>
+</s:Group>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:flowmonitor="com.huawei.sdnc.view.common.flowmonitor.*"
+				   xmlns:common="com.huawei.sdnc.view.ipCore_DCI.*"
+				   width="418" height="277" backgroundAlpha="0.3" backgroundColor="0x306091"
+				   borderAlpha=".9" borderColor="0x38b9dc">
+	<fx:Script>
+		<![CDATA[
+			private function onClose():void
+			{
+				this.visible=false;
+			}
+			
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,Capabilities.screenResolutionX,Capabilities.screenResolutionY);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				this.stopDrag();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group height="30" top="1" right="1" left="1" mouseDown="beginDrag(event)" mouseUp="endDrag(event)">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0x3894bf"/>
+			</s:fill>
+		</s:Rect>
+		<s:Label text="流量统计" verticalCenter="0" left="10" fontSize="15" color="0xffffff"/>
+	</s:Group>
+	<s:Group id="chartLines" top="38" left="8" right="8" bottom="8">
+		<common:LineChart id="flowChart"/>
+	</s:Group>
+	<s:Image id="closeBtn" source="@Embed('assets/imgs/close_button.png')" right="10" top="10" buttonMode="true" click="onClose()"/>
+</s:BorderContainer>

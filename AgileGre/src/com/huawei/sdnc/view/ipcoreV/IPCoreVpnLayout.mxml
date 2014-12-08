@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+createTime : 2013-04-23
+author     : jixiaofeng
+-->
+
+<common:MyGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex" 
+				implements="com.huawei.sdnc.view.ISerializable,com.huawei.sdnc.view.IObserver"
+				xmlns:common="com.huawei.sdnc.view.common.*"
+				creationComplete="onInit()" xmlns:ipcoreV="com.huawei.sdnc.view.ipcoreV.*">
+	<fx:Script>
+	<![CDATA[
+		import com.huawei.sdnc.tools.ConnUtil;
+		import com.huawei.sdnc.tools.SdncUtil;
+		import com.huawei.sdnc.tools.TopoUtil;
+		import com.huawei.sdnc.tools.XmlConvert;
+		import com.huawei.sdnc.view.ISerializable;
+		
+		import mx.controls.Alert;
+		import mx.events.FlexEvent;
+		import mx.rpc.events.ResultEvent;
+		
+		import twaver.Consts;
+		import twaver.DataBox;
+		import twaver.ElementBox;
+		import twaver.Group;
+		import twaver.IElement;
+		import twaver.Link;
+		import twaver.Node;
+		import twaver.Styles;
+		import twaver.Utils;
+		import twaver.XMLSerializer;
+		import twaver.network.layout.AutoLayouter;
+		import twaver.network.layout.SpringLayouter;
+	
+		
+		
+		private var serializable:ISerializable = null;	
+		private var autoLayouter:AutoLayouter = null;
+		
+		private var nodeColor:Number = 0xFF0000;
+		private var linkColor:Number = 0x66CCFF;
+		private var nodeOverColor:Number = 0xFFFF00;
+		private var linkOverColor:Number = 0xFF00FF;
+		private var selectColor:Number = 0x00FF00;
+		
+		private var lastElement:IElement = null;
+		private var ipcoreBox:ElementBox = new ElementBox();
+		private var springLaouter:SpringLayouter = null;
+	
+		private var _ipcoreVpnXml:XML;
+		private var cuVpnXml:XML;
+		private var vpnTotalNum:int = 0;
+		private var cuVpnOverQueryNum:int = 0;
+		private var ipcoreVpnTopoXml:Dictionary;
+		
+		public function get dataBox():DataBox{				
+			return ipcoreBox;
+		}
+		
+		public function onShown():void{
+			if(springLaouter != null){
+				springLaouter.start();
+			}
+		}
+		
+		public function onHidden():void{
+			if(springLaouter != null){
+				springLaouter.stop();
+			}
+		}
+		
+		protected function onInit():void
+		{
+			serializable = this as ISerializable;
+			
+			// 控制器初始化
+			// ipCoreCtrl.onInit();
+			vpnDataQuery();
+			
+			// TOPO容器初始化
+			network.elementBox = ipcoreBox;
+			this.autoLayouter = new AutoLayouter(network);
+			
+			this.network.addEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove);
+			this.network.zoom = 1;
+			
+			this.autoLayouter.animate = false;
+			this.autoLayouter.doLayout(Consts.LAYOUT_SYMMETRY);
+			this.autoLayouter.animate = true;	
+			network.callLater(function():void{
+				autoLayouter = new AutoLayouter(network);
+ 				autoLayouter.doLayout(Consts.LAYOUT_ROUND, function():void{
+					springLaouter = new SpringLayouter(network);
+					springLaouter.start();	
+					springLaouter.linkRepulsionFactor = 2;
+				});					 
+			});
+			
+			
+		}
+		/**初始化组件和box */
+		private function vpnDataQuery():void
+		{
+			ConnUtil.getInstence().query("http://10.107.51.25:9090/l3vpn.xml", onResultVpn, onFault);
+		}
+		
+		private function onResultVpn(e:ResultEvent):void
+		{
+			_ipcoreVpnXml = e.result as XML;
+			var vpnList:XMLList = _ipcoreVpnXml.item;
+			vpnTotalNum = vpnList.item.length();
+			for each(var iVpn:XML in vpnList){
+				cuVpnXml= iVpn;
+				ConnUtil.getInstence().query("http://"+"10.107.51.25:9090"+"/l3vpn/"+iVpn.id+"/topo.xml", onResultVpnTopo, onFault);
+			}
+			
+		}
+
+		private function onResultVpnTopo(e:ResultEvent):void
+		{
+			var vpnTopo:XML = e.result as XML;
+			ipcoreVpnTopoXml[e.currentTarget.url] = vpnTopo;
+			cuVpnOverQueryNum = cuVpnOverQueryNum + 1;
+			if (cuVpnOverQueryNum == vpnTotalNum){
+				refreshBox(_ipcoreVpnXml);
+			}
+		}
+		private function onFault(e:Event):void
+		{
+			cuVpnOverQueryNum = cuVpnOverQueryNum + 1;
+			trace(e.currentTarget.url,"请求失败!");
+		}
+	
+		public function refreshBox(ipcoretopoXml:XML):void
+		{
+			ipcoreBox.name = "ipcoreVpnRootSubmap";
+			ipcoreBox.setStyle(Styles.TREE_LABEL_SIZE, 11);
+    
+			var vpnSubmapList:XMLList = ipcoretopoXml.item;
+			
+			//  创建子图
+			for each(var vpnSubmpXml:XML in vpnSubmapList)
+			{
+				var vpnG:Group = TopoUtil.createGroup(ipcoreBox, vpnSubmpXml.id, vpnSubmpXml.name,
+					SdncUtil.imagesObjects.Cloud, 1, Consts.SHAPE_ROUNDRECT);
+				
+				var strUrl:String = "http://"+"10.107.51.25:9090"+"/l3vpn/"+vpnSubmpXml.id+"/topo.xml"
+		
+				var nodeList:XMLList =  ipcoreVpnTopoXml[strUrl].nodes;;
+				var linkList:XMLList =  ipcoreVpnTopoXml[strUrl].edges;;
+				
+				//  创建Node
+				for each(var nodeXml:XML in nodeList)
+				{
+					createNode(nodeXml.id, "CORE");
+				}
+				
+				// 创建link
+				for each(var linkXml:XML in linkList)
+				{
+					var fromN:Node = getNodeById(linkXml.source);
+					var toN:Node = getNodeById(linkXml.destination);
+					createLink(fromN,toN);
+				}
+			}
+		}
+	
+	
+
+		private function getNodeById(idStr:String):Node
+		{
+			var node:Node = null;
+			if(ipcoreBox.containsByID(idStr)){
+				node = ipcoreBox.getDataByID(idStr) as Node;
+			}
+			return node;
+		}
+		
+		
+		private function createNode(name:String,type:String = ""):Node{
+			if(ipcoreBox.containsByID(name)){
+				return ipcoreBox.getDataByID(name) as Node;
+			}
+			var node:Node = new Node(name);
+			node.name = name;
+			if(type != "")
+			{
+				node.image = type+"Node";
+			}
+			else
+			{
+				node.setStyle(Styles.LABEL_POSITION, Consts.POSITION_CENTER);
+				node.setStyle(Styles.LABEL_COLOR,0xffffff);
+				node.setStyle(Styles.LABEL_SIZE, 17);
+				node.setStyle(Styles.SELECT_COLOR, selectColor);
+				node.setStyle(Styles.CONTENT_TYPE, Consts.CONTENT_TYPE_VECTOR);
+				node.setStyle(Styles.VECTOR_SHAPE, Consts.SHAPE_CIRCLE);
+				node.setStyle(Styles.VECTOR_GRADIENT, Consts.GRADIENT_RADIAL_NORTHEAST);
+				node.setStyle(Styles.VECTOR_FILL_COLOR, nodeColor);	
+			}
+			ipcoreBox.add(node);
+			return node;
+		}
+		
+		private function createLink(fromNode:Node, toNode:Node):void{
+			var link:Link = new Link(fromNode, toNode);
+			link.setStyle(Styles.LINK_COLOR, linkColor);
+			link.setStyle(Styles.SELECT_COLOR, selectColor);
+			link.setStyle(Styles.LINK_WIDTH, 2);	
+			link.setStyle(Styles.LINK_TYPE, Consts.LINK_TYPE_PARALLEL);
+			ipcoreBox.add(link);
+		}	
+		
+		private function handleMouseMove(e:MouseEvent):void{
+			var element:IElement = network.getElementByMouseEvent(e);
+			if(element != lastElement && !network.isMovingElement && !network.isSelectingElement){
+				if(lastElement is Node){
+					lastElement.setStyle(Styles.VECTOR_FILL_COLOR, this.nodeColor);
+					lastElement.setStyle(Styles.LABEL_BOLD, false);
+					lastElement.setStyle(Styles.LABEL_FILL, false);
+				}
+				else if(lastElement is Link){
+					lastElement.setStyle(Styles.LINK_COLOR, this.linkColor);
+				}
+				
+				if(element is Node){
+					element.setStyle(Styles.VECTOR_FILL_COLOR, this.nodeOverColor);
+					element.setStyle(Styles.LABEL_BOLD, true);
+					element.setStyle(Styles.LABEL_FILL, true);
+				}
+				else if(element is Link){
+					element.setStyle(Styles.LINK_COLOR, this.linkOverColor);
+				}					
+				
+				this.lastElement = element;
+			}	
+		}
+		
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<!--<fx:XML source="assets/xml/l2topo_example.xml" id="topo_area_xml"/>-->
+	</fx:Declarations>
+	<twaver:NetworkX id="network" width="100%" height="100%"/>
+</common:MyGroup>

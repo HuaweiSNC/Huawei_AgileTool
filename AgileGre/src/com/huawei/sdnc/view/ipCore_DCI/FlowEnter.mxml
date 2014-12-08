@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:btn="com.huawei.sdnc.view.ipRan.physics.*"
+		 creationComplete="init()"
+		 width="830" height="473"
+		 fontFamily="微软雅黑"
+		 keyUp="onKeyUp(event)"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			
+			import twaver.IData;
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			
+			public  var __app:sdncui2
+			private var devices:Array=[];
+			[Bindable]
+			private var fileNameTypeDropDownList:ArrayCollection;
+			public var pipeline:ArrayCollection= new ArrayCollection();
+			[Bindable]
+			public var tnllist:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var pipeIPlist:ArrayCollection = new ArrayCollection();
+			public var element:IElement;
+			public var ppBtnArray:Array=[];
+			public var jcBtnArray:Array=[];
+			public var fe:FlowEnterContent=null;
+			public function init():void
+			{
+				__app=SdncUtil.app;
+				focusManager.setFocus(ddl);
+				devices=DataHandleTool.devices;
+				fileNameTypeDropDownList=new ArrayCollection(devices);
+				if(element == null){
+					//控制面板里面直接点不传入element
+					ddl.selectedIndex=0;
+				}else{
+					var stateNode:StateNode=element as StateNode;
+					var deviceName:String=stateNode.name;
+					for(var i:int=0;i<devices.length;i++){
+						var d:Object=devices[i];
+						var devicename:String=d["devicename"];
+//						var srcIp:String=d["ip"];
+						if(deviceName==devicename){
+							ddl.selectedIndex=i;
+							break;
+						}
+					}
+				}
+				fe=new FlowEnterContent;
+				fe.element=element;
+				dp.addElement(fe);
+			}
+			
+			public function upDatePolicy():void
+			{
+				var networkX:NetworkX = __app.ipcore.physicsView.networkX;
+				var selectedDeviceIp:Object=ddl.selectedItem;
+				var ip:String=selectedDeviceIp["ip"];
+				var symbol:Boolean=true;
+				networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+					if(symbol){
+						if(item is StateNode){
+							var stateNode:StateNode=item as StateNode;
+							var ip1:String=stateNode.getClient("ip");
+							if(ip1==ip){
+								element=stateNode;
+								symbol=false;
+							}
+						}
+					}
+				});
+				
+				if(fe!=null){
+					dp.removeElement(fe);
+					fe=new FlowEnterContent;
+					fe.element=element;
+					dp.addElement(fe);
+				}
+			}
+			
+			
+			
+			
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,Capabilities.screenResolutionX,Capabilities.screenResolutionY);
+				this.startDrag(false,re);
+			}
+			public function endDrag(e:MouseEvent):void
+			{
+				this.stopDrag();
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(event.keyCode==Keyboard.ESCAPE){
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_FLOW_ENTER));
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:Rect width="100%" height="100%" >
+		<s:fill>
+			<s:SolidColor color="0xcccccc" alpha=".9"/>
+		</s:fill>
+	</s:Rect>
+	<s:RectangularDropShadow blurX="20" blurY="20" width="100%" height="100%"
+							 alpha="0.32" distance="11"
+							 blRadius="0" brRadius="0"
+							 angle="90" color="#000000" left="0" top="0" right="0"
+							 bottom="0"/>
+	<s:VGroup width="100%" height="100%" gap="10">
+		<s:Group id="titlelayer" width="100%" height="39" left="0"  mouseDown="beginDrag(event)" mouseUp="endDrag(event)">
+			<s:Rect width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient>
+						<s:GradientEntry color="0x3276b7"/>
+						<s:GradientEntry color="0x4489ca"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Label text="导流入管道" color="0xf9f3f3" fontWeight="bold" fontFamily="微软雅黑" verticalCenter="0" left="10" fontSize="16"/>
+			<s:Image id="cbtn" source="@Embed('assets/imgs/ipran/close.png')" verticalCenter="0" right="15" 
+					 buttonMode="true" mouseOver="cbtn.filters=[glow]" mouseOut="cbtn.filters=null"	click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_FLOW_ENTER))"/>
+		</s:Group>
+		
+		<s:VGroup id="content"  width="100%" height="80%">
+			<s:Group  width="100%" height="15%">
+				<s:Label left="25"  text="导流入隧道" verticalCenter="0"/>
+				<s:Label right="{ddl.width+30}"  text="选择设备" verticalCenter="0"/>
+				<s:DropDownList id="ddl" width="150" right="20" verticalCenter="0" requireSelection="true" labelField="devicename" change="upDatePolicy()" dataProvider="{fileNameTypeDropDownList}" />
+			</s:Group>
+			<s:Group id="dp" width="100%" height="85%">
+				
+			</s:Group>
+			
+		</s:VGroup>
+		
+	</s:VGroup>
+</s:Group>

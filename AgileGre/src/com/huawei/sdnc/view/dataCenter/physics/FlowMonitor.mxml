@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:flowmonitor="com.huawei.sdnc.view.common.flowmonitor.*"
+		 creationComplete="init(event)" backgroundColor="0x306091" backgroundAlpha="0.3"
+		 borderColor="0x38b9dc" borderAlpha=".9" xmlns:common="com.huawei.sdnc.view.common.*">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.tools.ConnUtil;
+			import com.huawei.sdnc.tools.SdncUtil;
+			
+			import mx.events.FlexEvent;
+			import mx.rpc.Fault;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.events.HttpErrorEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.Utils;
+			private var __leftIfName:String;
+			private var __rightIfName:String;
+			private var __leftTitle:String;
+			private var __rightTitle:String;
+			[Bindable]
+			private var __title:String = "Please choose a line";
+			private var __timer:Timer;
+			private var __curDCName:String = "dc1";
+			private var __curDcKeys:Array = [];
+			private var refreshTime:Number;
+			
+			protected function init(event:FlexEvent):void
+			{
+				if(SdncUtil.cuProjectType == "test" || SdncUtil.cuProjectType == "commix")
+				{
+					refreshTime = 1000;
+				}else
+				{
+					refreshTime = SdncUtil.refreshTime * 1000;
+				}
+				__timer = new Timer(refreshTime);
+				__timer.addEventListener(TimerEvent.TIMER,onTimer);
+				__curDcKeys = SdncUtil.dcUrlInfos[__curDCName];
+				this.addEventListener(MouseEvent.MOUSE_DOWN, handleMouseDown);
+			}
+			
+			protected function handleMouseDown(event:MouseEvent):void
+			{
+				this.addEventListener(MouseEvent.MOUSE_UP, handleMouseUp);
+				var limitdrag:Rectangle = new Rectangle(0, 0, this.parent.width-this.width, this.parent.height-this.height);
+				this.startDrag(false, limitdrag);
+			}
+			
+			protected function handleMouseUp(event:MouseEvent):void
+			{
+				this.removeEventListener(MouseEvent.MOUSE_UP,handleMouseUp);
+				this.stopDrag();
+			}
+			
+			protected function onTimer(event:TimerEvent):void
+			{
+//				var count:int = (event.target as Timer).currentCount;
+				__timer.delay = refreshTime;
+				var obj:Object = new Object();
+				if(SdncUtil.cuProjectType == "test" || SdncUtil.cuProjectType == "commix")
+				{
+					ConnUtil.getInstence().query(__curDcKeys[6],onResultHandler,onFault);
+				}else
+				{
+					ConnUtil.getInstence().clientQuery(__curDcKeys[6],ConnUtil.METHOD_GET,onClientResultHandler,onClientFault);
+				}
+			} 
+			
+			/**
+			 * 初始化图表
+			 * @param isStart:是否开始计时器。true为开始，false为不开始
+			 */
+			public function initCharts(isStart:Boolean):void
+			{
+				leftChart.init(null);
+				rightChart.init(null);
+				__leftIfName = "";
+				__rightIfName = "";
+				__title = "Please choose a line";
+				/* rightChart.visible = false;
+				rightChart.includeInLayout = false; */
+				__timer.reset();
+				if(isStart)
+				{
+					__timer.delay = 0;
+					__timer.start();
+				}
+				else
+					__timer.stop();
+			}
+
+			private function onClientResultHandler(e:HttpResponseEvent,data:ByteArray):void
+			{
+				var str:String = String(data).replace(/xmlns(.*?)="(.*?)"/gm, "");
+				var ifmsXml:XML = XML(str);
+				var recByte:String
+				var sendByte:String
+				var recPacket:String
+				var sendPacket:String
+				var value1:String;
+				var value2:String;
+				var value3:String;
+				var value4:String;
+				for each(var ifmXml:XML in ifmsXml.interfaces[0]["interface"])
+				{
+					var ifName:String;
+					ifName = ifmXml.ifName;
+					value1 = String(ifmXml.ifStatistics.receiveByte);
+					value2 = String(ifmXml.ifStatistics.sendByte);
+					value3 = String(ifmXml.ifStatistics.receivePacket);
+					value4 = String(ifmXml.ifStatistics.sendPacket);
+					if(ifName == __leftIfName)
+					{
+						leftChart.updata(value1,value2,value3,value4);
+					}
+					if(ifName == __rightIfName)
+					{
+						rightChart.updata(value1,value2,value3,value4);
+						/* rightChart.visible =  true;
+						rightChart.includeInLayout = true;  */
+					}
+				}
+			}
+			
+			private function onClientFault(e:IOErrorEvent):void
+			{
+				trace("rest ifm 读取失败");
+			}
+			
+			private function onResultHandler(e:ResultEvent):void
+			{
+				var ifmsXml:XML = e.result as XML;
+				for each(var ifmXml:XML in ifmsXml.interfaces[0]["interface"])
+				{
+					var strArr:Array = String(ifmXml.ifName).split(":");
+					var ifName:String = "GigabitEthernet" + strArr[1];
+					strArr = String(ifmXml.ifStatistics.receiveByte).split(":");
+					var recByte:String = strArr[1];
+					strArr = String(ifmXml.ifStatistics.sendByte).split(":");
+					var sendByte:String = strArr[1];
+					strArr = String(ifmXml.ifStatistics.receivePacket).split(":");
+					var recPacket:String = strArr[1];
+					strArr = String(ifmXml.ifStatistics.sendPacket).split(":");
+					var sendPacket:String = strArr[1];
+					var value1:String = String(Utils.randomInt(int(recByte)));
+					var value2:String = String(Utils.randomInt(int(sendByte)));
+					var value3:String = String(Utils.randomInt(int(recPacket)));
+					var value4:String = String(Utils.randomInt(int(sendPacket)));
+					if(ifName == __leftIfName)
+					{
+						leftChart.updata(value1,value2,value3,value4);
+					}
+					if(ifName == __rightIfName)
+					{
+						rightChart.updata(value1,value2,value3,value4);
+					}
+				}
+			}
+			
+			private function onFault(e:FaultEvent):void
+			{
+				trace(e.target.url + "读取失败");
+			}
+
+			protected function onClose(event:MouseEvent):void
+			{
+				SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_FLOWMONITOR));
+			}
+			
+			/**左接口名称*/
+			public function set leftIfName(value:String):void
+			{
+				__leftIfName = value;
+			}
+			/**右接口名称*/
+			public function set rightIfName(value:String):void
+			{
+				__rightIfName = value;
+			}
+			/**当前DC名字*/
+			public function set curDCName(value:String):void
+			{
+				__curDCName = value;
+			}
+			
+			public function get title():String
+			{
+				return __title;
+			}
+			/**设置组件框名称，名称为"BandWidth" + value*/
+			public function set title(value:String):void
+			{
+				__title = "BandWidth " + value;
+			}
+
+			public function set leftTitle(value:String):void
+			{
+				__leftTitle = value;
+				leftChart.title = value;
+			}
+
+			public function set rightTitle(value:String):void
+			{
+				__rightTitle = value;
+				rightChart.title = value;
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group height="30" top="1" right="1" left="1">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0x3894bf"/>
+			</s:fill>
+		</s:Rect>
+		<s:Label text="{__title}" verticalCenter="0" left="10" fontSize="15" color="0xffffff"/>
+	</s:Group>
+	<s:Group id="chartLines" top="38" left="8" right="8" bottom="8">
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<common:LineChartPanel id="leftChart"/>
+		<common:LineChartPanel id="rightChart"/>
+	</s:Group>
+	<s:Image id="closeBtn" source="@Embed('assets/imgs/close_button.png')" right="10" top="10" buttonMode="true" click="onClose(event)"/>
+</s:BorderContainer>
