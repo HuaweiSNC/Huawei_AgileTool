@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="530" height="256" close="PopUpManager.removePopUp(this)" color="#000000"
+			   creationComplete="init()" fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','mgflow.addflow')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			import twaver.network.Network;
+			
+			/**是否是可用状态**/
+			[Bindable]public var isEnbled:Boolean=true;
+			/**设备对象**/
+			[Bindable]public var device:Object;
+			/**所有目的设备的信息**/
+			[Bindable]public var DesDeviceArray:ArrayCollection;
+			/**目的设备对象**/
+			[Bindable]public var desdevice:Object;
+			/**所有隧道策略的信息**/
+			[Bindable]private var tunnelPolicyArray:ArrayCollection = new ArrayCollection();
+			/**所有接口的信息**/
+			[Bindable]private var interfaceArray:ArrayCollection = new ArrayCollection();
+			/**所有策略**/
+			[Bindable]private var AllTunnelPolicy:ArrayCollection = new ArrayCollection();
+			/**当前主应用程序**/
+			[Bindable]private var __app:overTegui2;
+			/**项目类型**/
+			[Bindable]public var curarea:Object;
+			/**ops的IP地址**/
+			public var opsIp:String=SdncUtil.opsIp;
+			/**web名称**/
+			public var webname:String = SdncUtil.projectname;
+			/**判定是编辑还是增加**/
+			public var handleFlag:String="add";
+			/**设备ID**/
+			public var devId:String = "";
+			/**连接java单例**/
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			/**编辑时，找到传过来的目的设备名称**/
+			public var name_desDevice:String;
+			/**编辑时，找到传过来的接口名称**/
+			public var name_interface:String;
+			/**编辑时，找到传过来的隧道策略名称**/
+			public var name_tunnelPolicy:String;
+			/**流管理界面**/
+			public var tw_flow:TW_ManagerFlow; 
+			/**所有流的信息**/
+			public var Flowarray:ArrayCollection = new ArrayCollection();
+			
+			/**新增流页面初始化 cwx200285**/
+			protected function init():void{
+				__app=SdncUtil.app;
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;
+				var devices:Array = DataHandleTool.devices;
+				var desdevices:Array = SdncUtil.removeCurDevice(device['deviceName'],devices)
+				desdevice = desDevice.selectedItem;
+				DesDeviceArray=new ArrayCollection(desdevices);
+				AllTunnelPolicy = DataHandleTool.AllTunnelPolicy;
+				tunnelPolicyArray = DataHandleTool.AllTunnelPolicy;
+				if(SdncUtil.cuProjectType=="test"){
+					interfaceArray = device['ifms'];
+				}else{
+//					realForGetIfm();
+					/**查询隧道策略**/
+					realForGetPolicy();
+				}
+			}
+			
+			/**真实项目中 查询隧道策略 cwx200285**/
+			private function realForGetPolicy():void{
+				PopupManagerUtil.getInstence().popupLoading(this,false);
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+ "/devices/" + device['id'] + "/policys";
+				//初始化隧道策略信息，当前域id，当前设备id
+				DataHandleTool.showOnConsole("初始化隧道策略信息，当前域ID："+curarea+"当前设备ID："+device['id']+"\n URL:"+uri);
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetPolicyResult,onGetPolicyFault);
+			}
+			
+			/**查询隧道策略连接成功 cwx200285**/
+			private function onGetPolicyResult(e:HttpResponseEvent,data:String):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				//初始化隧道策略信息链接成功返回
+				DataHandleTool.showOnConsole("初始化隧道策略信息连接成功返回："+data);
+				/**清空隧道策略列表**/
+				tunnelPolicyArray.removeAll();
+				/**判断查询隧道策略连接成功的返回值**/
+				if(e.response.code != "200"){
+					//查询当前设备隧道策略失败，错误代码
+					DataHandleTool.showOnConsole("查询当前设备隧道策略失败，错误代码："+e.response.code);
+					PopupManagerUtil.getInstence().closeLoading();
+					return;
+				}else{
+					var policyXml:XML = new XML(data);
+					//查询当前设备隧道策略失败
+					DataHandleTool.showOnConsole("查询当前设备隧道策略成功");
+					/**隧道策略列表重新赋值**/
+					for(var i:int;i<policyXml.policy.length();i++){
+						tunnelPolicyArray.addItem({
+							policyName:policyXml.policy[i].name,
+							tunnelname:policyXml.policy[i].tpNexthops.tpNexthop.tpTunnels.tpTunnel.tunnelName,
+							tunnelegressIp:policyXml.policy[i].tpNexthops.tpNexthop.nexthopIPaddr
+						});
+					}
+				}
+				/**当状态是编辑的情况**/
+				if(handleFlag == "edit"){
+					/**目的设备默认选中的是编辑数据的目的设备，并且状态是不可用**/
+					for(var i:int=0;i<DesDeviceArray.length;i++){
+						if(DesDeviceArray[i].deviceName ==name_desDevice){
+							desDevice.selectedIndex = i;
+							desDevice.enabled = false
+						}
+					}
+					//					for(var j:int=0;j<interfaceArray.length;j++){
+					//						if(interfaceArray[j].ifmName ==name_interface){
+					//							interfaceName.selectedIndex = j;
+					//						}
+					//					}
+					/**接口默认选中的是编辑数据的接口**/
+					for(var j:int=0;j<device['ifm'].length;j++){
+						if(device['ifm'][j].ifmName ==name_interface){
+							interfaceName.selectedIndex = j;
+						}
+					}
+					/**隧道策略默认选中的是编辑数据的隧道策略**/
+					for(var k:int=0;k<tunnelPolicyArray.length;k++){
+						if(tunnelPolicyArray[k].policyName ==name_tunnelPolicy){
+							policyName.selectedIndex = k;
+						}
+					}
+				}
+			}
+			
+			/**查询隧道策略连接失败 cwx200285**/
+			private function onGetPolicyFault(e:Event):void{
+				//查询隧道策略信息链接出错
+				DataHandleTool.showOnConsole("查询隧道策略信息连接出错");
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			
+			/**保存按钮点击事件 lwx200286**/
+			protected function savebtn_clickHandler(event:MouseEvent):void{
+				if(SdncUtil.cuProjectType=="test"){
+					if(handleFlag == "add"){
+						testForAddFlow();
+					}else if(handleFlag == "edit"){
+						testForUpdateFlow();
+					}
+					this.dispatchEvent(new SdncEvt(SdncEvt.SAVE_FLOW_EVENT,Flowarray))
+				}else{
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+ "/devices/" + device['id']  + "/flows";
+					
+					/**验证标签内容是否符合要求**/
+					var vali:Array = Validator.validateAll([flowName,flowflagSVa,regExpV]);
+//					var rex;
+//					rex = /^[\u4e00-\u9fa5]+$/;
+//					if (rex.exec(flowName.text)) {
+////						return "文";
+//					}
+					if(vali.length!=0){
+						
+					}else if(policyName.selectedIndex==-1){
+//						Alert.show("请绑定隧道策略","提示");
+						Alert.show(resourceManager.getString('global','myflow.promty.bingpolicy'),
+							resourceManager.getString('global','all.prompt'));
+					}
+					else if(interfaceName.selectedIndex<0){
+						//请选择正正确的接口名称
+						Alert.show(resourceManager.getString('global','myflow.promty.interfacename'),
+							resourceManager.getString('global','all.prompt'));
+					}
+					else if(policyName.selectedItem.tunnelegressIp.toString()!=desIp.text){
+//						Alert.show("绑定管道策略目的地址与选择目的地址不统一","提示");
+						Alert.show(resourceManager.getString('global','myflow.promty.desipdiffer'),
+							resourceManager.getString('global','all.prompt'));
+					}else if(searchindex("",flowName.text,"")){
+						flowName.text="";
+//						Alert.show("流已经存在","提示");
+						Alert.show(resourceManager.getString('global','myflow.promty.flowexsit'),
+							resourceManager.getString('global','all.prompt'));
+					}else if(searchindex(identifyIndex.text,"","")){
+//						Alert.show("流标识已经存在","提示");
+						Alert.show(resourceManager.getString('global','myflow.promty.flowflagexist'),
+							resourceManager.getString('global','all.prompt'));
+						identifyIndex.text ="";
+					}else if(searchindex("","",interfaceName.selectedItem.ifmName)){
+//						Alert.show(interfaceName.selectedItem.ifmName+"已经存在流，请重新选择接口","提示");
+						Alert.show(interfaceName.selectedItem.ifmName+resourceManager.getString('global','myflow.promty.interfaceexist'),
+							resourceManager.getString('global','all.prompt'));
+						interfaceName.selectedIndex=0
+					}else{
+						var param:String = "<flows><flow><name>" + flowName.text + "</name>" +
+							"<identifyIndex>" + identifyIndex.text + "</identifyIndex>" +
+							"<desIp>" + desIp.text + "</desIp>" +
+							"<policy>" + policyName.selectedLabel + "</policy>" +
+							"<isDouleConfig>" + Ordouble.selected.toString() + "</isDouleConfig>" +
+							"<interfaceName>" + interfaceName.selectedItem.ifmName + "</interfaceName>" +
+							"</flow></flows>";
+						PopupManagerUtil.getInstence().popupLoading(this,false);
+						/**状态是添加状态**/
+						if(handleFlag == "add"){
+							DataHandleTool.showOnConsole("新增流信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+							connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onQueryFlowResult,onAddPolicyFault,param);
+						}
+						/**状态是编辑状态**/
+						if(handleFlag == "edit"){
+							DataHandleTool.showOnConsole("编辑流信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+							connUtil.clientQuery(uri,ConnUtil.METHOD_PUT,onQueryFlowResult,onUpdatePolicyFault,param);
+						}
+						PopUpManager.removePopUp(this);
+					}
+				}
+				
+			}
+			
+			/**增加、编辑流连接成功 cwx200285**/
+			public function onQueryFlowResult(e:HttpDataEvent):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				if(e.bytes.toString().search("ok")!=-1){
+					if(handleFlag == "add"){
+						DataHandleTool.showOnConsole("流增加成功");
+						/**"流增加成功","提示"**/
+						Alert.show(resourceManager.getString('global','all.postsuccess'),
+							resourceManager.getString('global','all.prompt'));
+					}else if(handleFlag == "edit"){
+						DataHandleTool.showOnConsole("流编辑成功");
+						/**"流编辑成功","提示"**/
+						Alert.show(resourceManager.getString('global','all.putsuccess'),
+							resourceManager.getString('global','all.prompt'));
+					}
+					PopupManagerUtil.getInstence().closeLoading();
+					/**流管理界面查询所有流信息**/
+					tw_flow.realForGetOneFlow(flowName.text,handleFlag);
+					PopUpManager.removePopUp(this);
+				}else{
+					if(handleFlag == "add"){
+						DataHandleTool.showOnConsole("流增加失败\n"+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")))
+						/**"流增加失败","提示"**/
+						Alert.show(resourceManager.getString('global','all.postfail'),
+							resourceManager.getString('global','all.prompt'));
+					}else if(handleFlag == "edit"){
+						DataHandleTool.showOnConsole("流编辑失败\n"+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")))
+						/**"流编辑失败","提示"**/
+						Alert.show(resourceManager.getString('global','all.putfail'),
+							resourceManager.getString('global','all.prompt'));
+					}
+				}
+			}
+			
+			/**增加流连接失败 cwx200285**/
+			private function onAddPolicyFault(e:Event):void{
+				DataHandleTool.showOnConsole("增加流连接失败！错误信息："+e.toString());
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**编辑流连接失败 cwx200285**/
+			private function onUpdatePolicyFault(e:Event):void{
+				DataHandleTool.showOnConsole("编辑流连接失败！错误信息："+e.toString());
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**判断流标识是否存在 cwx200285**/
+			public function searchindex(index:String="",flowName:String="",inter:String=""):Boolean{
+				/**定义一个变量来判断流标识是存在的状态还是不存在的状态**/
+				var orentity:Boolean = false;
+				for(var i:int=0;i<Flowarray.length;i++){
+					if(index!=""&&Flowarray[i].identifyIndex==index){
+						orentity=true;
+						break;
+					}
+					if(flowName!=""&&Flowarray[i].name==flowName){
+						orentity=true;
+						break;
+					}
+					if(inter!=""&&Flowarray[i].interfaceName==inter){
+						orentity=true;
+						break;
+					}
+				}
+				return orentity;
+			}
+			
+			/**查询ifm接口 cwx200285**/
+			private function realForGetIfm():void{
+				PopupManagerUtil.getInstence().popupLoading(this,false);
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+device['id']+"/ifms?type=Vlanif"; 
+//				var vlanifuri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea["id"]+"/devices/"+device['id']+"/ifms?type=Vlanif"; 
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetIfmResult,onGetIfmFault);
+			}
+			
+			/**查询Ifm接口连接成功 cwx200285**/
+			private function onGetIfmResult(e:HttpResponseEvent,data:String):void{
+				interfaceArray.removeAll();
+				if(e.response.code != "200"){
+					interfaceArray.addItem({
+						ifmName:""
+					});
+					PopupManagerUtil.getInstence().closeLoading();
+					return;
+				}else{
+					var ifmsXml:XML = new XML(data);
+					for(var i:int=0;i<ifmsXml.ifm.length();i++){
+						interfaceArray.addItem({
+							ifmName:ifmsXml.ifm[i].name
+						});
+					}
+				}
+				// ifm接口获取后 
+				if(handleFlag == "edit"){
+					for(var i:int=0;i<DesDeviceArray.length;i++){
+						if(DesDeviceArray[i].deviceName ==name_desDevice){
+							desDevice.selectedIndex = i;
+							desDevice.enabled = false
+						}
+					}
+					for(var j:int=0;j<interfaceArray.length;j++){
+						if(interfaceArray[j].ifmName ==name_interface){
+							interfaceName.selectedIndex = j;
+						}
+					}
+					for(var k:int=0;k<tunnelPolicyArray.length;k++){
+						if(tunnelPolicyArray[k].policyName ==name_tunnelPolicy){
+							policyName.selectedIndex = k;
+						}
+					}
+				}
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**查询Ifm接口连接失败 cwx200285**/
+			private function onGetIfmFault(e:Event):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				/**"ifm接口查询失败","提示"**/
+				Alert.show(resourceManager.getString('global','prompt.getifm')
+					+resourceManager.getString('global','all.failed'),
+					resourceManager.getString('global','all.prompt'));
+			}
+			
+			/**测试数据时 增加流 cwx200285**/
+			private function testForAddFlow():void{
+				Flowarray.addItem({
+					name:flowName.text,
+					identifyIndex:identifyIndex.text,
+					interfaceName:interfaceName.selectedItem["ifmName"],
+					desIp:desIp.text,
+					curDeviceName:curDevice.text,
+					isDouleConfig:Ordouble.selected,
+					desDeviceName:desDevice.selectedItem.deviceName,
+					policy:policyName.selectedLabel
+				});
+			}
+			
+			/**测试数据时 编辑流 cwx200285**/
+			private function testForUpdateFlow():void{
+				for(var i:int=0;i<Flowarray.length;i++){
+					if(DataHandleTool.flowdevice[i].identifyIndex == identifyIndex.text && DataHandleTool.flowdevice[i].name == flowName.text){
+						Flowarray.removeItemAt(i);
+						Flowarray.addItem({
+							name:flowName.text,
+							identifyIndex:identifyIndex.text,
+							interfaceName:interfaceName.selectedItem["ifmName"],
+							desIp:desIp.text,
+							curDeviceName:curDevice.text,
+							isDouleConfig:Ordouble.selected,
+							desDeviceName:desDevice.selectedItem.deviceName,
+							policy:policyName.selectedLabel
+						});
+					}
+				}
+			}
+			
+			protected function desDevice_changeHandler(event:ListEvent):void{
+				desdevice = desDevice.selectedItem
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="Flow_OneWay"/>
+	</s:states>
+	
+	<fx:Declarations>
+		<fx:XML id="project" source="assets/xml/sdn_office_project.xml"/>
+		<mx:StringValidator id="flowNameSVa" source="{flowName}" property="text"
+							tooShortError="{resourceManager.getString('global','myflow.promty.flownameexist')}"
+							tooLongError="{resourceManager.getString('global','myflow.promty.flownamemax')} "
+							minLength="1" maxLength="31"
+							trigger="{savebtn}" triggerEvent="click"/>
+		<s:NumberValidator id="flowflagSVa" source="{identifyIndex}" property="text"
+						   allowNegative="false"
+						   negativeError="{resourceManager.getString('global','myflow.promty.flowflagneg')}"
+						   invalidCharError="{resourceManager.getString('global','myflow.promty.flowflagint')}"
+						   required="true" minValue="1" maxValue="4294967295"
+						   requiredFieldError="{resourceManager.getString('global','myflow.promty.flowflagnull')}"
+						   greaterThanMaxError="{resourceManager.getString('global','myflow.promty.flowflagmaxle')}"
+							trigger="{savebtn}" triggerEvent="click"/>
+		
+		<mx:RegExpValidator id="regExpV" source="{flowName}" trigger="{savebtn}"
+							property="text" required="false"   triggerEvent="click"
+							expression="^\w+$"
+							noMatchError="{resourceManager.getString('global','myflow.promty.flownameerror')}"
+							>  
+		</mx:RegExpValidator> 
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+		<s:RadioButtonGroup id="radiogroup1"/>
+		<s:Fade id="fadeout" duration="500" alphaFrom="1.0" alphaTo="0.0"  />
+		<s:Fade id="fadeIn" duration="500" alphaFrom="0.0" alphaTo="1.0"  />
+		<s:Fade id="fadeout_up" duration="500" alphaFrom="1.0" alphaTo="0.0"  />
+		<s:Fade id="fadeIn_up" duration="500" alphaFrom="0.0" alphaTo="1.0" />
+	</fx:Declarations>
+	
+	<mx:Canvas width="530" height="257" backgroundColor="0xcccccc">
+	<s:BorderContainer id="bcc" top="10" width="502" height="208" hideEffect="fadeout"
+					   horizontalCenter="0" showEffect="fadeIn">
+		<s:VGroup width="500" height="203" gap="5">
+			<s:Group width="499" height="45">
+				<!--源设备 :-->
+				<s:Label left="30" text="{resourceManager.getString('global','all.srcDevice')} :" verticalAlign="middle" verticalCenter="0"/>
+				<s:TextInput id="curDevice" left="80" width="127" editable="false"
+							 text="{device['deviceName']}" verticalCenter="0"/>	
+				<!--目的设备 :-->
+				<s:Label right="165" text="{resourceManager.getString('global','all.desDevice')} :" verticalAlign="middle" verticalCenter="0"/>
+				<mx:ComboBox id="desDevice" right="30" width="127" enabled="{isEnbled}"
+							 change="desDevice_changeHandler(event)" cornerRadius="1"
+							 dataProvider="{DesDeviceArray}" editable="false"
+							 labelField="deviceName" verticalCenter="0"/>
+				<mx:HRule x="0" bottom="6" width="100%"/>
+			</s:Group>
+			
+			<s:HGroup width="501" height="143" gap="0">
+				<s:VGroup width="100%" gap="5">
+					<s:Group width="100%" height="5%">
+						<!--流名称-->
+						<s:Label right="310"
+								 text="{resourceManager.getString('global','mgflow.flowname')} :"
+								 verticalCenter="0"/>
+						<s:TextInput id="flowName" left="220" width="126"  toolTip="{resourceManager.getString('global','myflow.promty.flowname')}"
+									 fontStyle="normal" prompt="{resourceManager.getString('global','myflow.promty.inputflowname')}" verticalCenter="0"/>
+					</s:Group>
+					<s:Group width="100%" height="5%">
+						<!--流标识-->
+						<s:Label right="310"
+								 text="{resourceManager.getString('global','mgflow.flowflag')} :"
+								 verticalCenter="0"/>
+						<s:TextInput id="identifyIndex" left="220" width="126" enabled="{isEnbled}" restrict="0-9"
+									 fontStyle="normal" prompt="{resourceManager.getString('global','myflow.promty.inputflowflag')}" verticalCenter="0"
+									 toolTip="{resourceManager.getString('global','myflow.promty.flowflagmint')}"/>
+					</s:Group>
+					<s:Group width="100%" height="5%">
+						<!--接口名称-->
+						<s:Label right="310"
+								 text="{resourceManager.getString('global','mgflow.interfacename')} :"
+								 verticalCenter="0"/>
+						<s:ComboBox id="interfaceName" left="220" width="126"
+									dataProvider="{device['ifm']}" fontStyle="normal"
+									fontWeight="normal" labelField="ifmName" prompt="请输入Vlanif快速索引"
+									selectedIndex="0" verticalCenter="0"/>
+					</s:Group>
+					<s:Group width="100%" height="5%">
+						<!--目的IP地址-->
+						<s:Label right="310"
+								 text="{resourceManager.getString('global','all.desIP')} :"
+								 verticalCenter="0"/>
+						<s:TextInput id="desIp" left="220" width="126" editable="false"
+									 enabled="{false}" text="{desDevice.selectedItem.deviceTopoIp}"
+									 verticalCenter="0"/>
+					</s:Group>
+					<s:Group width="100%" height="5%">
+						<!--隧道策略-->
+						<s:Label right="310"
+								 text="{resourceManager.getString('global','mgflow.flowpolicy')} :"
+								 verticalCenter="0"/>
+						<mx:ComboBox id="policyName" left="220" width="126" cornerRadius="0"
+									 dataProvider="{tunnelPolicyArray}" editable="false"
+									 labelField="policyName" verticalCenter="0"/>
+					</s:Group>
+					<s:Group width="100%" height="5%">
+						<mx:CheckBox id="Ordouble" left="163" label="是否双向配置管道" fontFamily="SimSun" verticalCenter="0" visible="false" enabled="false"/>
+						<mx:Button  y="0" left="298" label="切换"
+								   cornerRadius="0" fontWeight="normal" visible="false"/>
+					</s:Group>
+				</s:VGroup>
+			</s:HGroup>
+			
+		</s:VGroup>
+	</s:BorderContainer>
+		
+		<s:Group width="95%" height="31"  bottom="14" horizontalCenter="0">
+			<s:Group verticalCenter="5" height="50%" horizontalCenter="0">
+				<!--确定-->
+				<s:Button id="savebtn" label="{resourceManager.getString('global','all.sure')}" click="savebtn_clickHandler(event)"
+						  horizontalCenter="-60" verticalCenter="0"/>
+				<!--取消-->
+				<s:Button id="cancelbtn" label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)"
+						  horizontalCenter="60" verticalCenter="0"/>
+			</s:Group>
+		</s:Group>
+		
+	</mx:Canvas>
+</s:TitleWindow>

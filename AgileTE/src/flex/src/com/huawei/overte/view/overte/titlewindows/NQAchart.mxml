@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:titlewindows="com.huawei.overte.view.overte.titlewindows.*"
+			   width="750" height="400" close="titlewindow1_closeHandler(event)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" creationComplete="init()" >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.model.Data;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import com.huawei.overte.view.overte.titlewindows.NQAlist;
+			
+			import flash.events.TimerEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.formatters.DateFormatter;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+			[Bindable]private var isEnbled:Boolean=true;
+			[Bindable]private var __app:overTegui2;
+			[Bindable]private var curarea:String;//项目类型
+			[Bindable]
+			public var mydata:Data = Data.getInstence();
+			//	var opsIp:String = "";
+			//	var webname:String = "";
+			//var curarea:String = "";
+			var deviceId:String = "";
+			var type:String = "";
+			public var iname:String = "";
+			public var handleFlag:String="add"; //判定是修改还是增加
+			public var devId:String = "";
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			private var opsIp:String=SdncUtil.opsIp;
+			private var webname:String = SdncUtil.projectname;
+			public var vlangroup:VlanGroup;
+			private var _vlanXML:XML;
+			private var sdnService:SdnUIService = new SdnUIService();
+			
+			
+			var time:int = mydata.NqaTime*1000
+			public var timeri:Timer = new Timer(time);//定义定时器，间隔时间取自用户设置的获取间隔时间
+				
+				
+			/**
+			 * 页面初始化 rwx202245
+			 **/
+			protected function init():void{
+				__app=SdncUtil.app;
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea +"/devices/"+deviceId+"/nqasoon?name="+type+"_"+iname;
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetnqaResult,onGetnqaFault);
+				
+				var url:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea +"/devices/"+deviceId+"/fluxsoon?name="+type+"_"+iname;
+				connUtil.clientQuery(url,ConnUtil.METHOD_PUT,onGetfluxResult,onGetfluxFault,"");
+			
+				timeri.addEventListener(TimerEvent.TIMER,onTimer);
+				timeri.start();
+			}
+			/**
+			 * 定时器执行事件，定时获取统计图信息
+			 **/
+			public function onTimer(event:TimerEvent):void{
+				
+				//时延统计数据获取
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea +"/devices/"+deviceId+"/nqasoon?name="+type+"_"+iname;
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetnqaResult,onGetnqaFault);
+				//流量统计数据获取
+				var url:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea +"/devices/"+deviceId+"/fluxsoon?name="+type+"_"+iname;
+				connUtil.clientQuery(url,ConnUtil.METHOD_PUT,onGetfluxResult,onGetfluxFault,llxml);
+			}
+			/**
+			 * 时延统计数据返回处理方法
+			 **/
+			var llxml:XML = null;
+			private function onGetnqaResult(e:HttpResponseEvent,data:String):void{
+				
+				if(e.response.code != "200"){
+					trace("获取状态信息出错！")
+					return;
+				}
+				else
+				{
+					if(mydata.sychartdata.length>11)//保证统计图内保留最近12个数据，多余数据删掉
+					{
+						for(var j:int = 0;j<(mydata.sychartdata.length-12);j++)
+						{
+							mydata.sychartdata.removeItemAt(0);
+						}
+					}
+					var xml:XML = new XML(data);
+					var nqaXML:XMLList = xml.data;
+					for(var i:int = 0;i<nqaXML.length();i++)
+					{
+						var dateformet:DateFormatter = new DateFormatter;
+						dateformet.formatString = "JJ:NN:SS";//设置时间格式化的格式
+						var time:String = dateformet.format(new Date(nqaXML[i].schedule.children()[0]));//时间格式化，毫秒数格式化为标准时间，取时分秒显示
+						mydata.sychartdata.addItem({x:time,y:nqaXML[i].value1.children()[0]})
+					}				
+				}
+			}
+			/**
+			 * 流量统计数据返回处理方法
+			 **/
+			private function onGetfluxResult(e:HttpDataEvent):void{
+				var data:String = e.bytes.toString();
+//				if(e.response.code != "200"){
+//					trace("获取状态信息出错！")
+//					return;
+//				}
+//				else
+//				{
+					if(mydata.llchartdata.length>11)//保证统计图内保留最近12个数据，多余数据删掉
+						
+					{
+						
+						for(var j:int = 0;j<(mydata.llchartdata.length-12);j++)
+						{
+							mydata.llchartdata.removeItemAt(0);
+						}
+					}
+					var xml:XML = new XML(data);
+					llxml= new XML(data);
+					var nqaXML:XMLList = xml.data;
+					for(var i:int = 0;i<nqaXML.length();i++)
+					{
+						var dateformet:DateFormatter = new DateFormatter;
+						dateformet.formatString = "JJ:NN:SS";//设置时间格式化的格式
+						var time:String = dateformet.format(new Date(nqaXML[i].schedule.children()[0]));//时间格式化，毫秒数格式化为标准时间，取时分秒显示
+						mydata.llchartdata.addItem({x:time,y:(nqaXML[i].value1.children()[0])/(1000*1000)})
+						trace("  receibveByte:"+nqaXML[i].receibveByte.children()[0]+"   sendByte:"+nqaXML[i].sendByte.children()[0]+"   value:"+(nqaXML[i].value1.children()[0])/(1024*1024))
+					}
+					
+					
+//				}
+			}
+			private function onGetnqaFault(e:Event):void{
+				trace("获取时延实时监测信息连接出错"+e.toString())
+				DataHandleTool.showOnConsole("获取时延实时监测信息连接出错"+e.toString())
+//				Alert.show("获取时延实时监测信息连接出错"+e.toString(),"提示");
+				
+			}
+			private function onGetfluxFault(e:Event):void{
+				trace("获取流量实时监测信息连接出错"+e.toString())
+				DataHandleTool.showOnConsole("获取流量实时监测信息连接出错"+e.toString())
+//				Alert.show("获取流量实时监测信息连接出错"+e.toString(),"提示");
+				
+			}
+			/**点击返回时关闭NQAping实例**/
+			protected function returnto(event:MouseEvent):void{
+				var NQA:NQAlist = NQAlist(PopUpManager.createPopUp(__app,NQAlist,false));
+				/**"网络质量列表"**/
+				NQA.title=resourceManager.getString('global','menu.network.nqaFlux');
+				PopUpManager.centerPopUp(NQA);
+				timeri.stop();
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea +"/devices/"+deviceId+"/nqasoon?name="+type+"_"+iname;
+				connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,onDeletenqaResult,onDeletenqaFault);
+				PopUpManager.removePopUp(this)
+			}
+			/**关闭NQAping实例 连接成功方法**/
+			private function onDeletenqaResult(e:HttpDataEvent):void{
+				
+				if(e.bytes.toString().search("ok") == -1){
+					DataHandleTool.showOnConsole("删除NQAPing实例失败")
+				}
+			}
+			/**关闭NQAping实例 连接出错方法**/
+			private function onDeletenqaFault(e:Event):void{
+				trace("删除NQAPing实例连接出错"+e.toString())
+				DataHandleTool.showOnConsole("删除NQAPing实例连接出错\n"+e.toString())
+				
+			}
+			protected function close(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this)
+				timeri.stop();
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea +"/devices/"+deviceId+"/nqasoon?name="+type+"_"+iname;
+				connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,onDeletenqaResult,onDeletenqaFault);
+			}
+			
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				timeri.stop();
+				PopUpManager.removePopUp(this)
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<!--s:BorderContainer id="bcc" top="40" bottom="40" width="95%" hideEffect="fadeout"
+		horizontalCenter="0" showEffect="fadeIn">
+		<mx:LineChart id="linechart1" left="0" right="0" top="0" bottom="0">
+		<mx:series>
+		<mx:LineSeries displayName="Series 1" yField=""/>
+		</mx:series>
+		</mx:LineChart>
+		</s:BorderContainer-->
+		<mx:TabNavigator left="10" right="10" top="15" bottom="40" color="#ffffff">
+			<!--时延统计/ms-->
+			<s:NavigatorContent width="100%" height="100%" label="{resourceManager.getString('global','nqlflux.nqaload')}/ms" color="#000000">
+				<!--titlewindows:VlanGroup/-->
+				<titlewindows:syChart id="sychart" width="100%" height="100%"/>
+			</s:NavigatorContent>
+			<!--流量负载/%-->
+			<s:NavigatorContent width="100%" height="100%" label="{resourceManager.getString('global','nqlflux.fluxload')}/M/s" color="#000000">
+				<titlewindows:llChart id="llchart" width="100%" height="100%"/>
+			</s:NavigatorContent>
+		</mx:TabNavigator>
+		<s:HGroup right="14" bottom="10">
+			<!--返回-->
+			<s:Button label="{resourceManager.getString('global','all.return')}" click="returnto(event)"/>
+			<!--关闭-->
+			<s:Button label="{resourceManager.getString('global','all.closed')}" click="close(event)"/>
+		</s:HGroup>
+	</mx:Canvas>
+</s:TitleWindow>

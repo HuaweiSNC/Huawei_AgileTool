@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="696" height="458" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12" 
+			  skinClass="com.huawei.overte.view.skins.TitleWindowSkin" title="{resourceManager.getString('global','mgflow.mgac')}" 
+			  xmlns:titlewindows="com.huawei.overte.view.overte.titlewindows.*">
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.managers.PopUpManager;
+		
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<mx:TabNavigator y="9" left="20" right="20" height="382">
+			<!--Vlan管理-->
+			<s:NavigatorContent width="100%" height="100%" label="{resourceManager.getString('global','mgflow.mgvlan.mgvlan')}">
+				<titlewindows:VlanGroup/>
+			</s:NavigatorContent>
+			<!--VlanMapping管理-->
+			<s:NavigatorContent width="100%" height="100%" label="{resourceManager.getString('global','mgflow.mgvlanmapping.mgvlanmapping')}">
+				<titlewindows:VlanMappingGroup/>				
+			</s:NavigatorContent>
+		</mx:TabNavigator>
+		<!--退出-->
+		<s:Button right="20" bottom="10" label="{resourceManager.getString('global','all.exit')}"  click="PopUpManager.removePopUp(this)"/>
+	</mx:Canvas>
+</s:TitleWindow>

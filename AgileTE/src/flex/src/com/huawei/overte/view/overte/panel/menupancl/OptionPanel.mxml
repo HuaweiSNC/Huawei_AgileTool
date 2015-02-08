@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:optionpanel="com.huawei.sdnc.view.common.optionpanel.*"
+		 xmlns:menupancl="com.huawei.overte.view.overte.panel.menupancl.*"
+		 width="{btns.width + 4}" height="150"
+		 height.general="200"
+		 height.service="180"
+		 height.network="230"
+		 height.setup="230">
+		 
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.tools.SdncUtil;
+			private var _curView:String;
+			
+			public function set curView(value:String):void
+			{
+				_curView = value;
+				if(this.currentState=="general"){
+					generanlPanel.judgeState();
+				}else if(this.currentState=="service"){
+					servicePanel.judgeState();
+				}else if(this.currentState=="setupPage"){
+					setupPage.judgeState();
+				}else if(this.currentState=="network"){
+					networkPanel.judgeState();
+				}
+			}
+
+			protected function tabBtnClickHandler(event:MouseEvent):void
+			{
+				var curBtn:TabBtnForOverTe = event.currentTarget as TabBtnForOverTe;
+				for(var i:int = 0;i < btns.numElements; i++)
+				{
+					var btn:TabBtnForOverTe = btns.getElementAt(i) as TabBtnForOverTe;
+					var stateStr:String = "unSelected";
+					if(btn == curBtn)stateStr = "selected";
+					btn.currentState = stateStr;
+				}
+				this.currentState = String(curBtn.id);
+				if(String(curBtn.id)=="general"){
+					generanlPanel.judgeState();
+				}else if(String(curBtn.id)=="service"){
+					servicePanel.judgeState();
+				}else if(String(curBtn.id)=="setup"){
+					setupPage.judgeState();
+				}else if(String(curBtn.id)=="network"){
+					networkPanel.judgeState();
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="general"/>
+		<s:State name="network"/>
+		<s:State name="setup"/>
+		<s:State name="service"/>
+	</s:states>
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0"/>
+		</s:fill>
+		<s:stroke>
+			<s:LinearGradientStroke rotation="175" weight="2">
+				<s:GradientEntry color="0xb4becc"/>
+				<s:GradientEntry color="0x57b0c9"/>
+				<s:GradientEntry color="0x21a9c9"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<s:VGroup  left="1" right="1" top="1" bottom="1" gap="-1">
+		<s:HGroup id="btns" height="23" gap="0">
+			<menupancl:TabBtnForOverTe id="general" text="General" click="tabBtnClickHandler(event)" fontSize="12" currentState="selected"/>
+			<menupancl:TabBtnForOverTe id="setup" text="Setup" click="tabBtnClickHandler(event)" fontSize="12"/>
+			<menupancl:TabBtnForOverTe id="network" text="Network" click="tabBtnClickHandler(event)" fontSize="12"/>
+			<menupancl:TabBtnForOverTe id="service" text="Service" click="tabBtnClickHandler(event)" fontSize="12"/>
+		</s:HGroup>
+		<menupancl:GeneralPanel id="generanlPanel" width="100%" height="100%" includeIn="general"/>
+		<menupancl:NetworkPanel id="networkPanel" width="100%" height="100%" includeIn="network"/>
+		<menupancl:SetupPanel id="setupPage" width="100%" height="100%" includeIn="setup"/>
+		<menupancl:ServicePanel id="servicePanel" width="100%" height="100%" includeIn="service"/>
+	</s:VGroup>
+</s:Group>

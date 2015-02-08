@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="766" height="406" close="PopUpManager.removePopUp(this)" color="#000000"
+			   creationComplete="init()" fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" title="{resourceManager.getString('global','mgUser.userlist')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			import twaver.IElement;
+			import twaver.networkx.NetworkX;
+			import com.laiyonghao.Uuid;
+			import mx.formatters.DateFormatter;
+			
+			[Bindable]public var fileNameTypeDropDownList:ArrayCollection = new ArrayCollection();
+			[Bindable]private var __app:overTegui2;
+			[Bindable]private var devices:Array=[];
+			[Bindable]private var curarea:String;
+			[Bindable]private var projectType:String;//项目类型
+			
+			public var element:IElement;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			public var opsIp:String = "";
+			public var webname:String = "";
+			private var registerpanel:Register;
+			
+			[Bindable]public var usersarray:ArrayCollection = new ArrayCollection();
+			protected function init():void
+			{
+					PopupManagerUtil.getInstence().popupLoading(this,false);
+					opsIp=SdncUtil.opsIp;
+					webname = SdncUtil.projectname;
+
+					getdatas();
+			}
+			//刷新数据
+			public function getdatas():void
+			{
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/userManage";
+				//var uri:String="http://10.111.92.248:8088/AgileTeService/agilete/domains/userManage";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetLinksResult,onGetLinksFault);
+			}
+			private function onGetLinksResult(e:HttpResponseEvent,data:String):void
+			{
+				usersarray.removeAll();
+				if(e.response.code=="200"){
+					if(data == ""){
+						PopupManagerUtil.getInstence().closeLoading();	
+						Alert.show(resourceManager.getString('global','mgUser.getuserlist')+resourceManager.getString('global','all.error'),resourceManager.getString('global','all.prompt'));
+						return;
+					}else{
+						var usersxml:XML = new XML(data);
+						for(var i:int=0;i<usersxml.user.length();i++){
+							usersarray.addItem({
+									id:usersxml.user[i].userId.toString(),
+									uname:usersxml.user[i].userName.toString(),
+									datatime:usersxml.user[i].registTime.toString(),
+									describe:usersxml.user[i].desc.toString()
+									})
+						}
+					}
+					PopupManagerUtil.getInstence().closeLoading();
+				}else{
+					Alert.show(resourceManager.getString('global','mgUser.getuserlist')+"\n"
+						+resourceManager.getString('global','all.errorcode')+e.response.code,resourceManager.getString('global','all.prompt'));
+				}
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			private function onGetLinksFault(e:Event):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				Alert.show(resourceManager.getString('global','mgUser.getuserlist')+resourceManager.getString('global','all.error'),resourceManager.getString('global','all.prompt'));
+			}
+			
+			
+			
+			
+			protected function registerResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("success")!=-1){
+					Alert.show(resourceManager.getString('global','mgUser.registersuccess'));
+					getdatas();
+					PopUpManager.removePopUp(this.registerpanel);
+					return;
+				}
+				if(e.bytes.toString().search("nameExit")!=-1){
+					
+					Alert.show(resourceManager.getString('global','mgUser.userexit'),resourceManager.getString('global','all.prompt'));
+					return;
+				}
+				else{
+					Alert.show(resourceManager.getString('global','mgUser.registerfail'),resourceManager.getString('global','all.prompt'));
+					return;
+				}
+			}
+			
+			protected function registerFault(e:HttpDataEvent):void
+			{
+				Alert.show(resourceManager.getString('global','mgUser.connectfailnowip')+opsIp,resourceManager.getString('global','all.prompt'))
+			}
+			
+			/**         * 获取当前时间         * @return 当前时间（年年年年-月月-日日 ）         */        
+			public static function getCurrentDate():String {            
+				var dateformatter:DateFormatter = new DateFormatter();            
+				dateformatter.formatString = "YYYY-MM-DD";            
+				return dateformatter.format(new Date());        
+			}
+			
+			protected function register(event:MouseEvent):void
+			{
+				if(registerpanel.password.text!=registerpanel.repassword.text)
+				{
+					Alert.show(resourceManager.getString('global','mgUser.twopasswordshouldsame'));
+				} else 
+				{
+					var uuid:Uuid = new Uuid();//36位UUid
+					/*构建xml报文*/
+					var registerBody:String = "<user>"; 
+					registerBody+= "<userName>"+registerpanel.username.text+"</userName>";
+					registerBody+= "<userPasswd>"+registerpanel.password.text+"</userPasswd>";
+					registerBody+= "<registTime>"+getCurrentDate()+"</registTime>";
+					registerBody+= "<desc>"+registerpanel.describe.text+"</desc>";
+					registerBody+= "</user>"; 
+					var registerData:Array = new Array();
+					registerData.push(registerBody);
+					var connUtil:ConnUtil = ConnUtil.getInstence();
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/regist";
+					//var uri:String="http://10.111.92.248:8088/AgileTeService/agilete/domains/regist";
+					trace(uri);
+					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,registerResult,registerFault,registerBody);
+				}
+				
+			}
+			
+			
+			
+			public function addUser():void
+			{
+				registerpanel=Register(PopUpManager.createPopUp(this,Register,true));
+				PopUpManager.centerPopUp(registerpanel);
+				registerpanel.save.addEventListener(MouseEvent.CLICK,register);
+			}
+			
+			public function queryLinks():void
+			{
+				PopupManagerUtil.getInstence().popupLoading(this,false);
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/userManage";
+				//var uri:String="http://10.111.92.248:8088/AgileTeService/agilete/domains/userManage";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetLinksResult,onGetLinksFault);
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			public function deleteUser():void
+			{
+				/**"确定删除？","提示"**/
+				Alert.show(resourceManager.getString('global','all.ifdeleted')+"？",
+					resourceManager.getString('global','all.prompt'),
+					Alert.YES|Alert.NO,this,closeDelete);
+				
+			}
+			public function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.YES){
+					PopupManagerUtil.getInstence().popupLoading(this,false);
+					var user:Object=g.selectedItem;
+					var userid:String=user["id"];
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/userManage?userId="+userid;
+					connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,onDeleteLinksResult,onDeleteLinksFault);
+				}
+				
+			}
+			private function onDeleteLinksResult(e:HttpDataEvent):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				if(e.bytes.toString().search("success")!=-1){
+					Alert.show(resourceManager.getString('global','mgUser.userdelsuccess'),resourceManager.getString('global','all.prompt'));
+					usersarray.removeItemAt(g.selectedIndex);
+				}else{
+					Alert.show(resourceManager.getString('global','mgUser.userdelfail'),resourceManager.getString('global','all.prompt'));
+				}
+			}
+			private function onDeleteLinksFault(e:Event):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				DataHandleTool.showOnConsole(resourceManager.getString('global','mgUser.userdelconnecterror')+"\n"+e.toString())
+				Alert.show(resourceManager.getString('global','mgUser.userdelconnecterror'),resourceManager.getString('global','all.prompt'));
+			}
+			/**
+			 * Topo链路列表中 源设备接口显示接口名称（IP地址）
+			 * */
+			private function FromInterfaceDisplayFunction(data:Object,col:GridColumn):String      
+			{      
+				var label:String = "";      
+				if(data.hasOwnProperty("frominterface")){      
+					label+=data.frominterface+" ("+data.frominterfaceIP+")";
+				}      
+				return label;      
+			}  
+			/**
+			 * Topo链路列表中目的设备接口显示接口名称（IP地址）
+			 * */
+			private function ToInterfaceDisplayFunction(data:Object,col:GridColumn):String      
+			{      
+				var label:String = "";      
+				if(data.hasOwnProperty("tointerface")){      
+					label+=data.tointerface+" ("+data.tointerfaceIP+")";
+				}      
+				return label;      
+			}   
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:VGroup id="content" width="100%" height="100%">
+			<s:Group width="100%" height="30">
+				<s:Button id="btn" right="{g.x}" bottom="0" label="{resourceManager.getString('global','mgUser.adduser')}" click="addUser()"/>
+			</s:Group>
+			<s:Group width="100%" height="95%">
+				<s:DataGrid id="g" width="95%" height="95%" dataProvider="{usersarray}"
+							horizontalCenter="0" requestedRowCount="4" textAlign="center"
+							verticalCenter="0">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn dataField="uname"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgUser.username')}"></s:GridColumn>
+							<s:GridColumn dataField="datatime"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgUser.registertime')}"></s:GridColumn>
+							<s:GridColumn dataField="describe" 
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgUser.describe')}"></s:GridColumn>
+							<s:GridColumn editable="false" width="80"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','all.delete')}">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  label="{resourceManager.getString('global','all.delete')}"  horizontalCenter="0" verticalCenter="0"
+													  click="outerDocument.deleteUser()"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+			<s:Group width="100%" height="30">
+				<s:Button id="closebtn" right="{g.x}" top="0" label="{resourceManager.getString('global','all.exit')}"
+						  click="PopUpManager.removePopUp(this)"/>
+			</s:Group>
+		</s:VGroup>
+	</mx:Canvas>
+</s:TitleWindow>

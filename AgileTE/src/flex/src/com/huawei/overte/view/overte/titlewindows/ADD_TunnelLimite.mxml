@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   xmlns:menupancl="com.huawei.overte.view.overte.panel.menupancl.*"
+			   width="634" height="406"  color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"  creationComplete="init(event)"
+			   title="{resourceManager..getString('global','mgtunnel.limited')}"
+			   close="PopUpManager.removePopUp(this)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.ErrorCodeUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			
+			import flashx.textLayout.tlf_internal;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.states.State;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			import twaver.IElement;
+			import twaver.Node;
+			import twaver.core.util.h._ED;
+			
+			public var Tunnelarray:ArrayCollection = new ArrayCollection()
+			protected function btn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var Addtemplate:ADD_TunnelTemplate=ADD_TunnelTemplate(PopUpManager.createPopUp(this,ADD_TunnelTemplate,true));
+				PopUpManager.centerPopUp(Addtemplate);
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				Tunnelarray.addItem({
+					name:"Tunnel1",
+					identifyIndex:"test",
+					ingressIp:"1000000",
+					egressIp:"1000000"
+				})
+			}
+			
+			public function bindtemplate(name:String):void{
+				var bindtemplate:Bing_Template=Bing_Template(PopUpManager.createPopUp(this,Bing_Template,true));
+				PopUpManager.centerPopUp(bindtemplate);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:VGroup id="content" top="0" bottom="50" width="100%">
+			<s:Group width="100%" height="40">
+				<!--增加...-->
+				<s:Button id="btn" right="{g.x}" label="{resourceManager.getString('global','mgtunnel.limited.addboard')}..." 
+						  verticalCenter="0" click="btn_clickHandler(event)"/>
+			</s:Group>
+			<s:Group width="100%" height="85%">
+				<s:DataGrid id="g" left="20" right="20" top="0" bottom="0"  dataProvider="{Tunnelarray}"
+							requestedRowCount="4" textAlign="center" sortableColumns="false">
+					<s:columns>
+						<s:ArrayList>
+							<!--隧道名称-->
+							<s:GridColumn dataField="name" showDataTips="true" width="100"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.limited.tunnelname')}"></s:GridColumn>
+							<!--模板名称-->
+							<s:GridColumn dataField="temName" showDataTips="true" width="100"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.limited.boardname')}"></s:GridColumn>
+							<!--承诺信息速率-->
+							<s:GridColumn dataField="speed"  showDataTips="true"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.limited.promisspeed')}"></s:GridColumn>
+							<!--承诺突发尺寸-->
+							<s:GridColumn dataField="size" width="100"  showDataTips="true"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.limited.promissize')}"></s:GridColumn>
+				
+							<!--绑定模板-->
+							<s:GridColumn editable="false" width="90"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.limited.bindboard')}">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/edit.png')"  click="outerDocument.bindtemplate('cc')"
+														   label="{resourceManager.getString('global','mgtunnel.limited.bindboard')}..."  
+														   horizontalCenter="0" verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<!--解绑定-->
+							<s:GridColumn editable="false" width="90"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.limited.unbind')}">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  
+														   label="{resourceManager.getString('global','mgtunnel.limited.unbind')}"  
+														   horizontalCenter="0" verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+		</s:VGroup>
+		<!--退出-->
+		<s:Button id="quitbtn" right="{g.x}" bottom="14" label="{resourceManager.getString('global','all.exit')}" 
+				  click="PopUpManager.removePopUp(this)"/>	
+	</mx:Canvas>
+</s:TitleWindow>

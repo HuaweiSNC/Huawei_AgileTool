@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="662" height="500" color="#000000" fontFamily="微软雅黑" fontSize="12"
+			   horizontalCenter="0" skinClass="com.huawei.overte.view.skins.TitleWindowSkin"
+			   title="MRTG{resourceManager.getString('global','all.deploy')}" verticalCenter="0"  close="PopUpManager.removePopUp(this)"
+			   title.State1="{resourceManager.getString('global','all.showdeploy')}" creationComplete="creationCompleteHandler(event)" initialize="initi(event)" xmlns:MRTGctrl="com.huawei.overte.control.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+		<MRTGctrl:MrtgCtrl id="mrtgctrl" _app="{this}">
+			
+		</MRTGctrl:MrtgCtrl>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.MrtgCtrl;
+			import com.huawei.overte.model.MrtgDatas;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.titlewindows.NewJob;
+			import com.huawei.overte.view.skins.TitleWindowSkin;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.events.IndexChangeEvent;
+			public var languages:ArrayCollection = new ArrayCollection;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			public var sdnproject:XML;
+			public var mydata:MrtgDatas = MrtgDatas.getInstence();
+			[Bindable]private var __app:overTegui2;
+			var formwork:ArrayCollection = new ArrayCollection;
+			var getmod:String = "`java -cp &quot;@{classLoaderPath}&quot; com.huawei.plugins.mrtg.run.bin.MrtgPlugins &quot;@{xmlTarget}&quot; &quot;@{xpathTarget}&quot;`"
+			protected function titlewindow1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function initi(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				ConnUtil.getInstence().query("assets/xml/sdn_office_project.xml",
+					function(evt:ResultEvent):void{
+						sdnproject = XML(evt.result.toString());
+						mydata.ipandport=sdnproject.mrtgip.children()[0];
+					},onFailed);
+			}
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				__app=SdncUtil.app;
+				languages.addItem({name:"Chinese"});
+				//languages.addItem({name:"English"});
+				
+				formwork.addItem({name:resourceManager.getString('global','nqlflux.nqa'),id:"nqa"});
+				formwork.addItem({name:resourceManager.getString('global','nqlflux.flux'),id:"traffic"});
+				modules.selectedIndex = 0;
+				//setlabels(mydata.setsme)
+				mrtgctrl.getListener(jobname.text);
+			//	mrtgctrl.getMRTGList();
+			}
+			/** HTTPService 请求失败函数 */
+			private function onFailed(evt:FaultEvent):void
+			{
+				trace(evt.message);	
+			}
+			protected function setings(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				mrtgctrl.formwork = modules.selectedItem.id;
+				var str:String = "<listenerData>"+
+					"<id>"+jobname.text+"</id>"+
+					"<Interval>"+times.text+"</Interval>"+
+					"<Language>"+language.selectedItem.name+"</Language>"+
+					"<Title><!"+"[CDATA["+ititle.text+"]"+"]></Title>"+
+					"<PageTop><!"+"[CDATA["+pagetop.text+"]"+"]></PageTop>"+
+					"<Options><!"+"[CDATA["+options.text+"]"+"]></Options>"+
+					"<MaxBytes>"+maxbytes.text+"</MaxBytes>"+
+					"<deviceTarget><!"+"[CDATA["+iurl.text+"]"+"]></deviceTarget>"+
+					"<xpathObject><!"+"[CDATA["+xpathObject.text+"]"+"]></xpathObject>"+
+					"<xpathTarget><!"+"[CDATA["+xpathTarget.text+"]"+"]></xpathTarget>"+
+					"<software><!"+"[CDATA["+software.text+"]"+"]></software>"+
+					"</listenerData>"
+				mrtgctrl.edittask(str);
+				
+			}
+			private function onpostResult(e:HttpDataEvent):void{
+				if(e.bytes.toString()=="OK"){
+					Alert.show(resourceManager.getString('global','all.deploysuccess'),resourceManager.getString('global','all.prompt'));
+				}else{
+					Alert.show(resourceManager.getString('global','all.deployfail'),resourceManager.getString('global','all.prompt'));
+				}
+			}
+			private function onpostFault(e:Event):void{
+				//trace("获取Vlan信息连接出错"+e.toString(),"提示");
+				//	PopupManagerUtil.getInstence().closeLoading();
+				Alert.show(resourceManager.getString('global','all.deployfail')+"!"+resourceManager.getString('global','all.errormessage')+e.toString(),resourceManager.getString('global','all.prompt'));
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(jobname.text!="")
+				{
+					mrtgctrl.showwebpage(jobname.text)
+				}
+				else
+				{
+					Alert.show(resourceManager.getString('global','all.pleasechooseonetask'),resourceManager.getString('global','all.prompt'))
+				}
+				
+				
+			}
+			
+			protected function newjob(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var newjob:NewJob = NewJob(PopUpManager.createPopUp(this,NewJob,true));
+				PopUpManager.centerPopUp(newjob);
+				PopUpManager.removePopUp(this);
+			}
+			protected function getListener(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				mrtgctrl.getListener(jobname.text);
+			}
+			public function setlabels(xml:XML):void
+			{
+				//				var str:String = "<postData>"+
+				//					"<id>"+jobname.selectedItem.name+"</id>"+
+				//					"<Interval>"+times.text+"</Interval>"+
+				//					"<Language>"+language.selectedItem.name+"</Language>"+
+				//					"<Title><!"+"[CDATA["+title.text+"]"+"]></Title>"+
+				//					"<PageTop><!"+"[CDATA["+pagetop.text+"]"+"]></PageTop>"+
+				//					"<Options>"+options.text+"</Options>"+
+				//					"<MaxBytes>"+maxbytes.text+"</MaxBytes>"+
+				//					"<XPath><!"+"[CDATA["+xpath.text+"]"+"]></XPath>"+
+				//					"<url><!"+"[CDATA["+iurl.text+"]"+"]></url>"+
+				//					"</postData>"
+				//times.text = xml.Interval.children()[0];
+				//language.selectedItem.name = xml.Language.children()[0];
+				ititle.text = xml.Title.children()[0];
+				pagetop.text = xml.PageTop.children()[0];
+				//options.text = xml.Options.children()[0];
+				//maxbytes.text = xml.MaxBytes.children()[0];
+//				iurl.text = xml.deviceTarget.children()[0];
+				//software.text = xml.software.children()[0];
+				//xpathTarget.text = xml.xpathTarget.children()[0];
+//				xpathObject.text = xml.xpathObject.children()[0];
+				for(var i:int = 0;i<languages.length;i++)
+				{
+					if(xml.Language.children()[0]==languages[i].name)
+					{
+						language.selectedIndex = i;
+					}
+				}
+			}
+			
+			protected function returnto(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var NQA:NQAlist = NQAlist(PopUpManager.createPopUp(__app,NQAlist,false));
+				/**"网络质量列表"**/
+				NQA.title=resourceManager.getString('global','menu.network.nqaFlux');
+				PopUpManager.centerPopUp(NQA);
+				PopUpManager.removePopUp(this)
+			}
+			
+			protected function changeformwork(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				mrtgctrl.formwork = modules.selectedItem.id;
+				mrtgctrl.getListener(jobname.text);
+			}
+			
+			protected function cancelListener(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var opsIp:String=SdncUtil.opsIp;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/AgilePM/agilepm/domain/shutDownListener/"+modules.selectedItem.id+"_"+jobname.text;
+				//var uri:String="http://10.111.92.248:8088/AgileTeService/agilete/domains/login";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,getReslut,getFault);
+			}
+			private function getReslut(e:HttpResponseEvent,data:String):void
+			{
+				var data:String = data.toString();
+				if(data=="OK"){
+					Alert.show(resourceManager.getString('global','all.removesuccess'),resourceManager.getString('global','all.prompt'))
+				}else{
+					Alert.show(resourceManager.getString('global','all.removefail'),resourceManager.getString('global','all.prompt'))
+				}
+			}
+			private function getFault(e:Event):void
+			{
+				Alert.show(resourceManager.getString('global','all.removeerror'),resourceManager.getString('global','all.prompt'))
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="State1"/>
+		<s:State name="more"/>
+	</s:states>
+	<mx:Canvas left="0" right="0" top="0" bottom="0" backgroundColor="0xcccccc">
+		<s:Button right="89" bottom="10" label="{resourceManager.getString('global','all.closed')}" click="returnto(event)"/>
+		<s:Button x="100" bottom="10" label="{resourceManager.getString('global','all.save')}" click="setings(event)"/>
+		<s:Button x="410" y="21" label="{resourceManager.getString('global','all.look')}" click="button1_clickHandler(event)"
+				  x.more="410" y.more="29"
+				  x.State1="493" y.State1="29"/>
+		<s:Label x="81" y="21" height="21" color="#000000" fontSize="14" fontWeight="bold"
+				 paddingBottom="2" paddingLeft="2" paddingRight="2" paddingTop="2" text="{resourceManager.getString('global','all.taskname')}："
+				 x.more="81" y.more="29"
+				 x.State1="22" y.State1="31"/>
+		<s:TextInput id="jobname" x="143" y="28" width="229" 
+					editable="false"
+					x.more="143" y.more="28"
+					x.State1="84" y.State1="28"/>
+		<!--s:Button x="489" y="21" label="{resourceManager.getString('global','all.new')}" click="newjob(event)" enabled="false"
+				  x.more="489" y.more="29"
+				  x.State1="572" y.State1="29"/-->
+		<s:Button x="489" y="21" label="{resourceManager.getString('global','all.cancelListener')}" click="cancelListener(event)" 
+		x.more="489" y.more="29"
+		x.State1="572" y.State1="29"/>
+		<mx:Button x="10" y="84" label="{resourceManager.getString('global','all.general')}" color="#FFFFFF" fillAlphas="[1.0, 1.0]"
+				   fillColors="[#0C6C9E, #0C6C9E]" fontSize="14" fontWeight="normal"
+				   color.more="#000000" fillColors.more="[#CCCCCC, #CCCCCC]"/>
+		<mx:Button x="62" y="84" label="{resourceManager.getString('global','all.advance')}" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+				   fontSize="14" fontWeight="normal"
+				   color.more="#FFFFFF"
+				  enabled.State1="false"
+				   fillColors.State1="[#CCCCCC, #CCCCCC]"/>
+		<s:BorderContainer left="10" right="10" top="104" bottom="40">
+			<s:BorderContainer includeIn="State1" left="10" right="10" top="158" bottom="10">
+				<mx:Form left="0" top="15" bottom="0" width="50%" paddingBottom="5"
+						 paddingLeft="5" paddingRight="5" paddingTop="5">
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.getinterval')}" horizontalAlign="right" paddingLeft="0"
+								 paddingRight="5">
+						<mx:TextInput id="times" width="100%" backgroundColor="#E1E1E1"
+									  editable="false" enabled="true" text="5"/>
+					</mx:FormItem>
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.language')}" horizontalAlign="right" paddingLeft="0"
+								 paddingRight="5">
+						<mx:ComboBox id="language" x="90" width="100%" height="23"
+									 cornerRadius="0" dataProvider="{languages}" editable="false"
+									 labelField="name"/>
+					</mx:FormItem>
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.title')}" horizontalAlign="right" paddingLeft="0"
+								 paddingRight="5">
+						<mx:TextInput id="ititle" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem width="100%" label="MRTG{resourceManager.getString('global','all.condition')}" horizontalAlign="right" paddingLeft="0"
+								 paddingRight="5">
+						<mx:TextInput id="options" width="100%" backgroundColor="#E1E1E1"
+									  editable="false" enabled="true" text="bits,growright,absolute"/>
+					</mx:FormItem>
+				</mx:Form>
+				<mx:Form right="0" top="15" bottom="0" width="50%" paddingBottom="5" paddingLeft="5"
+						 paddingRight="5" paddingTop="5">
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.peakvalue')}" horizontalAlign="right" paddingLeft="10"
+								 paddingRight="10">
+						<mx:TextInput id="maxbytes" width="100%" backgroundColor="#E1E1E1"
+									  editable="false" enabled="true" text="4000000"/>
+					</mx:FormItem>
+					<mx:FormItem width="100%" label="OPS{resourceManager.getString('global','all.address')}" horizontalAlign="right" paddingLeft="10"
+								 paddingRight="10">
+						<mx:TextInput id="iurl" width="100%" editable="false"/>
+					</mx:FormItem>
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.pagehead')}" horizontalAlign="right" paddingLeft="10"
+								 paddingRight="10">
+						<mx:TextInput id="pagetop" width="100%"/>
+					</mx:FormItem>
+				</mx:Form>
+				<s:Label x="11" y="-13" backgroundColor="#FFFFFF" fontSize="14" paddingBottom="5"
+						 paddingLeft="5" paddingRight="5" paddingTop="5" text="{resourceManager.getString('global','all.detectdatashowconfi')}"/>
+			</s:BorderContainer>
+			<s:BorderContainer includeIn="State1" y="25" left="10" right="10" height="116">
+				<s:Label x="11" y="-13" backgroundColor="#FFFFFF" fontSize="14" paddingBottom="5"
+						 paddingLeft="5" paddingRight="5" paddingTop="5" text="{resourceManager.getString('global','all.detectdatasourceshowconfi')}"/>
+				<mx:Form left="30" right="30" top="15" bottom="5" paddingBottom="5"
+						 paddingLeft="5" paddingRight="5" paddingTop="5">
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.detectobject')}" horizontalAlign="right" paddingLeft="0"
+								 paddingRight="5">
+						<mx:TextInput id="xpathObject" width="100%" editable="false"/>
+					</mx:FormItem>
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.detecttarget')}" horizontalAlign="right" paddingLeft="0"
+								 paddingRight="5">
+						<mx:TextInput id="xpathTarget" width="100%" backgroundColor="#E1E1E1"
+									  editable="false" enabled="true"
+									  text="/ifm/interfaces/interface[@ifName=@{xpathObject}]/ifStatistics/receiveByte/text()"/>
+					</mx:FormItem>
+					<mx:FormItem width="100%" label="{resourceManager.getString('global','all.getprogram')}" horizontalAlign="right" paddingLeft="0"
+								 paddingRight="5">
+						<mx:TextInput id="software" width="100%" backgroundColor="#E1E1E1"
+									  editable="false" enabled="true" text="{getmod}"/>
+					</mx:FormItem>
+				</mx:Form>
+			</s:BorderContainer>
+		</s:BorderContainer>
+		<s:Label includeIn="State1" x="322" y="33" fontSize="14" fontWeight="bold" text="{resourceManager.getString('global','all.template')}："/>
+		<s:ComboBox id="modules" labelField="name" x="371" y="29" width="101" dataProvider="{formwork}" selectedIndex="0" change="changeformwork(event)"/>
+		
+		
+	</mx:Canvas>
+</s:TitleWindow>

@@ -1,0 +1,30 @@
+#foreach($t_tunnel in ${T_Tunnel})
+<tunnelName>$!{t_tunnel.name}</tunnelName>
+<mplsTunnelIndex>$!{t_tunnel.identifyIndex}</mplsTunnelIndex>
+<interfaceName>$!{t_tunnel.interfaceName}</interfaceName>
+<mplsTunnelIngressLSRId>$!{t_tunnel.ingressIp}</mplsTunnelIngressLSRId>
+<mplsTunnelEgressLSRId>$!{t_tunnel.egressIp}</mplsTunnelEgressLSRId>
+<tunnelState>UP</tunnelState>
+<hotStandbyWtr>$!{t_tunnel.hotStandbyTime}</hotStandbyWtr>
+<hotStandbyEnable>true</hotStandbyEnable>
+ <resvForBinding>true</resvForBinding>
+<mplsTunnelRecordRoute>RECORD_LABLE</mplsTunnelRecordRoute>
+#if("0"!="${t_tunnel.tunnelPaths.size}")
+	<tunnelPaths>
+		#foreach($item in ${t_tunnel.tunnelPaths})
+			<tunnelPath>
+				<pathType>$!{item.pathType}</pathType>
+				#if("0"=="1")
+				<includeAll>0x0</includeAll>
+				<includeAny>0x0</includeAny>
+				<excludeAny>0x0</excludeAny>
+				<hopLimit>32</hopLimit>
+				<lspId>0</lspId>
+				<modifyLspId>0</modifyLspId>
+				#end
+				<explicitPathName>$!{item.pathName}</explicitPathName>
+			</tunnelPath>
+		#end
+	</tunnelPaths>
+#end
+#end

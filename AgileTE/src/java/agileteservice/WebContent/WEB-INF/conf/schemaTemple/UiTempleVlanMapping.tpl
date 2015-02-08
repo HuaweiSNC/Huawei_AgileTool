@@ -1,0 +1,22 @@
+<vlanmappings>
+	<foreach_vlanMappingsList>
+		<vlanmapping> 
+			<interfaceName>$interfaceName</interfaceName>  
+			<foreach_mappingPortsList>
+				<mappingPorts>
+				<foreach_mappingPortList>
+					<mappingPort>
+						<mappingVid>$mappingVid</mappingVid>
+						<outerVlansNew>
+								<vlansIndex></vlansIndex>
+						</outerVlansNew>
+						<internalVlansNew>
+								<vlansIndex>$internalVlansNew</vlansIndex>
+						</internalVlansNew>
+					</mappingPort>
+					</foreach_mappingPortList>
+				</mappingPorts>
+			</foreach_mappingPortsList>
+		</vlanmapping>
+	</foreach_vlanMappingsList>
+</vlanmappings>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="482" height="282" xmlns:common="com.huawei.sdnc.view.common.*"
+		 creationComplete="init(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.tools.SdncUtil;
+			import com.laiyonghao.Uuid;
+			import com.huawei.overte.tools.ConnUtil;
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			private var projects:ArrayCollection;
+			[Bindable]
+			public var uuid:Uuid = new Uuid();
+			[Bindable]
+			public var uuid2:Uuid;
+			var connUtil:ConnUtil = ConnUtil.getInstence();
+			var opsIp:String=SdncUtil.opsIp;
+			var webname:String = SdncUtil.projectname;
+			[Bindable]
+			private var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/verifyCode?clientBs=";
+			//登录按钮响应事件
+			protected function btn_mouseOverHandler(event:MouseEvent):void
+			{
+				event.target.filters=[glow];		
+			}
+			
+			protected function btn_mouseOutHandler(event:MouseEvent):void
+			{
+				event.target.filters=null;
+			}
+			
+			protected function textInput_focusOutHandler(event:FocusEvent):void
+			{
+				if(event.currentTarget.text == "")
+				{
+					event.currentTarget.setStyle("fontSize","11");
+				}
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				userLabel.filters = [shadow];
+				psLabel.filters = [shadow];
+				projects = new ArrayCollection();
+				for each(var project:XML in this.parentApplication.sdnproject.project)
+				{
+					var o:Object = new Object();
+					o.name = String(project.@name);
+					o.type = String(project.@projecttype);
+					projects.addItem(o);
+				}
+//				if(projects.getItemAt(0))curProjectSelector.selectedItem = projects.getItemAt(0);
+//				projectChangeHandler(null);
+				//开始默认不显示验证码
+				//img.visible=false;
+				//code.visible=false;
+			}
+			
+			protected function projectChangeHandler(event:IndexChangeEvent):void
+			{
+//				SdncUtil.cuProjectName = curProjectSelector.selectedItem.name;
+//				SdncUtil.cuProjectType = curProjectSelector.selectedItem.type;
+//				for each(var xml:XML in this.parentApplication.sdnproject.project)
+//				{
+//					if(xml.@name == SdncUtil.cuProjectName) 
+//					{
+//						SdncUtil.cuProjectXML = xml;
+//						break;
+//					}
+//				}
+			}
+			
+			private function GenerateCheckCode():String  
+			{  
+				//init  
+				var ran:Number;  
+				var number:Number;  
+				var code:String;  
+				var checkCode:String="";  
+				//get4radom  
+				for(var i:int=0;i<4;i++)  
+				{  
+					ran=Math.random();  
+					number=Math.round(ran*10000);//getresultlike0.1234  
+					if(number%2==0)  
+						code=String.fromCharCode(48+(number%10));//0'sASCIIcodeis48  
+					else  
+						code=String.fromCharCode(65+(number%26));//A'sASCIIcodeis65  
+					checkCode+=code;  
+				}  
+				return checkCode;  
+			}
+			
+			public function reloadcode():void {
+				uuid2 = new Uuid();
+				img.load(uri+uuid.toString()+"&id="+uuid2.toString());
+			}
+			
+			protected function code_clickHandler(event:MouseEvent):void
+			{	
+				uuid2 = new Uuid();
+				img.load(uri+uuid.toString()+"&id="+uuid2.toString());
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:DropShadowFilter id="shadow" color="0" angle="90" distance="2"/>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xffffff"/> 
+	</fx:Declarations>
+	<s:BitmapImage x="-28" y="-1" source="@Embed('assets/imgs/loginImgs/loginback.png')"/>
+	<s:Label x="78" y="89" id="userLabel" text="User" color="0xffffff" fontSize="21"/>
+	<mx:TextInput id="username" x="135" y="77" width="306" height="40" alpha="1.0"
+				  backgroundAlpha="0.0" borderStyle="none" color="0xffffff"
+				  focusIn="username.setStyle('fontSize','20')"
+				  focusOut="textInput_focusOutHandler(event)" fontSize="20" text=""
+				  textAlign="left"/>
+	<s:Label x="31" y="158" id="psLabel" text="Password" color="0xffffff" fontSize="21"/>
+	<mx:TextInput id="password" x="135" y="146" width="306" height="40" alpha="1.0"
+				  backgroundAlpha="0.0" borderStyle="none" color="0xffffff" displayAsPassword="true"
+				  focusIn="password.setStyle('fontSize','20')"
+				  focusOut="textInput_focusOutHandler(event)" fontSize="20" text=""/>
+	<!--<s:TextInput id="verificationCode" x="150" y="155" width="158" height="39" borderVisible="false"
+	color="0xffffff" contentBackgroundAlpha="0.0" prompt="Please enter the code"/>
+	<common:RandomCode id="verification" x="320" y="155"/>-->
+	<!--<s:Label id="projectLabel" text="Project" x="59" y="221" color="0xffffff" fontSize="21"/>-->
+	<mx:Image id= "img" x="93" y="217" width="108" height="40" source="{uri}{uuid.toString()}" click="code_clickHandler(event)" ></mx:Image>
+	<mx:TextInput id="code" x="225" y="217" width="95" height="40" alpha="1.0" backgroundAlpha="0.0"
+				  borderColor="#060E13" borderStyle="inset" color="0xffffff"
+				  focusIn="code.setStyle('fontSize','20')"
+				  focusOut="textInput_focusOutHandler(event)"/>
+	<!--<s:DropDownList id="curProjectSelector" x="266" y="216" width="105" height="40"
+					change="projectChangeHandler(event)" color="#000000" dataProvider="{projects}"
+					fontSize="12" labelField="name" mouseOut="btn_mouseOutHandler(event)"
+					mouseOver="btn_mouseOverHandler(event)" prompt="choose a project first"
+					skinClass="com.huawei.overte.view.skins.DDListSkin"/>-->
+	<s:Group id="loginBtn" right="38" bottom="27" width="97" height="39"
+			 mouseOut="btn_mouseOutHandler(event)" mouseOver="btn_mouseOverHandler(event)">
+		<s:Image x="0" y="0" height="39" source="@Embed('assets/imgs/loginImgs/loginbtn.png')"/>
+		<s:Label x="24" y="10" color="0xffffff" fontSize="18" text="Login"/>
+	</s:Group>
+	
+	
+	<!--<s:Group id="register" right="37" bottom="27" mouseOver="btn_mouseOverHandler(event)"
+			 mouseOut="btn_mouseOutHandler(event)">
+		<s:Image source="@Embed('assets/imgs/loginImgs/loginbtn.png')"/>
+		<s:Label text="register" fontSize="18" color="0xffffff" verticalCenter="0" horizontalCenter="0"/>
+	</s:Group>
+	-->
+</s:Group>

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="300" height="400"
+			   close="PopUpManager.removePopUp(this)" color="#000000"
+			   creationComplete="init(event)" fontFamily="微软雅黑" fontSize="12" keyUp="onKeyUp(event)"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin"  title="{resourceManager.getString('global','all.add')}{resourceManager.getString('global','all.rollbackpoint')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.formatters.DateFormatter;
+			import mx.managers.PopUpManager;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.utils.object_proxy;
+			
+			import org.httpclient.events.HttpDataEvent;
+			
+			import twaver.IData;
+			
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var systemRollback:SystemRollback;
+			private var opsIp:String;
+			private var idArr:Array = new Array();
+			private var pointId:String;
+			private var postPointBody:String;
+			
+			protected function init(event:FlexEvent):void
+			{
+				opsIp = SdncUtil.opsIp;
+				var pointList:ArrayCollection = systemRollback.rollbackPointList;
+				for (var i:int=0; i<pointList.length; i++){
+					var pointObj:Object = pointList.getItemAt(i);
+					var id:String = pointObj["id"];
+					var name:String = pointObj["name"];
+					var description:String = pointObj["description"];
+					var datetime:String = pointObj["datetime"];
+					idArr.push(id);
+				}
+			}
+/*******************************************增加点*******************************************************/	
+			private var pointObj:Object = new Object();
+			protected function saveAddPoint(event:MouseEvent):void
+			{
+				PopupManagerUtil.getInstence().popupLoading(this.parent);
+				devicenum =0;
+				num=0;
+				var name:String = pointName.text;
+				var description:String = desc.text;
+				var fr:DateFormatter=new DateFormatter();
+				fr.formatString="YYYY/MM/DD HH:NN:SS";
+				var date:String=fr.format(new Date());
+				var temp:Number = 0;
+				for (var i:int=0;i<idArr.length;i++){
+					if(Number(idArr[i]) > temp){
+						temp = Number(idArr[i]);
+					}
+				}
+				pointObj["id"] = temp+1;
+				pointObj["name"] = name;
+				pointObj["description"] = description;
+				pointObj["datetime"] = date;
+				pointId = pointObj["id"];
+				postPointBody = "<backuppoint pid=\""+pointId+"\">";
+//				SdncUtil.app.ipcore.physicsView.networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+//					if(item is StateNode){
+//						devicenum++;
+//						var node:StateNode=item as  StateNode;
+//						var device:Device=node.getClient("device");
+//						device.getCommitId(callback);
+//					}
+//				});
+			}
+			private var devicenum:int =0;
+			private var num:int=0;
+			public function callback():void{
+				var addRollbackPoint:AddRollbackPoint = this;
+				num++;
+				if(num == devicenum){
+				    var a:Boolean = true;
+//					SdncUtil.app.ipcore.physicsView.networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+//						if(item is StateNode){
+//							var node:StateNode=item as  StateNode;
+//							var device:Device=node.getClient("device");
+//							var devicename:String = node.getClient("devicename");
+//							var ip:String = node.getClient("ip");
+//							var commitId:String = device.commitId;
+//							var str:String = "<device><name>"+devicename+"</name><ipaddress>"+ip+"</ipaddress><commitid>"+commitId+"</commitid></device>";
+//							if(commitId == null){
+//								a = false;
+//								Alert.show("创建备份失败，"+devicename+"无法创建备份点","提示",Alert.OK,addRollbackPoint,closeFunction);
+//								return;
+//							}
+//							postPointBody += str;
+//						}
+//					});
+					postPointBody +="</backuppoint>";
+					trace(postPointBody);
+					if(a){
+						systemRollback.rollbackPointList.addItem(pointObj);
+						PostCommitIdAndPoint();
+					}
+				}
+			}
+			protected function PostCommitIdAndPoint():void{
+				var url:String = ConnUtil.protocolHeader+opsIp+"/database/agilegre?username=admin&infoname="+pointId+"&datatype=data";
+				trace("post commitId to Point  URL::::::"+url);
+				var body:String = postPointBody;
+				connUtil.clientQuery(url,ConnUtil.METHOD_POST,onPostCommPointListResult,onPostCommPointFault,body,"application/XML");
+			}
+			
+			private function onPostCommPointListResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("ok")!=-1){
+					Alert.show(resourceManager.getString('global','all.setrollbacksuccess'),resourceManager.getString('global','all.prompt'),Alert.OK,this,closeFunction);
+				}
+				systemRollback.makePointListBody(systemRollback.rollbackPointList);
+			}
+			
+			private function onPostCommPointFault(e:Event):void
+			{
+				Alert.show(resourceManager.getString('global','all.builddevicefail'),resourceManager.getString('global','all.prompt'));
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+/*******************************************其他*******************************************************/			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				if(event.keyCode==Keyboard.ESCAPE){
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+			private function closeFunction(e:CloseEvent):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<s:BorderContainer id="bcc" top="10" width="95%" height="313" hideEffect="fadeout"
+					   horizontalCenter="0" showEffect="fadeIn" >
+		<s:VGroup width="100%" height="90%">
+			<s:HGroup width="100%" height="30%" horizontalAlign="center" verticalAlign="middle">
+				<s:Label text="{resourceManager.getString('global','leftlist.name')}："  textAlign="right"/>
+				<s:TextInput id="pointName" x="71" width="182"/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="70%" horizontalAlign="center" verticalAlign="middle">
+				<s:Label text="  {resourceManager.getString('global','mgUser.describe')}：" textAlign="right"/>
+				<s:TextArea id="desc" />
+			</s:HGroup>
+		</s:VGroup>
+	</s:BorderContainer>
+	<s:Button bottom="15" label="{resourceManager.getString('global','all.sure')}" click="saveAddPoint(event)" horizontalCenter="-52"/>
+	<s:Button bottom="15" label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)" horizontalCenter="50"/>
+</s:TitleWindow>

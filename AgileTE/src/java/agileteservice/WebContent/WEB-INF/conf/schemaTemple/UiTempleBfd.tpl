@@ -1,0 +1,15 @@
+<bfds>
+	<foreach_bfdList>
+		<bfd> 
+			<name>$sessName</name>  
+			<discLocal>$localDiscr</discLocal>
+			<discRemote>$remoteDiscr</discRemote>
+			<tunnelName>$tunnelName</tunnelName>
+			<minTxInterval>$minTxInt</minTxInterval>
+			<minRxInterval>$minRxInt</minRxInterval>
+			<wtrTimerInt>$wtrTimerInt</wtrTimerInt>
+			<teBackup>$teBackup</teBackup>
+			<adminDown>$adminDown</adminDown>
+		</bfd>
+	</foreach_bfdList>
+</bfds>

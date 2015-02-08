@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="806" height="398" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12" initialize="init()" creationComplete="onCreate()"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','mgdevice.list')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.DeviceCtrl;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.model.Data;
+			import com.huawei.overte.model.Device;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.core.util.h.D_A0;
+			[Bindable]
+			public var deviceList:ArrayCollection;
+			[Bindable]
+			public var mydata:Data = Data.getInstence();
+			private var __app:overTegui2;
+			var nowdoid:String = ""
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var devices:Array=[];
+			
+			private var projectType:String;//项目类型
+			/**
+			 * 初始化  rwx202245
+			 * */	
+			public function init():void
+			{
+				__app = SdncUtil.app;
+//				devices=DataHandleTool.devices;
+				projectType = SdncUtil.cuProjectType;//初始化项目类型
+				mydata.areatypes.addItem({
+					id:1,
+					name:"Agile TE View"
+				})
+			}
+			
+			/**
+			 * 初始化设备列表
+			 * */
+			public function onCreate():void
+			{
+				var devices:Array=DataHandleTool.devices;
+				for each(var o:Object in devices){
+					o["state"]="uninitialized";
+				}
+				deviceList=new ArrayCollection(devices);
+				var getdevices:DeviceCtrl = new DeviceCtrl;
+				getdevices.getAllDevices()
+				
+			}
+			
+			/**
+			 * 增加设备
+			 */	
+			public function addDevice():void
+			{
+				var addDevice:AddDevice=AddDevice(PopUpManager.createPopUp(this.parent,AddDevice,true));
+				addDevice.flag="twadd"
+//				addDevice.addEventListener(SdncEvt.SAVE_NODE,SaveNode);//监听添加节点界面保存 Link事件
+				PopUpManager.centerPopUp(addDevice);     
+			}
+			/**添加节点设备事件**/
+			
+			private function SaveNode(e:SdncEvt):void{
+				
+				var i:int =0;
+				var newNode:StateNode = new StateNode;
+				newNode = (e.params as Array)[1] as StateNode;
+				(e.params as Array)[2]["id"]=i
+				//				devices.push((e.params as Array)[2])
+				DataHandleTool.nodeArray.push(newNode);
+				
+				if(projectType=="test"){
+					deviceList.addItem((e.params as Array)[2])
+				}else{
+					//					var opsIp:String=SdncUtil.opsIp;
+					//					var webname:String = SdncUtil.projectname;
+					//					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/domains/"+page.ManAreasID+"/devices";
+					//					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onPostDeviceResult,onPostDeviceFault,(e.params as Array)[0]);
+					//					PopupManagerUtil.getInstence().popupLoading(page,false);
+				}
+				i++;
+			}
+			/**
+			 * 编辑设备
+			 */
+			public function editData(obj:Object):void{
+				var editDevice:AddDevice=AddDevice(PopUpManager.createPopUp(this.parent,AddDevice,true));
+				editDevice.title = resourceManager.getString('global','mgdevice.title.editdevice')
+				editDevice.flag="edit";
+				//先把EditDevice这个子页面的属性赋给此页面
+				editDevice.nowid.text = obj["deid"]
+				editDevice.doid.text = nowdoid
+				editDevice.subdeviceId = obj["subdeviceid"]
+				editDevice.devicename.text = obj["devicename"];
+				editDevice.ip.text = obj["ip"];
+				editDevice.topoip.text = obj["topoip"];
+				editDevice.username.text= obj["username"];
+				editDevice.passwd.text = obj["passwd"];
+				editDevice.version.text = obj["version"];
+				if(obj["productType"]=="CE12800"){
+					editDevice.productType.selectedIndex = 0
+				}else{
+					editDevice.productType.selectedIndex = 1
+				}
+				editDevice.productType.enabled = false;
+				PopUpManager.centerPopUp(editDevice);     
+			}
+			
+			/**
+			 * 删除该条设备
+			 */	
+			public function deletedata(e:MouseEvent):void
+			{
+				Alert.show(resourceManager.getString('global','all.sure')+resourceManager.getString('global','all.delete')+"？",
+					resourceManager.getString('global','all.prompt'),
+					Alert.OK|Alert.CANCEL,__app,closeDelete);
+			}
+			
+			public function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.OK){
+					deviceList.removeItemAt(g.selectedIndex);
+//					var opsIp:String = SdncUtil.opsIp;
+//					var device:Object=g.selectedItem;
+//					var id:String=device["id"];
+					//					var url:String=ConnUtil.protocolHeader+opsIp+"/devices/"+id;
+					//					trace("url:::::::::::"+url);
+					//					connUtil.clientQuery(url,ConnUtil.METHOD_DELETE,onDelResult,onDelFault);
+				}
+				
+			}
+			/**
+			 * 单独测试一个设备
+			 * */
+			public var currentItem:Object;
+			public var index:int; 
+			public function testDevice():void{
+				PopupManagerUtil.getInstence().popupLoading(__app);
+				currentItem = g.selectedItem;
+				index = g.selectedIndex;
+				var device:Device = new Device();
+				device.id = currentItem["deid"];
+				device.username = currentItem["username"];
+				device.devicename = currentItem["devicename"];
+				device.version = currentItem["version"];
+				device.productType = currentItem["productType"];
+				device.pingTest(currentItem["deid"],setCurrDeviceState);
+				
+			}
+			//取得当前设备的状态的回调函数
+			public function setCurrDeviceState(curDevice:Device):void{
+				var value:String = curDevice.state;
+				DataHandleTool.showOnConsole(curDevice.devicename+"设备状态"+value)
+				currentItem["state"] = value;
+				mydata.nowdevices.setItemAt(currentItem,index)
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			/**
+			 * 测试所有设备
+			 * */
+			public function testAllDevices():void{
+				PopupManagerUtil.getInstence().popupLoading(__app);
+				var over:int = 0;
+				var devices:ArrayCollection=mydata.nowdevices;
+				if( devices == null||devices.length == 0){
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+				for each(var o:Object in devices){
+					var device:Device = new Device();
+					device.id = o["deid"]
+					device.pingTest(o["deid"],function(curDevice:Device):void{
+						var value:String = curDevice.state;
+						DataHandleTool.showOnConsole(curDevice.devicename+"设备状态"+value)
+						o["state"] = value
+						mydata.nowdevices.setItemAt(o,over)
+						over++;
+						if(over == devices.length){
+							PopupManagerUtil.getInstence().closeLoading();
+						}
+					});
+				}
+			}
+
+			
+			protected function show(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+					if (showcontrol.selected==true&&showdevice.selected==false) {
+						mydata.nowdevices.filterFunction = controlFilter;
+					} else if(showcontrol.selected==false&&showdevice.selected==true) {
+						mydata.nowdevices.filterFunction = deviceFilter;
+					}else{
+						mydata.nowdevices.filterFunction = null;
+					}
+					mydata.nowdevices.refresh();
+			}
+			private function controlFilter(item:Object):Boolean {
+				return item.productType != "CE12800";
+			}
+			private function deviceFilter(item:Object):Boolean {
+				return item.productType == "CE12800";
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="addsb"/>
+	</s:states>
+	<fx:Declarations>
+		<fx:XML id="project" source="assets/xml/sdn_office_project.xml"/>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas width="100%" height="100%" backgroundColor="0xcccccc" color="#000000">
+		<s:CheckBox id="showcontrol" x="537" y="8" label="显示控制器" click="show(event)"/>
+		<s:CheckBox id="showdevice" x="623" top="8" label="显示转发器" click="show(event)"/>
+			<s:VGroup id="content" left="18" right="18" top="40" bottom="50">
+				<s:Group width="100%" height="100%">
+					<s:DataGrid id="g" width="100%" height="100%" dataProvider="{mydata.nowdevices}"
+								editable="false" horizontalScrollPolicy="off" requestedRowCount="4"
+								 textAlign="center">
+						<s:columns>
+							<s:ArrayList>
+								<!--设备名称-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.name')}"  dataField="devicename" resizable="false"  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader" width="100"  />
+								<!--用户名-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.username')}" dataField="username" resizable="false" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--带外IP-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.outIP')}" dataField="ip" resizable="false" showDataTips="true"  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--带内IP-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.inputIP')}" dataField="topoip" resizable="false" showDataTips="true" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--版本-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.version')}"  dataField="version" resizable="false" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--产品类型-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.projectType')}" dataField="productType" resizable="false"  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--状态-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.state')}" dataField="state" resizable="false"  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+									<!--s:itemRenderer>
+										<fx:Component>
+											<s:GridItemRenderer>
+												<mx:Label  color="{data.state=='normal'?0x000000:0xff0000}" text="{data.state}"/>
+											</s:GridItemRenderer>
+										</fx:Component>
+									</s:itemRenderer-->
+								</s:GridColumn>
+								<!--测试-->
+								<s:GridColumn editable="false" resizable="false" width="75" headerText="{resourceManager.getString('global','mgdevice.testing')}" 
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+									<s:itemRenderer>
+										<fx:Component>
+											<s:GridItemRenderer>
+												<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/ping.png')"  label="{resourceManager.getString('global','mgdevice.testing')}" horizontalCenter="0" verticalCenter="0" click="outerDocument.testDevice()" />
+											</s:GridItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+								</s:GridColumn>
+								<!--编辑-->
+								<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','all.edit')}" resizable="false"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+									<s:itemRenderer>
+										<fx:Component>
+											<s:GridItemRenderer>
+												<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/edit.png')" label="{resourceManager.getString('global','all.edit')}..." horizontalCenter="0" verticalCenter="0"  click="outerDocument.editData(data)"/>
+											</s:GridItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+								</s:GridColumn>
+								<!--删除-->
+								<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','all.delete')}"  resizable="false"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+									<s:itemRenderer>
+										<fx:Component>
+											<s:GridItemRenderer>
+												
+												<fx:Script>
+													<![CDATA[
+														import com.huawei.overte.control.DeviceCtrl;
+														
+														import mx.controls.Alert;
+														import mx.events.CloseEvent;
+														protected function deldtedata(event:MouseEvent):void
+														{
+															Alert.show(resourceManager.getString('global','all.ifdeleted')+data.devicename+"？",
+																resourceManager.getString('global','all.prompt'),
+																Alert.YES|Alert.NO,this,closeDelete);
+														}
+														
+														public function closeDelete(e:CloseEvent):void
+														{
+															if(e.detail==Alert.YES)
+															{
+																trace("点击删除设备请求"+new Date().valueOf())
+																var deldevice:DeviceCtrl = new DeviceCtrl;
+																deldevice.DelDevices(data.deid)
+															}
+															
+														}
+													]]>
+												</fx:Script>
+												
+												<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  label="{resourceManager.getString('global','all.delete')}" horizontalCenter="0" verticalCenter="0" click="deldtedata(event)"/>
+											</s:GridItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+								</s:GridColumn>
+							</s:ArrayList>
+						</s:columns>
+					</s:DataGrid>
+				</s:Group>
+			</s:VGroup>
+		<!--退出-->
+		<s:Button right="20" bottom="15" label="{resourceManager.getString('global','all.exit')}" click="PopUpManager.removePopUp(this)"
+				  color="#000000" fontSize="12"/>
+		<s:Button id="allTestbtn" right="100" top="8" label="测试全部" click="testAllDevices()" visible="false"/>
+		<!--增加…-->
+		<s:Button id="btn" right="18" top="8" label="{resourceManager.getString('global','all.add')}..." click="addDevice()"/>
+		
+	</mx:Canvas>
+</s:TitleWindow>

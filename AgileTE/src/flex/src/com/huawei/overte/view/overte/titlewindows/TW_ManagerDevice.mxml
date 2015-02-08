@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="734" height="406"  color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   xmlns:menupancl="com.huawei.overte.view.overte.panel.menupancl.*"
+			   creationComplete="init()" close="PopUpManager.removePopUp(this)">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.DragSource;
+			import mx.events.CloseEvent;
+			import mx.managers.DragManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.HttpResponse;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.core.util.h._ED;
+			[Bindable]
+			public var deviceList:ArrayCollection;
+			private var __app:overTegui2;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var devices:Array=[];
+			private var projectType:String;//项目类型
+			public function init():void
+			{
+				__app = SdncUtil.app;
+				DataHandleTool.devices=devices;
+				projectType = SdncUtil.cuProjectType;//初始化项目类型
+			}
+			
+			/**
+			 * 初始化设备列表
+			 * */
+			public function onCreate():void
+			{
+				var devices:Array=DataHandleTool.devices;
+				for each(var o:Object in devices){
+					o["state"]="uninitialized";
+				}
+				deviceList=new ArrayCollection(devices);
+			}
+			
+			/**
+			 * 查询设备列表
+			 * */
+			public function queryDevice():void{
+				var opsIp:String=SdncUtil.opsIp;
+				var url:String = ConnUtil.protocolHeader+opsIp+"/devices";
+				connUtil.clientQuery(url,ConnUtil.METHOD_GET,onGetResult,onGetFault);
+				PopupManagerUtil.getInstence().popupLoading(this.parent);
+			}
+			
+			/**
+			 * 测试所有设备
+			 * */
+			public function testAllDevices():void{
+//				PopupManagerUtil.getInstence().popupLoading(this.parent);
+//				var over:int = 0;
+//				var devices:Array=DataHandleTool.devices;
+//				if( devices == null||devices.length == 0){
+//					PopupManagerUtil.getInstence().closeLoading();
+//				}
+//				var newDevices:Array=new Array;
+//				for each(var o:Object in devices){
+//					var id:String = o["id"];
+//					var device:Device = o["device"];
+//					device.pingTest(id,function(curDevice:Device):void{
+//						var obj:Object=new Object;
+//						obj["state"] = curDevice.state;
+//						obj["id"] = curDevice.id;
+//						obj["username"] = curDevice.username;
+//						obj["passwd"] = curDevice.passwd;
+//						obj["devicename"] = curDevice.devicename;
+//						obj["ip"] = curDevice.ip;
+//						obj["productType"] = curDevice.productType;
+//						obj["version"] = curDevice.version;
+//						obj["device"] = curDevice;
+//						newDevices.push(obj);
+//						over++;
+//						if(over == devices.length){
+//							deviceList=new ArrayCollection(newDevices);	
+//							PopupManagerUtil.getInstence().closeLoading();
+//						}
+//					});
+//				}
+			}
+			
+			/**
+			 * 单独测试一个设备
+			 * */
+			public var currentItem:Object;
+			public var index:int; 
+		    public function testDevice(e:MouseEvent):void{
+//				PopupManagerUtil.getInstence().popupLoading(this.parent);
+//				currentItem = g.selectedItem;
+//				index = g.selectedIndex;
+//				var id:String = currentItem["id"];
+//				var device:Device = currentItem["device"];
+//				device.pingTest(id,setCurrDeviceState);
+				
+			}
+			//取得当前设备的状态的回调函数
+		//	public function setCurrDeviceState(curDevice:Device):void{
+//				var value:String = curDevice.state;
+//				trace("取到的state+++"+value);
+//				currentItem["state"] = value;
+//				deviceList.setItemAt(currentItem,index);
+//				PopupManagerUtil.getInstence().closeLoading();
+			//}
+			
+			/**
+			 * 使设备可以拖动
+			 */	
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,1000,1000);
+				this.startDrag(false,re);
+			}
+			
+			public function endDrag(e:MouseEvent):void
+			{
+				stopDrag();
+			}
+			
+			/**
+			 * 增加设备
+			 */	
+			public function addDevice():void
+			{
+				var addDevice:AddDevice=AddDevice(PopUpManager.createPopUp(this.parent,AddDevice,true));
+				addDevice.addEventListener(SdncEvt.SAVE_NODE,SaveNode);//监听添加节点界面保存 Link事件
+				PopUpManager.centerPopUp(addDevice);     
+			}
+			/*添加节点设备事件*/
+			
+			private function SaveNode(e:SdncEvt):void{
+				
+				var i:int =0;
+				var newNode:StateNode = new StateNode;
+				newNode = (e.params as Array)[1] as StateNode;
+				(e.params as Array)[2]["id"]=i
+//				devices.push((e.params as Array)[2])
+				DataHandleTool.nodeArray.push(newNode);
+				
+				if(projectType=="test"){
+					deviceList.addItem((e.params as Array)[2])
+				}else{
+//					var opsIp:String=SdncUtil.opsIp;
+//					var webname:String = SdncUtil.projectname;
+//					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/domains/"+page.ManAreasID+"/devices";
+//					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onPostDeviceResult,onPostDeviceFault,(e.params as Array)[0]);
+//					PopupManagerUtil.getInstence().popupLoading(page,false);
+				}
+				i++;
+			}
+			/**
+			 * 编辑设备
+			 */
+			public function editData(e:MouseEvent):void{
+//				var editDevice:EditDevice=EditDevice(PopUpManager.createPopUp(this.parent,EditDevice,true));
+//				//先把EditDevice这个子页面的属性赋给此页面
+//				editDevice.deviceSetUp=this;
+//				editDevice.dataGrid=g;
+//				PopUpManager.centerPopUp(editDevice);     
+			}
+			
+			/**
+			 * 删除该条设备
+			 */	
+			public function deletedata(e:MouseEvent):void
+			{
+				Alert.show(resourceManager.getString('global','all.suredelete')+"?",resourceManager.getString('global','all.prompt'),Alert.OK|Alert.CANCEL,__app,closeDelete);
+			}
+			
+			public function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.OK){
+					deviceList.removeItemAt(g.selectedIndex);
+//					var opsIp:String = SdncUtil.opsIp;
+//					var device:Object=g.selectedItem;
+//					var id:String=device["id"];
+//					var url:String=ConnUtil.protocolHeader+opsIp+"/devices/"+id;
+//					trace("url:::::::::::"+url);
+//					connUtil.clientQuery(url,ConnUtil.METHOD_DELETE,onDelResult,onDelFault);
+				}
+			
+			}
+			private function onDelResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("error")== -1 ){
+					Alert.show(resourceManager.getString('global','mgdevice.title.deletedevice')+resourceManager.getString('global','all.success'),resourceManager.getString('global','all.prompt'));
+					deviceList.removeItemAt(g.selectedIndex);
+				}else{
+					Alert.show(resourceManager.getString('global','mgdevice.title.deletedevice')+resourceManager.getString('global','all.fail'),resourceManager.getString('global','all.prompt'));
+				}
+			}
+			
+			private function onDelFault(e:Event):void
+			{
+				trace("Delete失败"+e.toString());
+			}
+			private function onGetResult(e:HttpResponseEvent,data:String):void
+			{
+//				var over:int = 0;
+//				var devices:Array = DataHandleTool.handleDeviceData(data.toString());
+//				if( devices == null||devices.length == 0){
+//					PopupManagerUtil.getInstence().closeLoading();
+//				}
+//				var newDevices:Array=new Array;
+//				for each(var o:Object in devices){
+//					var id:String = o["id"];
+//					var device:Device = o["device"];
+//					device.pingTest(id,function(curDevice:Device):void{
+//						var obj:Object=new Object;
+//						obj["state"] = curDevice.state;
+//						obj["id"] = curDevice.id;
+//						obj["username"] = curDevice.username;
+//						obj["passwd"] = curDevice.passwd;
+//						obj["devicename"] = curDevice.devicename;
+//						obj["ip"] = curDevice.ip;
+//						obj["productType"] = curDevice.productType;
+//						obj["version"] = curDevice.version;
+//						obj["device"] = curDevice;
+//						newDevices.push(obj);
+//						over++;
+//						if(over == devices.length){
+//							deviceList=new ArrayCollection(newDevices);	
+//							PopupManagerUtil.getInstence().closeLoading();
+//						}
+//					});
+//				}
+			}
+			
+			private function onGetFault(e:Event):void
+			{
+				trace("获取所有数据失败"+e.toString());
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+//				if(event.keyCode==Keyboard.ESCAPE){
+//					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_SETUP_DEVICES_WINDOW));
+//				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<fx:XML id="option_ipcore" source="assets/xml/option_ipcore.xml"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:VGroup id="content"  width="100%" height="80%">
+			<s:Group  width="100%" height="30">
+				<s:Button id="btn" verticalCenter="0"  label="{resourceManager.getString('global','all.add')}..." click="addDevice()" right="20"/>
+				<s:Button id="test" verticalCenter="0"  label="{resourceManager.getString('global','mgdevice.testing')}" click="testAllDevices()" right="120" visible="false"/>
+			</s:Group>
+			<s:Group  width="100%" height="100%">
+				<s:DataGrid id="g" left="20" right="20" height="100%" dataProvider="{deviceList}"
+							editable="false" horizontalScrollPolicy="off" requestedRowCount="4"
+							sortableColumns="false"
+							textAlign="center" verticalCenter="0">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn  headerText="{resourceManager.getString('global','mgUser.username')}" dataField="username" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn  headerText="{resourceManager.getString('global','mgdevice.name')}" dataField="devicename" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader" />
+							<s:GridColumn headerText="{resourceManager.getString('global','mgtunnel.path.ip')}" dataField="ip" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.version')}"  dataField="version" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.projectType')}" dataField="productType" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.state')}" dataField="state" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','all.edit')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/edit.png')" label="{resourceManager.getString('global','all.edit')}..." horizontalCenter="0" verticalCenter="0"  click="outerDocument.editData(event)"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','all.delete')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')" label="{resourceManager.getString('global','all.delete')}" horizontalCenter="0" verticalCenter="0" click="outerDocument.deletedata(event)"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','mgdevice.testing')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/ping.png')" label="{resourceManager.getString('global','mgdevice.testing')}" horizontalCenter="0" verticalCenter="0" click="outerDocument.testDevice(event)"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+		</s:VGroup>
+		<s:Button right="20" bottom="15" label="{resourceManager.getString('global','all.exit')}"
+				  click="PopUpManager.removePopUp(this)"/>
+	</mx:Canvas>
+	
+</s:TitleWindow>
+ 

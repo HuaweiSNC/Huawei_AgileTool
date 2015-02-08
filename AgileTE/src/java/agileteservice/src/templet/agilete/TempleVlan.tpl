@@ -1,0 +1,12 @@
+#if("0"!="${t_vlan.size}")
+<vlanId>$!{t_vlan.index}</vlanId>
+<vlanName>$!{t_vlan.name}</vlanName>
+<vlanDesc>$!{t_vlan.desc}</vlanDesc>
+#if(""!="$!{t_vlan.ifName}")
+ <vlanif>
+	<ifName>$!{t_vlan.ifName}</ifName>
+	<cfgBand>1000</cfgBand>
+	<dampTime>0</dampTime>
+</vlanif>
+#end
+#end

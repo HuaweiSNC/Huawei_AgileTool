@@ -1,0 +1,21 @@
+cd /opt/svrp
+./time_client_start 1
+
+system
+snmp-agent sys-info version all
+snmp-agent target-host trap address udp-domain 10.111.92.248 udp-port 163 params securityname cipher %@%@.{'F1zqsS3Mx|m-nKH`+,:68%@%@ v2c
+snmp-agent trap type base-trap
+snmp-agent trap enable
+commit
+
+模拟触发告警linkDown
+diagnose
+simulate  alarm-name  linkDown alarm-state start
+simulate  alarm-name  linkDown alarm-state end
+
+
+
+************************
+其中snmp-agent target-host trap address udp-domain 10.111.92.248 udp-port 163 params securityname cipher %@%@.{'F1zqsS3Mx|m-nKH`+,:68%@%@ v2c
+里面的ip号是你跟设备想关联的ops服务的ip号
+*************************

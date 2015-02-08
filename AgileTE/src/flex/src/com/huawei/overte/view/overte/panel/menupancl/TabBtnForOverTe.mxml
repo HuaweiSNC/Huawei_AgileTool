@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="79" height="23" buttonMode="true"
+		 fontSize.unSelected="12">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.tools.SdncUtil;
+			
+			import mx.events.FlexEvent;
+			[Bindable]
+			private var __text:String
+			/**按钮显示标签*/
+			public function get text():String
+			{
+				return __text;
+			}
+			/**按钮显示标签*/
+			public function set text(value:String):void
+			{
+				__text = value;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="unSelected"/>
+		<s:State name="selected"/>
+	</s:states>
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0"/>
+		</s:fill>
+	</s:Rect>
+	<s:Label id="btnText" text="{__text}" verticalCenter="0" horizontalCenter="0" color="0xffffff" alpha=".4" alpha.selected="1"/>
+	<s:Line width="81" bottom="0" horizontalCenter="0">
+		<s:stroke>
+			<s:SolidColorStroke color="0x5c636d" color.selected="0x03bbff" weight="1" weight.selected="2" />
+		</s:stroke>
+	</s:Line>
+	<!--<s:Rect width="100%" height="3" bottom="0">
+	<s:fill>
+	<s:SolidColor color="0x03bbff" alpha="0" alpha.selected="1"/>
+	</s:fill>
+	</s:Rect>-->
+</s:Group>

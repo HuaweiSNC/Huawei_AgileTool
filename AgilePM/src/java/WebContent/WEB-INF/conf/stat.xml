@@ -1,0 +1,7 @@
+<domains>
+	<domain name="sdnc">
+		<device name="F">
+			<tunnel name="Tunnel0" toInterface="MEth0/0/0" ifoperspeed="10000" />
+		</device>
+	</domain>
+</domains>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				buttonMode="true"
+				click="onClick(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.tools.SdncUtil;
+			protected function onClick(event:MouseEvent):void
+			{
+				SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.CTRLVIEW_DC_CHANGE, data));
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:Button label="{data.label}" chromeColor="0x0c6c9e"/>
+</s:ItemRenderer>

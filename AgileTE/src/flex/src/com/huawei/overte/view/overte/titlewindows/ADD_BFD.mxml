@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="604" height="324" close="PopUpManager.removePopUp(this)" color="#000000"
+			   creationComplete="onCreate(event)" fontFamily="微软雅黑" fontSize="12"
+			   initialize="init()" skinClass="com.huawei.overte.view.skins.TitleWindowSkin"
+			   title="{resourceManager.getString('global','mgtunnel.tnldeploybfd')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.log.Logs;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.components.PopUpAnchor;
+			
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+			[Bindable]private var isEnbled:Boolean=true;
+			[Bindable]private var curarea:String;//当前管理域
+			private var __app:overTegui2;//主应用程序
+			private var projectType:String;
+			public var bfdarray:ArrayCollection = new ArrayCollection();
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			public var deviceid:String="";
+			public var handleFlag:String="";
+			public var tw_tunnel:TW_ManagerTunnel;
+			protected function init():void
+			{
+				__app = SdncUtil.app;//初始化主应用程序
+				projectType = SdncUtil.cuProjectType	
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;;//当前管理域
+			}
+			/**
+			 * 初始化获取配置bfd信息
+			 * */
+			protected function onCreate(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(projectType=="test"){
+					
+				}
+				else{
+					//切换不同设备 请求不同设备下的管道信息
+					PopupManagerUtil.getInstence().popupLoading(__app,false);
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceid+"/bfds?name="+bfdtunnel.text;
+					connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetBfdResult,onGetBfdFault);
+				}
+			}
+			/***
+			 * 获取bfd信息连接成功
+			 * */
+			private function onGetBfdResult(e:HttpResponseEvent,data:String):void
+			{
+				if(e.response.code=="200"){
+					if(data == ""){
+						PopupManagerUtil.getInstence().closeLoading();	
+						handleFlag="add";
+						return;
+					}else{
+						handleFlag="edit";
+						var bfdxml:XML = new XML(data);
+						for(var i:int=0;i<bfdxml.bfd.length();i++){
+							if(bfdxml.bfd[i].teBackup=="true"){
+								backbfdName.enabled = false;
+								backbfdName.text = bfdxml.bfd[i].name.toString();
+								backbfdcurFlag.text = bfdxml.bfd[i].discLocal.toString();
+								backbfddesFlag.text = bfdxml.bfd[i].discRemote.toString();
+								backbfdgetTime.text = bfdxml.bfd[i].minRxInterval.toString();
+								bfdsendTime.text = bfdxml.bfd[i].minTxInterval.toString();
+							}else{
+								bfdName.enabled = false;
+								bfdName.text = bfdxml.bfd[i].name.toString();
+								bfdcurFlag.text = bfdxml.bfd[i].discLocal.toString();
+								bfddesFlag.text = bfdxml.bfd[i].discRemote.toString();
+								bfdgetTime.text = bfdxml.bfd[i].minRxInterval.toString();
+								bfdsendTime.text = bfdxml.bfd[i].minTxInterval.toString();
+							}
+						}
+						PopupManagerUtil.getInstence().closeLoading();
+					}
+				}else{
+					/**"获取BFD信息连接失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.getfail'),
+						resourceManager.getString('global','all.prompt'));
+				}
+				
+			}
+			/**
+			 * 获取bfd信息连接出错
+			 * */
+			private function onGetBfdFault(e:Event):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				/**"获取BFD信息连接出错","提示"**/
+				Alert.show(resourceManager.getString('global','all.geterror'),
+					resourceManager.getString('global','all.prompt'));
+				trace("获取管道BFD信息连接出错","提示");
+			}
+			protected function save_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var arr:Array = [bfdNameV,bfdsendTimeV,bfdgetTimeV,backbfdNameV,backbfdsendTimeV,backbfdgetTimeV];
+				var resultArr:* = Validator.validateAll(arr);
+				if(resultArr.length != 0){
+					
+				}else if(bfdName.text==backbfdName.text){
+					Alert.show(resourceManager.getString('global','mgtunnel.bfd.bfdnamesame'),
+						resourceManager.getString('global','all.prompt'));
+				}else if(bfdcurFlag.text==backbfdcurFlag.text){
+					Alert.show(resourceManager.getString('global','mgtunnel.bfd.bfdflagsame'),
+						resourceManager.getString('global','all.prompt'));
+				}else{
+					PopupManagerUtil.getInstence().popupLoading(this,false);
+					var addBfdBody:String = "<bfds><bfd>"; 
+					addBfdBody+="<name>"+bfdName.text+"</name>";
+					addBfdBody+="<discLocal>"+bfdcurFlag.text+"</discLocal>";
+					addBfdBody+="<discRemote>"+bfddesFlag.text+"</discRemote>";
+					addBfdBody+="<tunnelName>"+bfdtunnel.text+"</tunnelName>";
+					addBfdBody+="<minTxInterval>"+bfdsendTime.text+"</minTxInterval>";
+					addBfdBody+="<minRxInterval>"+bfdgetTime.text+"</minRxInterval>";
+					addBfdBody+="<teBackup>false</teBackup><adminDown>false</adminDown>"
+					addBfdBody+="</bfd></bfds>";
+					
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					if(handleFlag=="add"){
+						var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceid+"/bfds";
+						connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onPostBfdResult,onPostBfdFault,addBfdBody);
+					}
+					if(handleFlag=="edit"){
+						var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceid+"/bfds";
+						connUtil.clientQuery(uri,ConnUtil.METHOD_PUT,onPutBfdResult,onPutBfdFault,addBfdBody);
+					}
+				}
+			}
+			/***
+			 * 真实工程：主Path-配置bfd信息成功
+			 * */
+			private function onPostBfdResult(e:HttpDataEvent):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				if(e.bytes.toString().search("ok")!=-1){
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var addBackBfdBody:String = "<bfds><bfd>"; 
+					addBackBfdBody+="<name>"+backbfdName.text+"</name>";
+					addBackBfdBody+="<discLocal>"+backbfdcurFlag.text+"</discLocal>";
+					addBackBfdBody+="<discRemote>"+backbfddesFlag.text+"</discRemote>";
+					addBackBfdBody+="<tunnelName>"+backbfdtunnel.text+"</tunnelName>";
+					addBackBfdBody+="<minTxInterval>"+backbfdsendTime.text+"</minTxInterval>";
+					addBackBfdBody+="<minRxInterval>"+backbfdgetTime.text+"</minRxInterval>";
+					addBackBfdBody+="<teBackup>true</teBackup><adminDown>false</adminDown>";
+					addBackBfdBody+="</bfd></bfds>";
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceid+"/bfds";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onPostBackBfdResult,onPostBackBfdFault,addBackBfdBody);
+					PopUpManager.removePopUp(this);
+				}else{
+					var xml:XML = new XML(e.bytes.toString())
+					/**"主备Path-Bfd配置失败\n","提示"**/
+					Alert.show(resourceManager.getString('global','mgtunnel.bfd.mainbfd')+"Failed"
+						+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")),
+						resourceManager.getString('global','all.prompt'));
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.mainbackpath')+resourceManager.getString('global','mgtunnel.tnldeploybfd')+"fail\n"+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")))
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+				
+			}
+			/***
+			 * 真实工程：主Path-配置bfd信息连接错误
+			 * */
+			private function onPostBfdFault(e:Event):void
+			{
+				trace("主Path-配置Bfd信息连接错误","提示");
+				/**"配置主Path Bfd信息连接错误","提示"**/
+				Alert.show(resourceManager.getString('global','prompt.mainpath')+"-Bfd"
+					+resourceManager.getString('global','all.error'),
+					resourceManager.getString('global','all.prompt'));
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/***
+			 * 真实工程：备Path-配置bfd信息成功
+			 * */
+			private function onPostBackBfdResult(e:HttpDataEvent):void
+			{
+				
+				if(e.bytes.toString()){
+					/**"备Path-Bfd配置成功","提示",Alert.OK,this**/
+					Alert.show(resourceManager.getString('global','mgtunnel.tnldeploybfd')+"-Success",
+						resourceManager.getString('global','all.prompt'),Alert.OK,this);
+					this.dispatchEvent(new SdncEvt(SdncEvt.SAVE_BFD_EVENT))
+					PopUpManager.removePopUp(this);
+					PopupManagerUtil.getInstence().closeLoading();
+				}else{
+					/**"备Path--Bfd配置失败\n","提示"**/
+					Alert.show(resourceManager.getString('global','mgtunnel.bfd.backbfd')+"Failed"
+						+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")),resourceManager.getString('global','all.prompt'))
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+			}
+			/***
+			 * 真实工程：备Path-配置bfd信息连接错误
+			 * */
+			private function onPostBackBfdFault(e:Event):void
+			{
+				/**"配置备Path Bfd信息连接错误","提示"**/
+				Alert.show(resourceManager.getString('global','prompt.backuppath')+"-Bfd"
+					+resourceManager.getString('global','all.error'),
+					resourceManager.getString('global','all.prompt'));
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/***
+			 * 真实工程：主Path-bfd编辑信息成功
+			 * */
+			private function onPutBfdResult(e:HttpDataEvent):void
+			{
+				
+				if(e.bytes.toString().search("ok")!=-1){
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var addBackBfdBody:String = "<bfds><bfd>"; 
+					addBackBfdBody+="<name>"+backbfdName.text+"</name>";
+					addBackBfdBody+="<discLocal>"+backbfdcurFlag.text+"</discLocal>";
+					addBackBfdBody+="<discRemote>"+backbfddesFlag.text+"</discRemote>";
+					addBackBfdBody+="<tunnelName>"+backbfdtunnel.text+"</tunnelName>";
+					addBackBfdBody+="<minTxInterval>"+backbfdsendTime.text+"</minTxInterval>";
+					addBackBfdBody+="<minRxInterval>"+backbfdgetTime.text+"</minRxInterval>";
+					addBackBfdBody+="<teBackup>true</teBackup>";
+					addBackBfdBody+="</bfd></bfds>";
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceid+"/bfds";
+					
+					connUtil.clientQuery(uri,ConnUtil.METHOD_PUT,onPutBackBfdResult,onPutBackBfdFault,addBackBfdBody);
+					PopUpManager.removePopUp(this);
+					PopupManagerUtil.getInstence().closeLoading();
+				}else{
+					/**"主Path-编辑Bfd配置失败","提示"**/
+					Alert.show(resourceManager.getString('global','mgtunnel.bfd.mainbfd')+"Failed"
+						+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")),
+						resourceManager.getString('global','all.prompt'));
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+			}
+			/***
+			 * 真实工程：主Path-配置编辑bfd信息连接错误
+			 * */
+			private function onPutBfdFault(e:Event):void
+			{
+				trace("主Path-编辑配置Bfd信息连接错误","提示");
+			}
+			/***
+			 * 真实工程：备Path-bfd编辑信息成功
+			 * */
+			private function onPutBackBfdResult(e:HttpDataEvent):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				if(e.bytes.toString().search("ok")!=-1){
+					/**"备Path-编辑Bfd配置成功","提示",Alert.OK,this**/
+					Alert.show(resourceManager.getString('global','mgtunnel.tnldeploybfd')+"-Success",
+						resourceManager.getString('global','all.prompt'),Alert.OK,this);
+					PopUpManager.removePopUp(this);
+				}else{
+					/**"备Path-编辑Bfd配置失败","提示"**/
+					Alert.show(resourceManager.getString('global','mgtunnel.bfd.backbfd')+"Failed"
+						+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")),
+						resourceManager.getString('global','all.prompt'))
+				}
+			}
+			/***
+			 * 真实工程：备Path-配置编辑bfd信息连接错误
+			 * */
+			private function onPutBackBfdFault(e:Event):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				trace("备Path-编辑配置Bfd信息连接错误","提示");
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="State_All"/>
+	</s:states>
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+		<mx:StringValidator id="bfdNameV" source="{bfdName}" property="text"
+							minLength="1" requiredFieldError="{resourceManager.getString('global','mgtunnel.bfd.bfdnameNull')}"
+							trigger="{save}" triggerEvent="click"/>
+		<mx:NumberValidator id="bfdsendTimeV" source="{bfdsendTime}" property="text"
+							domain="int" minValue="10"
+							maxValue="1000"
+							lowerThanMinError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeMin')}"
+							exceedsMaxError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeMax')}"
+							integerError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeInt')}"
+							requiredFieldError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeNull')}"
+							trigger="{save}" triggerEvent="click"/>
+		<mx:NumberValidator id="bfdgetTimeV" source="{bfdgetTime}" property="text"
+							domain="int" minValue="10"
+							maxValue="1000"
+							lowerThanMinError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeMin')}"
+							exceedsMaxError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeMax')}"
+							integerError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeInt')}"
+							requiredFieldError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeNull')}"
+							trigger="{save}" triggerEvent="click"/>
+		
+		<mx:StringValidator id="backbfdNameV" source="{backbfdName}" property="text"
+							minLength="1" requiredFieldError="{resourceManager.getString('global','mgtunnel.bfd.bfdnameNull')}"
+							trigger="{save}" triggerEvent="click"/>
+		<mx:NumberValidator id="backbfdsendTimeV" source="{backbfdsendTime}" property="text"
+							domain="int" minValue="10"
+							maxValue="1000"
+							lowerThanMinError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeMin')}"
+							exceedsMaxError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeMax')}"
+							integerError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeInt')}"
+							requiredFieldError="{resourceManager.getString('global','mgtunnel.bfd.minsendtimeNull')}"
+							trigger="{save}" triggerEvent="click"/>
+		<mx:NumberValidator id="backbfdgetTimeV" source="{backbfdgetTime}" property="text"
+							domain="int" minValue="10"
+							maxValue="1000"
+							lowerThanMinError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeMin')}"
+							exceedsMaxError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeMax')}"
+							integerError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeInt')}"
+							requiredFieldError="{resourceManager.getString('global','mgtunnel.bfd.minreceivetimeNull')}"
+							trigger="{save}" triggerEvent="click"/>
+		
+	</fx:Declarations>
+	<mx:Canvas left="0" right="0" height="100%" backgroundColor="0xcccccc">
+		<s:BorderContainer id="bcc" left="10" right="10" top="10" bottom="50" hideEffect="fadeout"
+						   showEffect="fadeIn">
+			<s:VGroup width="100%" height="100%" gap="5" left="0">
+				<s:Group width="100%" height="30">
+					<!--主Path-BFD配置-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.mainbfd')}"  verticalCenter="0" left="20"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--会话名称-->
+					<s:Label left="37" text="{resourceManager.getString('global','mgtunnel.bfd.bfdname')}　:" verticalCenter="0"/>
+					<s:TextInput id="bfdName" left="122" width="126" enabled="{isEnbled}"
+								 verticalCenter="0"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--本地标识-->
+					<s:Label left="37" text="{resourceManager.getString('global','mgtunnel.bfd.srcflag')}　:" verticalCenter="0"/>
+					<s:TextInput id="bfdcurFlag" left="122" width="126" enabled="{isEnbled}"
+								 restrict="0-9" verticalCenter="0"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--目的标识-->
+					<s:Label left="37" text="{resourceManager.getString('global','mgtunnel.bfd.desflag')}　:" verticalCenter="0"/>
+					<s:TextInput id="bfddesFlag" left="122" width="126" enabled="{isEnbled}"
+								 restrict="0-9" verticalCenter="0"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--绑定管道-->
+					<s:Label left="37" text="{resourceManager.getString('global','mgtunnel.bfd.bingtnl')}　:" verticalCenter="0"/>
+					<s:TextInput id="bfdtunnel" left="122" width="126" enabled="{false}"
+								 verticalCenter="0"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--最小发送间隔-->
+					<s:Label left="13" text="{resourceManager.getString('global','mgtunnel.bfd.minsendtime')}　:" verticalCenter="0"/>
+					<s:TextInput id="bfdsendTime" left="122" width="90" enabled="{isEnbled}"
+								 restrict="0-9" text="50" verticalCenter="0"/>
+					<!--毫秒-->
+					<s:Label x="220" y="0" height="100%" text="{resourceManager.getString('global','mgtunnel.bfd.millisecond')}" verticalAlign="middle"/>
+				</s:Group>
+		
+				<s:Group width="100%" height="5%">
+					<!--最小接收间隔-->
+					<s:Label left="13" text="{resourceManager.getString('global','mgtunnel.bfd.minreceivetime')}　:" verticalCenter="0"/>
+					<s:TextInput id="bfdgetTime" left="122" width="90" enabled="{isEnbled}"
+								 restrict="0-9" text="50" verticalCenter="0"/>
+					<!--毫秒-->
+					<s:Label x="220" y="0" height="100%" text="{resourceManager.getString('global','mgtunnel.bfd.millisecond')}" verticalAlign="middle"/>
+				</s:Group>
+				<!--s:Group width="100%" height="5%">
+					<s:CheckBox left="60" label="是否为隧道备LSP" verticalCenter="0"/>
+				</s:Group-->
+				
+			</s:VGroup>
+		</s:BorderContainer>
+		<s:BorderContainer id="backbcc" right="10" top="10" bottom="50" width="50%"
+						   hideEffect="fadeout" showEffect="fadeIn">
+			<s:VGroup left="0" width="100%" height="100%" gap="5">
+				<s:Group width="100%" height="30">
+					<!--备Path-BFD配置-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.backbfd')}"  verticalCenter="0" left="20"/>
+				</s:Group>
+				
+				<s:Group width="100%" height="5%">
+					<!--会话名称-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.bfdname')}　:"  verticalCenter="0" left="67"/>
+					<s:TextInput id="backbfdName"  width="126" verticalCenter="0" left="152" enabled="{isEnbled}"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--本地标识-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.srcflag')}　:"  verticalCenter="0" left="67"/>
+					<s:TextInput id="backbfdcurFlag"  width="126" verticalCenter="0" left="152" enabled="{isEnbled}" restrict="0-9"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--目的标识-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.desflag')}　:"  verticalCenter="0" left="67"/>
+					<s:TextInput id="backbfddesFlag"  width="126" verticalCenter="0" left="152" enabled="{isEnbled}" restrict="0-9"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--绑定管道-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.bingtnl')}　:"  verticalCenter="0" left="67"/>
+					<s:TextInput id="backbfdtunnel"  width="126" verticalCenter="0" left="152" enabled="{false}" text="{bfdtunnel.text}"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--最小发送间隔-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.minsendtime')}　:"  verticalCenter="0" left="43"/>
+					<s:TextInput id="backbfdsendTime" text="50"  width="90" verticalCenter="0" left="152" enabled="{isEnbled}" restrict="0-9"/>
+					<!--毫秒-->
+					<s:Label x="250" y="0" height="100%" text="{resourceManager.getString('global','mgtunnel.bfd.millisecond')}" verticalAlign="middle"/>
+				</s:Group>
+				
+				<s:Group width="100%" height="5%">
+					<!--最小接收间隔-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.bfd.minreceivetime')}　:"  verticalCenter="0" left="43"/>
+					<s:TextInput id="backbfdgetTime"  text="50" width="90" verticalCenter="0" left="152" enabled="{isEnbled}" restrict="0-9"/>
+					<!--毫秒-->
+					<s:Label x="250" y="0" height="100%" text="{resourceManager.getString('global','mgtunnel.bfd.millisecond')}" verticalAlign="middle"/>
+				</s:Group>
+				
+				
+			</s:VGroup>
+		</s:BorderContainer>
+		<s:Group bottom="0" height="50" horizontalCenter="0">
+			<!--确定-->
+			<s:Button id="save" label="{resourceManager.getString('global','all.sure')}" click="save_clickHandler(event)" enabled="true"
+					  horizontalCenter="-60" verticalCenter="0"/>
+			<!--取消-->
+			<s:Button label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)" horizontalCenter="60"
+					  verticalCenter="0"/>
+		</s:Group>
+	</mx:Canvas>
+</s:TitleWindow>

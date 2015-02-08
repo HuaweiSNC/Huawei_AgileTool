@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 color="0xffffff" xmlns:common="com.huawei.sdnc.view.common.*" 
+		 xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*"
+		 creationComplete="init()" width="200" height="50"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenMax;
+			import com.huawei.sdnc.event.SdncEvt;
+			import com.huawei.sdnc.model.Device;
+			import com.huawei.sdnc.model.QosItem;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.sdnc.view.common.node.StateNode;
+			import com.huawei.sdnc.view.ipCore_DCI.dataHandle.DataHandleTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import twaver.IData;
+			import twaver.networkx.NetworkX;
+			
+			/**展开状态,true为展开，false为未展开*/
+			private var __isExtended:Boolean;
+			private var __app:sdncui2;
+			public var page:OverTEView
+			protected function init():void
+			{
+				__app=SdncUtil.app;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:Group id="content" left="11"  width="100%" height="100%">
+		<s:Rect  width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0x283855" alpha="1"/>
+			</s:fill>
+		</s:Rect>
+		
+	</s:Group>
+</s:Group>

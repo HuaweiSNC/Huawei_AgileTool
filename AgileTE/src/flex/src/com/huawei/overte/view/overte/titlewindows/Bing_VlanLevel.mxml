@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="362" height="134" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','mgflow.mgvlan.vlanbind')}" creationComplete="init()" >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+			
+			/**是否是可用 状态**/
+			[Bindable]private var isEnbled:Boolean=true;
+			/**所有整网优先级的信息**/
+			[Bindable]private var vlanLevelArray:ArrayCollection = new ArrayCollection();
+			/**当前主应用程序**/
+			[Bindable]private var __app:overTegui2;
+			/**项目类型**/
+			[Bindable]public var curarea:Object;
+			/**ops的IP地址**/
+			public var opsIp:String=SdncUtil.opsIp;
+			/**web名称**/
+			public var webname:String = SdncUtil.projectname;
+			/**判定是编辑还是增加**/
+			public var handleFlag:String="add";
+			/**设备ID**/
+			public var devId:String = "";
+			/**连接java单例**/
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			/**界面服务**/
+			private var sdnService:SdnUIService                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 = new SdnUIService();
+			/**测试时vlan信息**/
+			private var _vlanXML:XML;
+			/**绑定的Vlan的ID**/
+			public var vlanId:String;
+			/**vlan管理界面**/
+			public var vlangroup:VlanGroup;
+			/**编辑时，找到传过来的等级名称**/
+			public var name_level:String;
+			
+			/**绑定整网优先级页面初始化 cwx200285**/
+			protected function init():void{
+				__app=SdncUtil.app;
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;
+				if(SdncUtil.cuProjectType=="test"){
+				}else{
+					/**查询所有整网优先级**/
+					realForGetVlanLevel();
+				}
+			}
+			
+			/**真实项目中 查询所有整网优先级 cwx200285**/
+			public function realForGetVlanLevel():void{
+				PopupManagerUtil.getInstence().popupLoading(__app);
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/devices/" + devId + "/qoss";
+				DataHandleTool.showOnConsole("初始化整网优先级信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri)
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetVlanLevelResult,onGetVlanLevelFault);
+			}
+			
+			/**查询整网优先级连接成功 cwx200285**/
+			private function onGetVlanLevelResult(e:HttpResponseEvent,data:String):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				DataHandleTool.showOnConsole("初始化整网优先级信息连接成功返回："+data);
+				/**清空整网优先级列表**/
+				vlanLevelArray.removeAll();
+				/**判断查询整网优先级连接成功的返回值**/
+				if(e.response.code != "200"){
+					DataHandleTool.showOnConsole("查询当前设备整网优先级失败，错误代码："+e.response.code);
+					PopupManagerUtil.getInstence().closeLoading();
+					return;
+				}else{
+					DataHandleTool.showOnConsole("查询当前设备整网优先级成功");
+					var vlanLevelXml:XML = new XML(data);
+					/**整网优先级列表重新赋值**/
+					for(var i:int;i<vlanLevelXml.qos.length();i++){
+						vlanLevelArray.addItem({
+							level:vlanLevelXml.qos[i].level.children()[0],
+							value:vlanLevelXml.qos[i].value.children()[0]
+						});
+					}
+					/**状态是编辑的情况**/
+					if(handleFlag == "edit"){
+						for(var j:int;j<vlanLevelArray.length;j++){
+							if(name_level == vlanLevelArray[j].value){
+								/**整网优先级是编辑数据对应的整网优先级**/
+								bindg.selectedIndex =j;
+							}
+						}
+					}
+				}
+			}
+			
+			/**查询整网优先级连接失败 cwx200285**/
+			private function onGetVlanLevelFault(e:Event):void{
+				DataHandleTool.showOnConsole("查询整网优先级信息连接出错");
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**确定按钮点击事件 cwx200285**/
+			protected function save_clickHandler(event:MouseEvent):void{
+				if(SdncUtil.cuProjectType=="test"){
+				}else{
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/devices/"+devId + "/qosVlanDs";
+					var param:String = "<qosVlanDs><qosVlan><vlanId>"+vlanId+"</vlanId>" +
+						"<name>"+bindg.selectedItem.value+"</name></qosVlan></qosVlanDs>";
+					if(handleFlag =="add"){
+						DataHandleTool.showOnConsole("新增整网优先级信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+						connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onQueryVlanLevelResult,onQueryVlanLevelFault,param);
+					}else if(handleFlag =="edit"){
+						DataHandleTool.showOnConsole("编辑整网优先级信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+						connUtil.clientQuery(uri,ConnUtil.METHOD_PUT,onQueryVlanLevelResult,onQueryVlanLevelFault,param);
+					}
+				}
+			}
+			
+			/**增加、编辑整网优先级连接成功 cwx200285**/
+			public function onQueryVlanLevelResult(e:HttpDataEvent):void{
+				if(e.bytes.toString().search("ok")!=-1){
+					/**vlan管理界面查询所有vlan信息**/
+					vlangroup.realForGetVlan();
+					if(handleFlag == "add"){
+						DataHandleTool.showOnConsole("整网优先级增加成功");
+						/**"整网优先级增加成功","提示"**/
+						Alert.show(resourceManager.getString('global','all.postsuccess'),
+							resourceManager.getString('global','all.prompt'));
+					}else if(handleFlag == "edit"){
+						DataHandleTool.showOnConsole("整网优先级编辑成功");
+						/**"整网优先级编辑成功","提示"**/
+						Alert.show(resourceManager.getString('global','all.putsuccess'),
+							resourceManager.getString('global','all.prompt'));
+					}
+					PopUpManager.removePopUp(this);
+				}else{
+					if(handleFlag == "add"){
+						DataHandleTool.showOnConsole("整网优先级增加失败！错误信息："+e.bytes.toString());
+						/**"整网优先级增加失败","提示"**/
+						Alert.show(resourceManager.getString('global','all.postfail'),
+							resourceManager.getString('global','all.prompt'));
+					}else if(handleFlag == "edit"){
+						DataHandleTool.showOnConsole("整网优先级编辑失败！错误信息："+e.bytes.toString());
+						/**"整网优先级编辑失败","提示"**/
+						Alert.show(resourceManager.getString('global','all.putfail'),
+							resourceManager.getString('global','all.prompt'));
+					}
+				}
+			}
+			
+			/**增加、编辑整网优先级连接失败 cwx200285**/
+			public function onQueryVlanLevelFault(e:Event):void{
+				if(handleFlag == "add"){
+					DataHandleTool.showOnConsole("增加整网优先级信息连接失败！错误信息："+e.toString());
+					/**"整网优先级编辑失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.posterror'),
+						resourceManager.getString('global','all.prompt'));
+				}else if(handleFlag == "edit"){
+					DataHandleTool.showOnConsole("编辑整网优先级信息连接失败！错误信息："+e.toString());
+					/**"整网优先级编辑失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.puterror'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="10" width="95%" height="50" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn" >
+			<s:VGroup width="100%" height="50" gap="5" left="0">
+				<s:Group width="100%" height="8"></s:Group>
+				
+				<s:Group width="100%" height="5%">
+					<!--整网优先级-->
+					<s:Label right="240"
+							 text="{resourceManager.getString('global','mgflow.mgvlan.vlanqos')} :"
+							 verticalCenter="0"/>
+					<s:ComboBox id="bindg" left="150" width="126" dataProvider="{vlanLevelArray}"
+								 enabled="{isEnbled}" verticalCenter="0" labelField="value">
+						<s:itemRenderer>
+							<fx:Component>
+								<s:GridItemRenderer>
+									<fx:Script>
+										<![CDATA[
+										override public function set data(value:Object):void{
+											super.data = value;
+											if(data.level==5){
+												img.source = "assets/imgs/icons/level_ (1).png";
+											}else if(data.level==4){
+												img.source = "assets/imgs/icons/level_ (2).png";
+											}else if(data.level==3){
+												img.source = "assets/imgs/icons/level_ (3).png";
+											}else if(data.level==2){
+												img.source = "assets/imgs/icons/level_ (4).png";
+											}else if(data.level==1){
+												img.source = "assets/imgs/icons/level_ (5).png";
+											}
+										}
+										]]>
+									</fx:Script>
+									<mx:HBox>
+										<s:BorderContainer borderAlpha="0" alpha="0" width="5"/>
+										<s:Image id="img" buttonMode="true"/>
+										<s:Label id="lab" text="{data.value}" buttonMode="true" height="{img.height}" verticalAlign="middle"/>
+									</mx:HBox>
+								</s:GridItemRenderer>
+							</fx:Component>
+						</s:itemRenderer>
+					</s:ComboBox>
+				</s:Group>			
+			</s:VGroup>
+		</s:BorderContainer>
+		
+		<s:HGroup bottom="10" horizontalCenter="0">
+			<!--确定-->
+			<s:Button id="save" label="{resourceManager.getString('global','all.sure')}" horizontalCenter="25" enabled="true" click="save_clickHandler(event)"/>
+			<!--取消-->
+			<s:Button label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)" horizontalCenter="103"/>
+		</s:HGroup>
+		
+	</mx:Canvas>
+</s:TitleWindow>

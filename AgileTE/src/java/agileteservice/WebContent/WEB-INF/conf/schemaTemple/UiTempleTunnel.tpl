@@ -1,0 +1,44 @@
+<tunnels>
+<foreach_tunnelList>
+	<tunnel> 
+        <name>$tunnelName</name>
+		<interfaceName>$interfaceName</interfaceName>
+		<identifyIndex>$identifyIndex</identifyIndex>
+		<ingressIp>$mplsTunnelIngressLSRId</ingressIp>
+		<egressIp>$mplsTunnelEgressLSRId</egressIp>
+		<hotStandbyTime>$hotStandbyWtr</hotStandbyTime>
+		<isDouleConfig></isDouleConfig>
+		<desDeviceName></desDeviceName>
+		<state>$state</state>
+		<foreach_tunnelPathsList>
+		<tunnelPaths>
+		<foreach_tunnelPath>
+			<tunnelPath>
+				<pathType>$pathType</pathType>
+				<pathName>$explicitPathName</pathName>
+			</tunnelPath>
+			</foreach_tunnelPath>
+		</tunnelPaths>
+		</foreach_tunnelPathsList>
+		<foreach_pathsList>
+		<paths>
+		<foreach_pathList>
+			<path>
+				<name>$PathName</name>
+				<foreach_explicitPathHopsList>
+				<nextHops>
+				<foreach_explicitPathHop>
+					<nextHop>
+						<id>$id</id>
+						<nextIp>$nextIp</nextIp>
+					</nextHop>
+				</foreach_explicitPathHop>
+				</nextHops>
+				</foreach_explicitPathHopsList>
+			</path>
+			</foreach_pathList>
+		</paths>
+		</foreach_pathsList>
+	</tunnel>
+	</foreach_tunnelList>
+</tunnels>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="662" height="368" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12" initialize="init(event)" 
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','menu.general.alarm')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.worlize.websocket.WebSocket;
+			import com.worlize.websocket.WebSocketEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			/**当前主应用程序**/
+			[Bindable]private var __app:overTegui2;
+			/**连接java单例**/
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			/**WebSocket服务**/
+			public var websocket:WebSocket;
+			/**所有告警信息**/
+			private var array:ArrayCollection = new ArrayCollection();
+			
+			/**告警管理页面初始化 cwx200285**/
+			protected function init(event:FlexEvent):void{
+				/**开启告警服务**/
+//				if(SdncUtil.openalermflag){
+//					realForStartService();
+//				}
+				
+				//服务在点击进入域管理的时候已经开启，直接创建websocket连接
+				//if(SdncUtil.openalermwsflag){
+					webSocketAndGetAlarmData();
+				//}
+//				}
+			}
+			/**开启告警服务 cwx200285**/
+			/**private function realForStartService():void{
+				var alermstartip:String = SdncUtil.alermstartip;
+				var uri:String=ConnUtil.protocolHeader+alermstartip+"/AgileFM/agilete/alarm"; //开启/发布服务
+				DataHandleTool.showOnConsole("开启告警服务：\n"+uri);
+				connUtil.clientAlarm(uri,ConnUtil.METHOD_POST,onResult,onFault);
+				SdncUtil.openalermflag = false;
+			}*/
+			
+			/**开启告警服务连接成功 cwx200285**/
+			private function onResult(e:HttpDataEvent):void{
+				if(e.bytes.toString().search("ok")!=-1){
+					/**告警服务开启连接成功，提示**/
+					Alert.show(resourceManager.getString('global','menu.general.alarm')
+						+resourceManager.getString('global','all.opensuccess'),
+						resourceManager.getString('global','all.prompt'));
+					DataHandleTool.showOnConsole("告警服务开启成功");
+					/**建立webSocket连接并获取数据*/
+					webSocketAndGetAlarmData();
+				}else{
+					/**告警服务开启连接失败，提示**/
+					Alert.show(resourceManager.getString('global','menu.general.alarm')
+						+resourceManager.getString('global','all.openfail'),
+						resourceManager.getString('global','all.prompt'));
+					SdncUtil.openalermflag = true;
+					DataHandleTool.showOnConsole("告警服务开启失败！错误信息："+e.bytes.toString());
+				}
+			}
+			
+			/**开启告警服务连接失败 cwx200285**/
+			private function onFault(e:Event):void{
+				/**告警服务开启连接失败，提示**/
+				Alert.show(resourceManager.getString('global','menu.general.alarm')
+					+resourceManager.getString('global','all.openerror'),
+					resourceManager.getString('global','all.prompt'));
+				DataHandleTool.showOnConsole("告警服务开启连接失败！错误信息："+e.toString());
+			}
+			/**建立webSocket连接并获取告警数据 cwx200285**/
+			public function webSocketAndGetAlarmData():void   {
+				var alermconnectip:String = SdncUtil.alermconnectip
+				websocket = new WebSocket("ws://"+alermconnectip+"/alarm/common", "*");//连接/监听服务
+				websocket.addEventListener(WebSocketEvent.OPEN, onWebSocketopen);
+				websocket.addEventListener(WebSocketEvent.CLOSED, onWebSocketclose);
+				websocket.addEventListener(WebSocketEvent.MESSAGE,handleWebSocketMessage);
+				websocket.connect();
+				var socketTimer:Timer = new Timer(60000);
+				socketTimer.addEventListener(TimerEvent.TIMER, onSocketTimer);
+				socketTimer.start();
+			}
+			
+			protected function onWebSocketopen(event:WebSocketEvent):void{
+				SdncUtil.openalermwsflag=false;
+				trace("websocket服务开启"+event.type);
+			}
+			protected function onWebSocketclose(event:WebSocketEvent):void{
+				SdncUtil.openalermwsflag=true;
+				trace("websocket服务关闭"+event.type);
+			}
+			
+			protected function onSocketTimer(event:TimerEvent):void{
+				trace("alarm websocket.connect!");
+				websocket.sendUTF("ok");
+				websocket.connect();
+			}
+			
+			public  function handleWebSocketMessage(event:WebSocketEvent):void{
+				/**从服务器端获得告警信息**/
+				var alarmmessage:String = event.message.utf8Data;
+				if("ok"!=alarmmessage){
+					trace("告警信息："+alarmmessage);
+					var xml:XML = new XML(alarmmessage);
+					/**移除界面告警信息**/
+					array.removeAll();
+					/**界面告警信息重新赋值**/
+					for(var i:int=0;i<xml.snmpTrapPdu.snmpv2trap.length();i++){
+						array.addItem({
+							timestamp:xml.snmpTrapPdu.snmpv2trap[i].timestamp,
+							agentaddr:xml.snmpTrapPdu.snmpv2trap[i].agentaddr,
+							trapoid:xml.snmpTrapPdu.snmpv2trap[i].trapoid,
+							vbs:xml.snmpTrapPdu.snmpv2trap[i].vbs
+						});
+					}
+				}
+				
+			}
+			
+			/**清空告警信息 cwx200285**/
+			protected function clearAlarm(event:MouseEvent):void{
+				array.removeAll();
+			}
+			
+			/**关闭窗口 cwx200285**/
+			public function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!--fx:XML id="project" source="assets/xml/sdn_office_project.xml"/-->
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:Group width="100%" height="100%">
+			<s:DataGrid bottom="36" width="100%" height="100%" dataProvider="{array}"
+						requestedRowCount="4" textAlign="center" >
+				<s:columns>
+					<s:ArrayList>
+						<s:GridColumn dataField="timestamp" headerText="timestamp"></s:GridColumn>
+						<s:GridColumn dataField="agentaddr" headerText="agentaddr"></s:GridColumn>
+						<s:GridColumn dataField="trapoid" headerText="trapname"></s:GridColumn>
+						<s:GridColumn dataField="vbs" headerText="vbs"></s:GridColumn>
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+			<!--清空-->
+			<s:Button bottom="6" label="{resourceManager.getString('global','all.removeall')}" horizontalCenter="0" click="clearAlarm(event)"/>
+		</s:Group>
+	</mx:Canvas>
+</s:TitleWindow>

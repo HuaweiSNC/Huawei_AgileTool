@@ -1,0 +1,199 @@
+<?xml version="1.0"?>
+<project basedir="." default="antwar" name="AgileTeService">
+	<echo message="pulling in property files" />
+	<property file="ci_build.properties" />
+
+	<property name="src" value="src" />
+	<property name="build" value="build" />
+	<property name="lib" value="${agile.lib}" />
+	<property name="dist" value="dist" />
+	<property name="data" value="data" />
+	<property name="images" value="images" />
+	<property name="classpath" location="${build}" />
+
+	<property name="utclasspath" location="${utbuild}" />
+	<property name="utsrc" value="utsrc" />
+	<property name="utbuild" value="build\utbuild" />
+	<property name="WebContent" value="build\WebContent" />
+	<property name="reports.dir" value="build\report" />
+        <property name="correctreports.dir" value="${reports.dir}/html" />
+        <property name="SourceWebContent" value="${agile.src.webcontent}" />
+
+	<!-- basedir表示当前项目基路径，default表示启动ant之后运行目标（必须的）,name表示项目发布后名称 -->
+	<!-- target表示运行目标，可以有多个target标签 ，也可以通过depends依赖其他目标  -->
+	<target name="init" description="初始化ant打包环境">
+		<delete dir="${build}" />
+		<delete dir="${utbuild}" />
+		<delete dir="${report}" />
+		<delete dir="${dist}" />
+		<delete dir="${WebContent}" />
+		<mkdir dir="${build}" />
+		<mkdir dir="${build}/classes" />
+		<mkdir dir="${utbuild}" />
+		<mkdir dir="${utbuild}/classes" />
+		<mkdir dir="${WebContent}" />
+		<property name="packages" value="ant.*" />
+		<property name="build.classes" value="${build}/classes" />
+		<path id="classpath">
+			<fileset dir="${lib}">
+				<include name="**/*.jar" />
+			</fileset>
+			<!-- tomcat安装路径lib表示jar存放路径  -->
+			<fileset dir="${tomcatlib}">
+				<include name="**/*.jar" />
+			</fileset>
+			<fileset dir="${WebContent}/WEB-INF/classes">
+				<include name="**/*.class" />
+			</fileset>
+		</path>
+		<path id="testclasspath">
+			<fileset dir="${lib}">
+				<include name="**/*.jar" />
+			</fileset>
+			<!-- tomcat安装路径lib表示jar存放路径  -->
+			<fileset dir="${tomcatlib}">
+				<include name="**/*.jar" />
+			</fileset>
+			<fileset dir="${utsrc}">
+				<include name="**/*.jar" />
+			</fileset>
+		    <pathelement location="${WebContent}/WEB-INF/classes"/>
+		    <pathelement location="${WebContent}/classes"/>
+		</path>
+	</target>
+
+	<!-- 编译选项（我这里要编译工程下所有类似这样格式的文件）  -->
+	<patternset id="compiler.resources">
+		<include name="**/*.properties" />
+		<include name="**/*.script" />
+		<include name="**/*.xml" />
+		<include name="**/*.html" />
+		<include name="**/*.dtd" />
+		<include name="**/*.tld" />
+		<include name="**/*.gif" />
+		<include name="**/*.png" />
+		<include name="**/*.jpeg" />
+		<include name="**/*.jpg" />
+		<include name="**/*.sql" />
+		<include name="**/*.jar" />
+		<include name="**/*.tpl" />
+		<include name="**/*.exe" />
+		<include name="**/application" />
+		<include name="**/*.json" />
+		<include name="**/*.ini" />
+		<include name="**/*.txt" />
+	</patternset>
+
+	<!-- 补充target执行的顺序是prepare->compile->run -->
+	<target name="prepare" depends="init" description="拷贝所有文件到源文件到打包路径下">
+		<delete dir="${build.classes}/com" />
+		<mkdir dir="${WebContent}\META-INF" />
+		<mkdir dir="${WebContent}\WEB-INF" />
+		<mkdir dir="${WebContent}\WEB-INF\classes" />
+		<mkdir dir="${WebContent}\WEB-INF\classes\com\huawei\manage" />
+		<mkdir dir="${WebContent}\WEB-INF\classes\com\huawei\plugins" />
+		<copy todir="${WebContent}\WEB-INF">
+			<fileset dir="${SourceWebContent}\WEB-INF">
+				<patternset refid="compiler.resources" />
+			</fileset>
+		</copy>
+
+		<copy todir="${WebContent}\META-INF">
+			<fileset dir="${SourceWebContent}\META-INF">
+			</fileset>
+		</copy>
+
+		
+		<copy todir="${WebContent}\WEB-INF\classes\com\huawei\manage">
+			<fileset dir="${SourceWebContent}\..\algorithm\com\huawei\manage">
+			</fileset>
+		</copy>
+	
+		<copy todir="${WebContent}\WEB-INF\classes\com\huawei\plugins">
+			<fileset dir="${SourceWebContent}\..\algorithm\com\huawei\plugins">
+			</fileset>
+		</copy>
+		
+		<copy todir="${WebContent}" file="${SourceWebContent}\index.jsp" /> 
+		
+	</target>
+
+	<target name="compile" depends="prepare" description="编译Java文件并复制资源文件">
+		<javac destdir="${WebContent}/WEB-INF/classes"  encoding="UTF-8">
+			<classpath refid="classpath" />
+			<src path="${basedir}/src" />
+			<src path="${basedir}/algorithm" />
+		</javac>
+
+		<copy todir="${WebContent}/WEB-INF/classes">
+			<fileset dir="${basedir}/src">
+				<patternset refid="compiler.resources" />
+			</fileset>
+ 
+			<fileset dir="${basedir}/algorithm">
+				<patternset refid="compiler.resources" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="antwar" depends="compile" description="开始工作了（打war包）">
+		<war warfile="${build}/${ops.war}">
+			<fileset dir="${WebContent}">
+				<exclude name="**/AntBuild/**" />
+				<exclude name="**/doc/**" />
+				<exclude name="**/src/**" />
+				<exclude name="**/build/**" />
+				<exclude name="**/utsrc**" />
+			</fileset>
+		</war>
+	</target>
+
+	<target name="testcompile" depends="compile" description="编译junit文件并复制资源文件">
+
+		<javac destdir="${utbuild}/classes"  encoding="UTF-8">
+			<classpath refid="testclasspath" />
+			<src path="${basedir}/utsrc" />
+		</javac>
+
+		<copy todir="${utbuild}/classes">
+			<fileset dir="${basedir}/utsrc">
+				<patternset refid="compiler.resources" />
+			</fileset>
+		</copy>
+
+	</target>
+
+
+	<target name="runtests" depends="testcompile" description="运行junit程序, 开始测试">
+		<delete dir="${reports.dir}" />
+		<mkdir dir="${reports.dir}" />
+		<junit printsummary="on" failureProperty="fail">
+ 
+			<classpath>
+				<pathelement path="${testclasspath}"/>
+				<fileset dir="${utbuild}">
+					<include name="**/*.class" />
+				</fileset>
+			</classpath>
+			<formatter type="xml" />
+			<batchtest fork="yes" todir="${reports.dir}">
+				<fileset dir="${utsrc}">
+					<!-- 只执行test CLASS -->
+					<include name="${test.dir}**/*Test.java" />
+				</fileset>
+			</batchtest>
+		</junit>
+
+		<junitreport todir="${reports.dir}">
+			<fileset dir="${reports.dir}">
+				<include name="TEST-*.xml" />
+			</fileset>
+
+			<report format="frames" todir="${correctreports.dir}" />
+		</junitreport>
+
+	</target>
+
+
+
+</project>

@@ -1,0 +1,25 @@
+<topoLinks>
+#foreach($t_link in ${T_Link})
+<topoLink>
+<name>$!{t_link.name}</name>
+<headNodeConnector>
+<Connectorid>$!{t_link.headNodeConnectorid}</Connectorid>
+<Connectorip>$!{t_link.headNodeConnectorip}</Connectorip>
+<toponode>
+<nodeID>$!{t_link.headNodeId}</nodeID>
+<nodeType>$!{t_link.headNodeIp}</nodeType>
+</toponode>
+</headNodeConnector>
+<tailNodeConnector>
+<Connectorid>$!{t_link.tailNodeConnectorid}</Connectorid>
+<Connectorip>$!{t_link.tailNodeConnectorip}</Connectorip>
+<toponode>
+<nodeID>$!{t_link.tailNodeId}</nodeID>
+<nodeType>$!{t_link.tailNodeIp}</nodeType>
+</toponode>
+</tailNodeConnector>
+<cost>1</cost>
+<bandwidth>10</bandwidth>
+</topoLink>
+#end
+</topoLinks>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="362" height="134" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','mgflow.mgvlan.vlanbind')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="10" width="95%" height="50" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn" >
+			<s:VGroup width="100%" height="50" gap="5" left="0">
+				<s:Group width="100%" height="8"></s:Group>
+				
+				<s:Group width="100%" height="5%">
+					<!--整网优先级-->
+					<s:Label right="240"
+							 text="{resourceManager.getString('global','mgtunnel.limited.tembind')} :"
+							 verticalCenter="0"/>
+					<s:ComboBox id="bindg" left="150" width="126"
+								verticalCenter="0" labelField="value"/>
+				</s:Group>			
+			</s:VGroup>
+		</s:BorderContainer>
+		
+		<s:HGroup bottom="10" horizontalCenter="0">
+			<!--确定-->
+			<s:Button id="save" label="{resourceManager.getString('global','all.sure')}" horizontalCenter="25" enabled="true" />
+			<!--取消-->
+			<s:Button label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)" horizontalCenter="103"/>
+		</s:HGroup>
+		
+	</mx:Canvas>
+</s:TitleWindow>

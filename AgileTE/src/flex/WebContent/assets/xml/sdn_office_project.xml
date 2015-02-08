@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<vrpsdnoffice>
+	<softwarename>Agile TE v1.0</softwarename>
+	<copyright>Copyright (C) Huawei Technologies Co., Ltd. 2013~2014. All
+		rights reserved.</copyright>
+	<logo>assets/imgs/huawei_logo.png</logo>
+	<company>HUAWEI</company>
+	<protocolHeader>https</protocolHeader>
+	<!-- 定时刷新的监测时间，60秒内有告警刷新拓扑图 -->
+	<refreshshort>60000</refreshshort>
+	<!-- 配置定时刷新时间，30分钟刷无条件新拓扑 -->
+	<refreshlong>1800000</refreshlong>
+	<opsip>192.168.11.102:8099</opsip>
+	<socketip>192.168.11.102:9003</socketip>
+	<alermconnectip>192.168.11.102:9038</alermconnectip>
+	<alermstartip>192.168.11.102:8099</alermstartip>
+	<mrtgip>192.168.11.102:8099</mrtgip>
+	<projectname>AgileTeService</projectname>
+	<project name='sdn_office_agilete_interop' servicetype='OverTe'
+		projecttype='normal' />
+	<project name='sdn_office_agilete_test' servicetype='OverTe'
+		projecttype='test' />
+</vrpsdnoffice>

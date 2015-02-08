@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:panel="com.huawei.overte.view.overte.panel.*"
+		 xmlns:control="com.huawei.overte.control.*" 
+		 width="400" height="300" creationComplete="init()" fontFamily="SimSun" fontSize="12">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.AgileteRefresh;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.handle.SaveTopoLocation;
+			import com.huawei.overte.model.Device;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.titlewindows.NQAlist;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerArea;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerDevice;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerDevices;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerLink;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			private var __app:overTegui2;
+			[Bindable]
+			protected function init():void
+			{
+				__app=SdncUtil.app;
+				DataHandleTool.showOnConsole(resourceManager.getString('global','all.initialize')+"GeneralView")
+			}
+			
+			public function judgeState():void
+			{
+				__app=SdncUtil.app;
+				DataHandleTool.showOnConsole(resourceManager.getString('global','all.judgeviewgoto'))
+				if(__app.overte.topoview.selectedChild.name=="overte"){
+					this.currentState="State_network";
+				}else{
+					this.currentState="State_overte";
+				}
+			}
+			
+			protected function managerLink(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var link:TW_ManagerLink = TW_ManagerLink(PopUpManager.createPopUp(__app,TW_ManagerLink,true));
+				/**物理链路管理**/
+				link.title=resourceManager.getString('global','menu.network.mgLink');
+				PopUpManager.centerPopUp(link);
+			}
+			private var refreshTopo:AgileteRefresh;
+			protected function refresh(event:MouseEvent):void
+			{
+				refreshTopo = new AgileteRefresh();
+				Device.j = 1
+				refreshTopo.init();
+			}
+			
+			protected function refreshManagerArea(event:MouseEvent):void
+			{
+				(__app.overte.topoview.getChildAt(0) as GeneralView).generalctrl.onCreate();
+			}
+			private function saveTopo(event:MouseEvent):void
+			{
+				var saveTopoLocation:SaveTopoLocation=new SaveTopoLocation;
+				saveTopoLocation.saveLocation((__app.overte.topoview.selectedChild as OverTEView).ManAreasID,(__app.overte.topoview.selectedChild as OverTEView).networkX);
+			}
+			
+			protected function openNQA(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var NQA:NQAlist = NQAlist(PopUpManager.createPopUp(__app,NQAlist,true));
+				/**网络质量列表**/
+				NQA.title=resourceManager.getString('global','menu.network.nqaFlux');
+				PopUpManager.centerPopUp(NQA);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="State_overte"/>
+		<s:State name="State_network"/>
+	</s:states>
+	<s:VGroup horizontalCenter.State_overte="0" verticalCenter.State_overte="0">
+	</s:VGroup>
+	
+	<s:VGroup top.State_network="119" height.State_network="64" horizontalCenter.State_network="0">
+		<s:HGroup includeIn="State_network" color="#000000" horizontalCenter="0" verticalCenter="0">
+			<!--管理链路-->
+			<mx:Button width="108" click="managerLink(event)" color="0xffffff" fontSize="12"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   label="{resourceManager.getString('global','menu.network.mgLink')}" 
+					   icon="@Embed('assets/imgs/icons/link_manmger.png')"/>
+			<!--刷新TOPO-->
+			<mx:Button width="108" click="refresh(event)" color="0xffffff" fontSize="12" 
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/refreshTOPO.png')"
+					   label="{resourceManager.getString('global','menu.network.refreshTopo')}"/>
+		</s:HGroup>
+		<s:HGroup includeIn="State_network" color="#000000" horizontalCenter="0" verticalCenter="0">
+			<!--保存布局-->
+			<mx:Button width="108" click="saveTopo(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/save_layout.png')"
+					   label="{resourceManager.getString('global','menu.network.savelayout')}"/>
+			<!--网络质量-->
+			<mx:Button width="108" click="openNQA(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   fontSize="12" icon="@Embed('assets/imgs/icons/statistics.png')"
+					   label="{resourceManager.getString('global','menu.network.nqaFlux')}"/>
+		</s:HGroup>
+	</s:VGroup>
+	<panel:OverTeMenuPanel id="TopoMenu" includeIn="State_network" top="7" height="100"
+						   horizontalCenter="0"/>
+</s:Group>

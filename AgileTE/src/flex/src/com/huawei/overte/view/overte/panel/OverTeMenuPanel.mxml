@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 color="0xffffff" creationComplete="init()"
+		 xmlns:common="com.huawei.sdnc.view.common.*" 
+		 xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*"
+		 xmlns:topo="com.huawei.overte.view.common.topo.*" 
+		 width="200" height="100">
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenMax;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.panel.menupancl.GeneralPanel;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.DragSource;
+			import mx.events.FlexEvent;
+			import mx.managers.DragManager;
+			
+			import twaver.IData;
+			import twaver.networkx.NetworkX;
+			
+			/**展开状态,true为展开，false为未展开*/
+			private var __app:overTegui2;
+			protected function init():void
+			{
+				__app=SdncUtil.app;
+			}
+			
+			protected function newLink_click(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				__app.dispatchEvent(new SdncEvt(SdncEvt.NEW_LINK))
+			}
+			
+			protected function newNode_click(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				(__app.overte.topoview.selectedChild as OverTEView).overteCtrl.ipage = newNode
+				__app.dispatchEvent(new SdncEvt(SdncEvt.NEW_NODE,event))
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	<mx:Canvas id="content" left="0" width="100%" height="100%" backgroundAlpha="0.0"
+			   backgroundColor="#283855" cornerRadius="5">
+		<topo:NewNodeButton id="newNode" left="20" verticalCenter="0" mouseDown="newNode_click(event)"/>
+		<topo:NewLineButton id="newLink" right="20" verticalCenter="0" click="newLink_click(event)"/>
+	</mx:Canvas>
+</s:Group>

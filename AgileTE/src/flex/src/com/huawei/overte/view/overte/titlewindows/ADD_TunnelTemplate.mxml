@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="596" height="432" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','mgtunnel.limited.temdeploy')}" 
+			   >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			import spark.events.IndexChangeEvent;
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="10" bottom="40" width="95%" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn">
+			<s:VGroup width="100%" height="100%" gap="5" left="0">
+				
+				<mx:Canvas width="100%" height="120">
+					<s:BorderContainer top="10" width="95%" height="110" horizontalCenter="0">
+						<s:Group width="100%" height="30">
+							<!--新增策略隧道-->
+							<s:Label x="7" y="0" height="100%" text="{resourceManager.getString('global','mgtunnel.limited.addboard')}" verticalAlign="middle"/>
+						</s:Group>
+						<s:Group width="100%" height="30" top="35">
+							<!--隧道名称 :-->
+							<s:Label right="470"
+									 text="{resourceManager.getString('global','mgtunnel.limited.tunnelname')} :"
+									 verticalCenter="0"/>
+							<mx:ComboBox id="tunnelName" left="80" width="130" cornerRadius="0"
+										  verticalCenter="0"/>
+							<!--模板名称 :-->
+							<s:Label right="250"
+									 text="{resourceManager.getString('global','mgtunnel.limited.boardname')} :"
+									 verticalCenter="0"/>
+							<mx:ComboBox id="templateName" left="299" width="130" cornerRadius="0"
+										 verticalCenter="0"/>
+							
+						</s:Group>
+						<s:Group width="100%" height="30" top="70">
+							<!--承诺信息速率:-->
+							<s:Label right="470"
+									 text="{resourceManager.getString('global','mgtunnel.limited.speed')} :"
+									 verticalCenter="0"/>
+							<s:TextInput id="speed" left="80" width="80" 
+										 fontStyle="normal"  verticalCenter="0"/>
+							
+							<s:Label left="170" height="100%" text="Kbit/s" verticalAlign="middle"/>
+									 
+							<!--承诺突发尺寸 :-->
+							<s:Label right="250"
+									 text="{resourceManager.getString('global','mgtunnel.limited.size')} :"
+									 verticalCenter="0"/>
+							
+							<s:TextInput id="size" left="299" width="80" 
+										 fontStyle="normal" verticalCenter="0"/>
+							<s:Label left="390" height="100%" text="Byte" verticalAlign="middle"/>
+							
+							<!--添加 ↓-->
+							<s:Button id="save" right="10" label="{resourceManager.getString('global','all.append')} ↓"
+									  enabled="true" verticalCenter="0"/>
+						</s:Group>
+					</s:BorderContainer>
+				</mx:Canvas>
+				
+				<s:Group width="100%" height="100%">
+					<s:DataGrid id="g" top="30" width="95%" height="95%"
+								horizontalCenter="0"
+								requestedRowCount="4" textAlign="center">
+						<s:columns>
+							<s:ArrayList>
+								<!--隧道策略名称-->
+								<s:GridColumn dataField="policyName"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','mgtunnel.limited.boardname')}"></s:GridColumn>
+								<!--绑定隧道-->
+								<s:GridColumn dataField="tunnelname"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','mgtunnel.limited.promisspeed')}"></s:GridColumn>
+								<!--目的IP地址-->
+								<s:GridColumn dataField="tunnelegressIp" 
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','mgtunnel.limited.promissize')}"></s:GridColumn>
+								<!--删除-->
+								<s:GridColumn editable="false"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','all.delete')}" width="80">
+									<s:itemRenderer>
+										<fx:Component>
+											<s:GridItemRenderer>
+												<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  
+															   label="{resourceManager.getString('global','all.delete')}"  horizontalCenter="0" verticalCenter="0"/>
+											</s:GridItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+								</s:GridColumn>
+							</s:ArrayList>
+						</s:columns>
+					</s:DataGrid>
+					<s:Group width="100%" height="30">
+						<!--隧道模板列表-->
+						<s:Label y="0" left="19" height="100%" text="{resourceManager.getString('global','mgtunnel.limited.temlist')}" verticalAlign="middle"/>
+					</s:Group>
+				</s:Group>
+				
+			</s:VGroup>
+		</s:BorderContainer>
+		
+		<s:Group bottom="3" width="95%" height="26" horizontalCenter="0">
+			<s:Group verticalCenter="0" height="50%" horizontalCenter="0">
+				<!--确定-->
+				<s:Button id="savebtn" bottom="19" label="{resourceManager.getString('global','all.sure')}" click="PopUpManager.removePopUp(this)"
+						  verticalCenter="0" horizontalCenter="-50"/>
+				<!--取消-->
+				<s:Button id="cancelbtn"  bottom="19" label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)"  verticalCenter="0" horizontalCenter="50" />
+			</s:Group>
+		</s:Group>
+		
+	</mx:Canvas>
+</s:TitleWindow>

@@ -1,0 +1,118 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="zh-cn" xml:lang="zh-cn">
+<head>
+      <meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+   
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
+<meta name="copyright" content="(C) 版权 2005">
+<meta name="DC.rights.owner" content="(C) 版权 2005">
+<meta name="DC.Type" content="task">
+<meta name="DC.Title" content="增加管道">
+<meta name="DC.Relation" scheme="URI" content="../vrp/dc_vrp_agile-te_cfg_0017.html">
+<meta name="DC.Creator" content="j00178664">
+<meta name="Owner" content="j00178664">
+<meta name="IA" content="l48412">
+<meta name="SE" content="l48412">
+<meta name="TE" content="j00178664">
+<meta name="AuthorInfo_F" content="Author:j00178664;Owner:j00178664;IA:l48412;SE:l48412;TE:j00178664;CreatedDate:2012-04-28">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="dc_vrp_agile-te_cfg_0018">
+<meta name="DC.Language" content="zh-cn">
+<link rel="stylesheet" type="text/css" href="../help/public_sys-resources/commonltr.css">
+<title>增加管道</title>
+</head>
+<body style="clear:both; padding-left:10px; padding-top:5px; padding-right:5px; padding-bottom:5px"><a name="dc_vrp_agile-te_cfg_0018"></a><a name="dc_vrp_agile-te_cfg_0018"></a>
+
+
+<h1 class="topictitle1">增加管道</h1>
+
+
+<div class="taskbody">
+<div class="steps"><a name="dc_vrp_agile-te_cfg_0018__1.3.1"></a><a name="1.3.1"></a><h4 class="sectiontitle">操作步骤</h4>
+<ol>
+<li><span>进入定义管道对话框</span>
+<p>进入增加管道对话框有两种方式，选择其中一种来操作即可。<ul><li>在“Aglie TE View”页面选择“菜单 &gt; Service &gt; 定义管道”。</li><li>在源设备上单击鼠标右键，选择“定义管道”。</li></ul>
+<span><img src="images/fig_dc_vrp_agile-te_cfg_001801.png"></span></p>
+</li>
+<li><span>在“管道定义”对话框中选择管道的源设备。</span></li>
+<li><span>点击“增加”，弹出“新增管道”对话框。</span>
+<p><span><img src="images/fig_dc_vrp_agile-te_cfg_001802.png"></span></p>
+</li>
+<li><span>定义管道路径</span>
+<p>定义管道路径有自动获取和手动添加两种方式。不论采用哪种，最多只能添加两条路径。其中一条可以作为主路径，一条可以作为备份路径。<ul><li>自动获取Path<ol type="a"><li>在“新增管道”对话框点击“自动获取路径”</li><li>系统弹出“提示”对话框，点击“OK”。</li></ol>
+</li><li>手动增加Path<ol type="a"><li>在“新增管道”对话框点击“增加Path”按钮。</li><li><p>弹出“增加Path”对话框。</p>
+<p><span><img src="images/fig_dc_vrp_agile-te_cfg_001803.png"></span></p>
+</li><li>填写“路径名称”</li><li>在“下跳地址”列表中选择要添加的跳数，然后点击“下一步”按钮，将此跳添加到路径中。</li><li>重复上一步，直到列表中显示“已经跳到目的设备”，此时即路径添加完毕。点击“完成”。</li></ol>
+</li></ul>
+</p>
+</li>
+<li><span>填写管道参数</span>
+<p><span><img src="images/fig_dc_vrp_agile-te_cfg_001802.png"></span>
+<div class="tablenoborder"><a name="dc_vrp_agile-te_cfg_0018__tab_dc_vrp_agile-te_cfg_001801"></a><a name="tab_dc_vrp_agile-te_cfg_001801"></a><table cellpadding="4" cellspacing="0" summary="" id="dc_vrp_agile-te_cfg_0018__tab_dc_vrp_agile-te_cfg_001801" frame="border" border="1" rules="all"><caption><b>表1 </b>填写对象及取值说明</caption>
+<thead align="left">
+<tr>
+
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.3.1.5.2.2.2.3.1.1"><p>填写对象</p>
+</th>
+
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.3.1.5.2.2.2.3.1.2"><p>取值说明</p>
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+<tr>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.3.1.5.2.2.2.3.1.1 "><p>隧道名称</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.3.1.5.2.2.2.3.1.2 "><p>名称的取值为字符串形式，以Tunnel开头，Tunnel后面可以接字母数字和。长度范围为。</p>
+</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.3.1.5.2.2.2.3.1.1 "><p>隧道标识</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.3.1.5.2.2.2.3.1.2 "><p>整数形式，取值范围是1～32768。</p>
+</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.3.1.5.2.2.2.3.1.1 "><p>回切等待时间</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.3.1.5.2.2.2.3.1.2 "><p>整数形式，取值范围是0～2592000，单位是秒。缺省值是10。</p>
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+</div>
+</p>
+</li>
+<li><span>（可选）勾选“双向配置”，配置本端设备时，程序会自动在目的端设备上下发同样的管道配置。</span></li>
+<li><span>（可选）点击“显示目的配置”。点击后对话框会并行显示目的端设备上的管道配置。</span></li>
+<li><span>（可选）勾选“逃生路径”。如果勾选后，当主路径和备份路径都发生故障时，管道首节点会发起建立一条临时路径以保证管道的可靠性。</span>
+</li>
+<li><span>点击“确定”完成新增管道的操作。</span></li>
+</ol></div>
+
+</div>
+
+<div>
+<div class="familylinks">
+<div class="parentlink"><strong>父主题：</strong> <a href="../help/dc_vrp_agile-te_cfg_0017.html" title="定义管道是指配置MPLS TE隧道以及CR-LSP热备份以及BFD for CR-LSP检测。">定义管道</a></div>
+</div>
+</div>
+
+<div class="hrcopyright"><hr size="2"></div><div class="hwcopyright">华为专有和保密信息</div><div class="hwcopyright">版权所有 &copy; 华为技术有限公司</div></body>
+</html>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:titlewindows="com.huawei.overte.view.overte.titlewindows.*"
+			   width="200" height="200" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12" creationComplete="init(event)"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" title="{resourceManager.getString('global','all.settimeintervale')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.model.Data;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			public var mydata:Data = Data.getInstence()
+			
+			/**
+			 * 页面初始化 cwx200285
+			 **/
+			
+			
+			protected function savetime(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				mydata.NqaTime = int(timei.text)
+				PopUpManager.removePopUp(this)
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				timei.text = mydata.NqaTime.toString()
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" left="10" right="10" top="40" bottom="40" hideEffect="fadeout">
+			<s:TextInput id="timei" width="100" horizontalCenter="-11" verticalCenter="0" restrict="0-9"/>
+			<s:Label  fontSize="16" horizontalCenter="55" text="/s" verticalCenter="0"/>
+		</s:BorderContainer>
+		<s:Button bottom="10" label="确定" horizontalCenter="-43" click="savetime(event)"/>
+		<s:Button bottom="10" label="取消" horizontalCenter="49" click="PopUpManager.removePopUp(this)"/>
+		<s:Label left="10" top="14" fontWeight="bold" text="{resourceManager.getString('global','nqlflux.ontime')}{resourceManager.getString('global','nqlflux.datatim')}："/>
+		
+	</mx:Canvas>
+</s:TitleWindow>

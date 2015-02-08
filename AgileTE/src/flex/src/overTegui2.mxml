@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:twaver="http://www.servasoftware.com/2009/twaver/flex"
+			   xmlns:common="com.huawei.overte.view.common.*"
+			   xmlns:overte="com.huawei.overte.view.overte.*"
+			   applicationComplete="validateLicense()" creationComplete="onCreationComplete(event)"
+			   currentState="overte_state" initialize="init(event)" preinitialize="preinitializeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.log.Logs;
+			import com.huawei.overte.model.MrtgDatas;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.Images;
+			import com.huawei.overte.tools.SdncUtil;
+			
+			import mx.events.FlexEvent;
+			import mx.graphics.SolidColorStroke;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.Defaults;
+			import twaver.Utils;
+			/**Demo 演示Topo链路管道状态切换定时器*/
+			public var demoTime:Timer = new Timer(5000);
+			/**Twaver license*/
+			public var license:XML;
+			/**工程文件*/
+			public var sdnproject:XML;
+			public var log:Logs;
+			
+			public var mrtgdatas:MrtgDatas = MrtgDatas.getInstence();
+			[Bindable]
+			public var strurl:String = "";
+			
+			
+			/**注册Twaver license*/
+			private function validateLicense():void
+			{  
+				Utils.validateLicense(license);
+			}
+			/**初始化组件内部结构 **/
+			protected function init(event:FlexEvent):void
+			{
+//				log = new Logs();
+				Images.init();
+				SdncUtil.app = this;//初始化主应用程序
+				resourceManager.localeChain = ["zh_CN"];
+				/**请求Twaver License XML*/
+				ConnUtil.getInstence().query("assets/xml/twaverLicense.xml",
+					function(evt:ResultEvent):void{
+						DataHandleTool.showOnConsole("系统加载twaver文件");
+						license = XML(evt.result.toString());
+					},onFailed);
+//				overte.generalview.generalctrl.getdbarea(ConnUtil.protocolHeader +SdncUtil.opsIp,SdncUtil.projectname)
+				
+			}
+			/** HTTPService 请求失败函数 */
+			private function onFailed(evt:FaultEvent):void
+			{
+				trace(evt.message);	
+			}
+			/**组件完成其构建、属性处理、测量、布置和绘制时分派方法  */
+			protected function onCreationComplete(event:FlexEvent):void
+			{
+				Defaults.FONT_FAMILY = "Arial";//Twaver默认字体
+				copyright.text = sdnproject.copyright;//初始化copyright
+				header.companyNameLabel.text = sdnproject.company;//初始化企业名称
+				header.softwareNameLabel.text = sdnproject.softwarename;//初始化软件名称
+			}
+			
+			protected function onUrlComplete(event:Event):void
+			{
+				var str:String = (event.target as URLLoader).data;
+				var projectXml:XML=XML(str);
+				SdncUtil.opsIp=projectXml.opsip;
+			} 
+			
+			protected function preinitializeHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				/**请求系统Project XML*/
+				ConnUtil.getInstence().query("assets/xml/sdn_office_project.xml",
+					function(evt:ResultEvent):void{
+						sdnproject = XML(evt.result.toString());
+						SdncUtil.refreshlong=sdnproject.refreshlong;
+						SdncUtil.refreshshort=sdnproject.refreshshort;
+						SdncUtil.opsIp=sdnproject.opsip;
+						SdncUtil.socketIp=sdnproject.socketip;
+						SdncUtil.alermconnectip=sdnproject.alermconnectip;
+						SdncUtil.alermstartip = sdnproject.alermstartip;
+						SdncUtil.projectname = sdnproject.projectname;
+						mrtgdatas.ipandport = sdnproject.mrtgip
+						SdncUtil.cuProjectType = sdnproject.project.@projecttype
+						ConnUtil.protocolHeader = sdnproject.protocolHeader+"://";
+						
+						DataHandleTool.showOnConsole("系统加载Project文件"+ConnUtil.protocolHeader +SdncUtil.opsIp);
+						strurl = ConnUtil.protocolHeader +SdncUtil.opsIp+"/"+SdncUtil.projectname
+						ConnUtil.url = ConnUtil.protocolHeader +SdncUtil.opsIp+"/"+SdncUtil.projectname
+						Security.allowDomain(sdnproject.opsip)
+						Security.loadPolicyFile(ConnUtil.protocolHeader+SdncUtil.opsIp+"/crossdomain.xml");
+						var loader:URLLoader = new URLLoader();
+						loader.addEventListener(Event.COMPLETE,function loadcomplete(e:Event):void{
+							DataHandleTool.showOnConsole("加载完成")
+						})
+						loader.load(new URLRequest(ConnUtil.protocolHeader+SdncUtil.opsIp+"/crossdomain.xml"));
+						
+					},onFailed);
+				
+				
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("global")]
+	</fx:Metadata>
+	<fx:Style source="assets/Main.css"></fx:Style>
+	<s:states>
+		<s:State name="login_state"/> 
+		<s:State name="overte_state"/>
+	</s:states>
+	<s:BitmapImage id="id_background" source="@Embed('assets/imgs/background.png')"  smooth="true" left="0" right="0" top="0" bottom="0"/>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<common:Header id="header"  __app2="{this}" width="100%"/>
+		<s:Line width="100%" height="1" stroke="{ new SolidColorStroke(0x263148,2) }" includeIn="login_state"/>
+		<common:Login id="login" width="100%" height="100%" includeIn="login_state"/>
+		<overte:OverTE id="overte" width="100%" height="100%" includeIn="overte_state"/>
+	</s:VGroup>
+	<s:Label id="copyright" color="0x1b6bb9" bottom="10" horizontalCenter="0"/>
+</s:Application>

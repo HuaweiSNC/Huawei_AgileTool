@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="{Capabilities.screenResolutionX*0.53}"
+		 height="{Capabilities.screenResolutionY*0.30}" color="#000000" fontFamily="微软雅黑"
+		 fontSize="12" initialize="init()" keyUp="onKeyUp(event)">
+	<fx:Declarations>
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.model.Device;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.ErrorCodeUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.channels.StreamingAMFChannel;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.IData;
+			
+			[Bindable]
+			public var rollbackPointList:ArrayCollection=new ArrayCollection();
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			private var __app:overTegui2;
+			private var opsIp:String;
+		
+			public function init():void
+			{
+				__app = SdncUtil.app;
+				opsIp = SdncUtil.opsIp;
+				getPointList();
+			}
+/*********************************************增加回滚点**********************************************************/		
+			protected function addRollbackPoint(event:MouseEvent):void
+			{
+				var addrollbackPoint:AddRollbackPoint = AddRollbackPoint(PopUpManager.createPopUp(this.parent,AddRollbackPoint,true));
+				addrollbackPoint.systemRollback= this;
+				PopUpManager.centerPopUp(addrollbackPoint);   
+			}
+			
+/*********************************************删除回滚点**********************************************************/			
+			public function deletPoint(e:MouseEvent):void
+			{
+				Alert.show(resourceManager.getString('global','all.suredelete')+"?",resourceManager.getString('global','all.prompt'),Alert.OK|Alert.CANCEL,__app,closeDelete);
+			}
+			
+			protected function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.OK){
+					var opsIp:String = SdncUtil.opsIp;
+					var point:Object=g.selectedItem;
+					var pointId:String = point["id"];
+					var url:String=ConnUtil.protocolHeader+opsIp+"/database/agilegre?username=admin&infoname="+pointId;
+					trace("delete commitId to Point URL+++1++++"+url);
+					connUtil.clientQuery(url,ConnUtil.METHOD_DELETE,onDelResult,onDelFault);
+				}
+			}
+			
+			private function onDelResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("ok")!=-1 ){
+					Alert.show(resourceManager.getString('global','all.deleterollbackpoint')+resourceManager.getString('global','all.success'),resourceManager.getString('global','all.prompt'));
+					rollbackPointList.removeItemAt(g.selectedIndex);
+					makePointListBody(rollbackPointList);
+				}else{
+					Alert.show(resourceManager.getString('global','all.deleterollbackpoint')+resourceManager.getString('global','all.fail'),resourceManager.getString('global','all.prompt'));
+				}
+			}
+			
+			private function onDelFault(e:Event):void
+			{
+				trace("Delete还原点失败"+e.toString());
+			}
+/******************************************备份列表*******************************************************/	
+			/**
+			 *获取备份还原点列表 
+			 */
+			public function getPointList():void{
+				var url:String=ConnUtil.protocolHeader+opsIp+"/database/agilegre?username=admin&infoname=backup";
+				trace("get pointList URL++++"+url);
+				connUtil.clientQuery(url,ConnUtil.METHOD_GET,onGetPointListResult,onGetPointListFault);
+			}
+			
+			private function onGetPointListResult(e:HttpResponseEvent,data:String):void
+			{
+				var errorcode:ErrorCodeUtil = new ErrorCodeUtil;
+				if(!errorcode.parse(e,data)){
+					trace("获取还原点列表失败");
+					return;
+				}
+				if(data.toString() == "null"){
+					return;
+				}
+				var backup:XML=XML(data.toString());
+				var pointArr:Array = new Array();
+				for each(var point:XML in backup.points.point)
+				{
+					var pointObj:Object = new Object();
+					pointObj["id"] = point.id;
+					pointObj["name"] = point.name;
+					pointObj["description"] = point.description;
+					pointObj["datetime"] = point.datetime;
+					pointArr.push(pointObj);
+					rollbackPointList.addItem(pointObj);
+				}
+			}
+			
+			private function onGetPointListFault(e:Event):void
+			{
+				trace("还原点列表获取失败");
+			}
+			
+			public function makePointListBody(rollbackPointList:ArrayCollection):void{
+				var newPointListBody:String = "<backup><points>";
+				if(rollbackPointList.length == 0){
+					newPointListBody = "null";
+					updatePointList(newPointListBody);
+					return;
+				}else{
+					for(var i:int=0; i<rollbackPointList.length; i++){
+						var pointItem:Object = rollbackPointList.getItemAt(i);
+						var id:String = pointItem["id"];
+						var name:String =  pointItem["name"];
+						var description:String = pointItem["description"];
+						var datetime:String = pointItem["datetime"];
+						var str:String =  "<point><id>"+id+"</id><name>"+name+"</name>"+
+							"<description>"+description+"</description><datetime>"+datetime+"</datetime></point>";
+						newPointListBody += str; 
+					}
+					newPointListBody += "</points></backup>"
+				}
+					trace(newPointListBody);
+				updatePointList(newPointListBody);
+			}
+			/**
+			 *重新将备份还原点的列表上传 
+			 */
+			public function updatePointList(body:String):void{
+				var url:String = ConnUtil.protocolHeader+opsIp+"/database/agilegre?username=admin&infoname=backup&datatype=data";
+				trace("update pointList URL++2++"+url);
+				connUtil.clientQuery(url,ConnUtil.METHOD_PUT,updatePointListResult,updatePointListFault,body,"application/XML");
+			}
+			
+			private function updatePointListResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString().search("ok")!=-1 ){
+					trace("更新备份还原点列表成功");
+				}
+			}
+			
+			private function updatePointListFault(e:Event):void
+			{
+				trace("更新备份还原点列表失败"+e.toString());
+			}
+/*******************************************回滚******************************************************/		
+			private var devicenum:int = 0;
+			private var num:int = 0;
+			protected function backToPolint(event:MouseEvent):void
+			{
+				PopupManagerUtil.getInstence().popupLoading(this);
+				devicenum = 0;
+				num = 0;
+				var item:Object = g.selectedItem;
+				var pid:String = item["id"];
+				getAllDevicesCommitId(pid);
+			}
+			
+			/**
+			 * 根据还原点的ID 找所有设备的commitId
+			 */
+			 protected function getAllDevicesCommitId(pid:String):void{
+				 var url:String = ConnUtil.protocolHeader+opsIp+"/database/agilegre?username=admin&infoname="+pid;
+				 connUtil.clientQuery(url,ConnUtil.METHOD_GET,getCommitIdListResult,getCommitIdListFault);
+			 }
+
+			private function getCommitIdListResult(e:HttpResponseEvent,data:String):void
+			{
+				var errorcode:ErrorCodeUtil = new ErrorCodeUtil;
+				if(!errorcode.parse(e,data)){
+					trace("获取备份回滚点列表失败");
+					return;
+				}
+				var backuppoint:XML=XML(data.toString());
+				for each(var deviceCommit:XML in backuppoint.device)
+				{
+					devicenum++;
+					var deviceip:String = deviceCommit.ipaddress;					
+					var commitid:String = deviceCommit.commitid;
+//					__app.ipcore.physicsView.networkX.elementBox.forEachByBreadthFirst(function(item:IData):void{
+//						if(item is StateNode){
+//							var node:StateNode=item as  StateNode;
+//							var device:Device=node.getClient("device");
+//							var devicename:String = node.getClient("devicename");
+//							var ip:String = node.getClient("ip");
+//							device.commitId = commitid;
+//							if(ip == deviceip){
+//								device.rollback(refunction);
+//							}
+//						}
+//					});
+				}
+			}
+			protected function refunction():void{
+				num++;
+				if(num == devicenum){
+					Alert.show(resourceManager.getString('global','all.rollback')+resourceManager.getString('global','all.success'),resourceManager.getString('global','all.prompt'));
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+			}
+			private function getCommitIdListFault(e:Event):void
+			{
+				trace("获取备份回滚点列表失败");
+			}
+/*******************************************其他*****************************************************/		
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				if(event.keyCode==Keyboard.ESCAPE){
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_SYSTEM_ROLLBACK_WINDOW));
+				}
+			}
+			
+			public function beginDrag(e:MouseEvent):void
+			{
+				var re:Rectangle=new Rectangle(0,0,1000,1000);
+				this.startDrag(false,re);
+			}
+			
+			public function endDrag(e:MouseEvent):void
+			{
+				stopDrag();
+			}
+		]]>
+	</fx:Script>
+	<s:Rect width="100%" height="100%" >
+		<s:fill>
+			<s:SolidColor color="0xcccccc" alpha=".9"/>
+		</s:fill>
+	</s:Rect>
+	<s:RectangularDropShadow blurX="20" blurY="20" width="100%" height="100%"
+							 alpha="0.32" distance="11"
+							 blRadius="0" brRadius="0"
+							 angle="90" color="#000000" left="0" top="0" right="0"
+							 bottom="0"/>
+	<s:VGroup width="100%" height="100%" gap="0">
+		<s:Group id="titlelayer" width="100%" height="10%" left="0"  mouseDown="beginDrag(event)" mouseUp="endDrag(event)">
+			<s:Rect width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient>
+						<s:GradientEntry color="0x3276b7"/>
+						<s:GradientEntry color="0x4489ca"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Label text="{resourceManager.getString('global','all.sysrevert')}" color="0xf9f3f3" fontWeight="bold" verticalCenter="0" left="10" fontSize="14"/>
+			<s:Image id="cbtn" source="@Embed('assets/imgs/ipran/close.png')" verticalCenter="0" right="15" 
+					 buttonMode="true" mouseOver="cbtn.filters=[glow]" mouseOut="cbtn.filters=null"	click="__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_SYSTEM_ROLLBACK_WINDOW))"/>
+		</s:Group>	
+		<s:VGroup id="content"  width="100%" height="80%">
+			<s:Group  width="100%" height="15%">
+				<s:Button id="btn" verticalCenter="0"  label="{resourceManager.getString('global','all.addrollbackpoint')}..." click="addRollbackPoint(event)" right="20"/>
+			</s:Group>
+			<s:Group  width="100%" height="75%">
+				<s:DataGrid id="g"  width="95%" height="95%" requestedRowCount="4" verticalCenter="0" horizontalCenter="0" textAlign="center"
+							dataProvider="{rollbackPointList}" horizontalScrollPolicy="off"
+							editable="false"  
+							sortableColumns="false" skinClass="com.huawei.overte.view.skins.DataGridSkin">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn  headerText="id" dataField="id" width="{(g.width)/5-100}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn  headerText="{resourceManager.getString('global','all.rollbackpointname')}" dataField="name" width="{(g.width)/5}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn  headerText="{resourceManager.getString('global','mgUser.describe')}" dataField="description" width="{(g.width)/5+180}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn  headerText="{resourceManager.getString('global','all.time')}" dataField="datetime" width="{(g.width)/5}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<s:GridColumn  editable="false" width="{(g.width)/5-80}" headerText="{resourceManager.getString('global','all.delete')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  label="{resourceManager.getString('global','all.delete')}" horizontalCenter="0" verticalCenter="0"  click="outerDocument.deletPoint(event)"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+			<s:HGroup  width="100%" height="10%" verticalAlign="middle" horizontalAlign="center">
+				<s:Button verticalCenter="0"  label="  {resourceManager.getString('global','all.rollbacktothis')} " click="backToPolint(event)" right="20"/>
+				<s:Button verticalCenter="0"  label=" {resourceManager.getString('global','all.closed')} " click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_SYSTEM_ROLLBACK_WINDOW))" right="120"/>
+			</s:HGroup>
+		</s:VGroup>
+	</s:VGroup>
+</s:Group>

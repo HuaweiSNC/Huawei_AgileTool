@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300" 
+		 xmlns:ns="http://code.google.com/p/flexlib/"
+		 xmlns:panel="com.huawei.overte.view.overte.panel.*"
+		 xmlns:overte="com.huawei.overte.view.overte.*"
+		 xmlns:menupancl="com.huawei.overte.view.overte.panel.menupancl.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.SdncUtil;
+			
+			import flexlib.controls.tabBarClasses.SuperTab;
+			import flexlib.events.SuperTabEvent;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			
+			import twaver.IData;
+			import twaver.Node;
+			import twaver.network.Network;
+			
+			/**记录选项面板开关状态*/
+			private var __isShowOptions:Boolean;
+			/**显示或隐藏optionpanel*/
+			public function setupBtnClickhandler(e:MouseEvent):void
+			{
+				if(!__isShowOptions)
+				{
+					
+					optionPanel.visible=true;
+					optionPanel.includeInLayout = true;
+					if(topoview.selectedIndex==0){
+						optionPanel.currentState = "general";
+						optionPanel.general.currentState = "selected";
+						optionPanel.setup.currentState = "unSelected";
+						optionPanel.service.currentState = "unSelected";
+						optionPanel.network.currentState = "unSelected";
+						optionPanel.generanlPanel.judgeState();
+					}else{
+						optionPanel.currentState = "service";
+						optionPanel.general.currentState = "unSelected";
+						optionPanel.setup.currentState = "unSelected";
+						optionPanel.network.currentState = "unSelected";
+						optionPanel.service.currentState = "selected";
+						optionPanel.servicePanel.judgeState();
+					}
+					__isShowOptions = true;
+				}else
+				{
+					optionPanel.visible = false;
+					optionPanel.includeInLayout = false;
+					__isShowOptions = false;
+				}
+			}
+			/**初始化SuperTabBar 默认设置索引值为1的页签 不可以关闭*/
+			protected function menubar_onCreate(event:FlexEvent):void
+			{
+				menutabbar.setClosePolicyForTab(0,SuperTab.CLOSE_NEVER)
+				menutabbar.addEventListener(SuperTabEvent.TAB_CLOSE,closeTaber)
+			}
+			
+			protected function topoview_change(event:IndexChangedEvent):void
+			{
+				
+				optionPanel.visible = false;
+				optionPanel.includeInLayout = false;
+				__isShowOptions = false;
+				if(topoview.selectedIndex!=0){
+					SdncUtil.CurAreaId = (topoview.selectedChild as OverTEView).ManAreasID;
+					SdncUtil.network = (topoview.selectedChild as OverTEView).networkX
+				}
+				popdeviceArray();
+			}
+			
+			public function popdeviceArray():void{
+				var devices:Array = DataHandleTool.devices;
+				if(devices.length!=0&&topoview.selectedChild is OverTEView){
+					DataHandleTool.devices = [];
+					var network:Network = (topoview.selectedChild as OverTEView).networkX
+					network.elementBox.forEachByBreadthFirst(function(item:IData):void{
+						if(item is Node){
+							var sn:Node=item as Node;
+							var deviceobj:Object=new Object;
+							deviceobj["id"]=sn.getClient("id");
+							deviceobj["userName"]=sn.getClient("username");
+							deviceobj["deviceName"]=sn.getClient("devicename");
+							deviceobj["passwd"]=sn.getClient("passwd");
+							deviceobj["deviceTopoIp"]=sn.getClient("deviceTopoIp");
+							deviceobj["ipAddress"]=sn.getClient("ip");
+							deviceobj["Passwd"]=sn.getClient("version");
+							deviceobj["type"]=sn.getClient("productType");
+							deviceobj["ifm"]=sn.getClient("ifm");
+							DataHandleTool.devices.push(deviceobj);
+						}
+					});
+				}
+			}
+			
+				
+			public function closeTaber(event:SuperTabEvent):void{
+				DataHandleTool.timer.stop();
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("zh_CN")]
+	</fx:Metadata>
+	<s:Group id ="m" width="100%" height="100%">
+		<s:layout>
+			<s:VerticalLayout/>
+		</s:layout>
+		<!--导航栏-->
+		<s:Group width="100%" height="30" fontSize="15">
+			<s:Rect left="0" right="0" top="0" height="100%">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry ratio=".5" color="0xd1d4db"/>
+						<s:GradientEntry ratio=".51" color="0xc7c9d5"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:HGroup id="menuHg" paddingLeft="56" paddingRight="15" width="100%" height="100%" horizontalAlign="left" verticalAlign="middle">
+				<s:Spacer width="100%"/>
+				<!--common:SearchBar id="searchBar"/-->
+			</s:HGroup>
+			<ns:SuperTabBar id="menutabbar" left="50" right="" width="100%" height="100%"
+							color="#000000" creationComplete="menubar_onCreate(event)"
+							dataProvider="{topoview}" dragEnabled="false" dropEnabled="false"
+							tabHeight="30" tabWidth="180" />
+			
+		</s:Group>
+		<!--拓扑图等展示区域-->
+		<s:Group id="topoContent" width="100%" height="100%">
+			<mx:ViewStack id="topoview" width="100%" height="100%" change="topoview_change(event)">
+				<overte:GeneralView id="generalview" label="General View" width="100%" height="100%" name="general"/>
+			</mx:ViewStack>
+		</s:Group>
+	</s:Group>
+	<!--菜单区域-->
+	<menupancl:OptionPanel id="optionPanel" right="0" top="35" visible="false" includeInLayout="false" />
+</s:Group>

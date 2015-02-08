@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="376" height="310" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12" initialize="init(event)" 
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','menu.general.console')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.SdncUtil;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			private var __app:overTegui2;
+			/**
+			 * 控制台初始化方法
+			 * */
+			protected function init(event:FlexEvent):void
+			{
+				__app=SdncUtil.app;
+			}
+			/**
+			 * 清空控制台输出
+			 * */
+			protected function clearConsole(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				console.text="";
+				DataHandleTool.contentstr="";
+			}
+			/**
+			 * 关闭当前控制台窗口
+			 * */
+			public function close():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!--s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/-->
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:Group width="100%" height="100%">
+			<s:TextArea id="console" width="95%" height="235"  horizontalCenter="0" text="{DataHandleTool.console.console.text}"/>
+			<!--清空-->
+			<s:Button bottom="10" label="{resourceManager.getString('global','all.removeall')}" horizontalCenter="0" click="clearConsole(event)"/>
+		</s:Group>
+	</mx:Canvas>
+</s:TitleWindow>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="init(event)" currentState="login"
+		 width="100%" height="40" fontSize="15" color="0xc2c0c0">
+	<s:layout>
+		<s:HorizontalLayout paddingTop="5" verticalAlign="middle"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.graphics.SolidColorStroke;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			/**用户名*/
+			public var username:String = "";
+			[Bindable]
+			/**当前时间*/
+			public var cuTimeStr:String = "";
+			
+			private var __timer:Timer;
+			private var __cuDt:Date = null;
+			private var __app:overTegui2;
+			public var __app2:overTegui2;
+			/**选项栏显示状态，true为显示，false为未显示*/
+			private var __isShowOptions:Boolean;
+			protected function init(event:FlexEvent):void
+			{
+				__timer = new Timer(2000);
+				__timer.addEventListener(TimerEvent.TIMER,onTimer);
+				__timer.start();
+				
+				__cuDt = new Date();
+				cuTimeStr = SdncUtil.getFormatStr("YYYY-MM-DD  JJ:NN",__cuDt);
+				__app = SdncUtil.app;
+			}
+			
+			private function onTimer(evt:TimerEvent):void
+			{ 
+				__cuDt.seconds = __cuDt.seconds + 2;
+				cuTimeStr = SdncUtil.getFormatStr("YYYY-MM-DD  JJ:NN",__cuDt);
+			}
+			
+			protected function logoutBtn_clickHandler(event:MouseEvent):void
+			{
+				Alert.show("Are you sure you want to quit?","Warning",1|2,null,closeHandler);
+			}
+			
+			private function closeHandler(event:CloseEvent):void
+			{
+				if(event.detail == Alert.YES)
+				{
+					var opsIp:String=SdncUtil.opsIp;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/AgileSEM/logout?service="+ConnUtil.protocolHeader+opsIp+"/AgileSEM/login?service="+ConnUtil.protocolHeader+opsIp+"/AgileSys/view/main/index.jsp";
+//					var  request:URLRequest  =  new  URLRequest("javascript:location.reload();");  
+					var  request:URLRequest  =  new  URLRequest(uri);  
+					navigateToURL(request,"_self");  
+				//	navigateToURL(newURLRequest("javascript:location.reload();"),"_self")
+				}
+			}
+			private function choseClick(event:MouseEvent):void
+			{
+				__app.overte.setupBtnClickhandler(event);
+			}
+			protected function uname_clickHandler(event:MouseEvent):void
+			{
+				//if(uname.label!="admin")
+				//{
+					var changePW:ChangePassword=ChangePassword(PopUpManager.createPopUp(__app2,ChangePassword,true));
+					//				changePW.Uname = uname.label;
+					PopUpManager.centerPopUp(changePW);
+				//}
+			}
+			
+			protected function ulist_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var managerUser:TW_ManagerUser=TW_ManagerUser(PopUpManager.createPopUp(__app2,TW_ManagerUser,true));
+				//				changePW.Uname = uname.label;
+				PopUpManager.centerPopUp(managerUser);
+			}
+			
+			/**中英文切换**/
+			protected function swicth_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(swicth.text == "[English]"){
+					swicth.text = "[中文]"
+					resourceManager.localeChain = ["en_US"];
+				}else{
+					swicth.text = "[English]"
+					resourceManager.localeChain = ["zh_CN"];
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:GlowFilter id="glow" color="0xffffff"/>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="logout"/>
+		<s:State name="login"/>
+	</s:states>
+	<mx:Canvas width="100%" height="100%">
+		<!--LOGO及时间-->
+		<s:HGroup gap="5" paddingLeft="5" verticalAlign="middle">
+			<s:Image source="@Embed(source='assets/imgs/huawei_logo.png')"/>
+			<s:Label id="companyNameLabel" text="HUAWEI" color="0xffffff" fontWeight="bold" alpha=".7"/>
+			<s:Label id="softwareNameLabel" text="Agile TE"/>
+		</s:HGroup>
+		<!--<s:Spacer width="100%"/>-->
+		<s:HGroup right="0" fontSize="14" gap="15" paddingRight="30" verticalAlign="middle"
+				  right.login="0" verticalCenter.login="0"
+				  right.logout="0" width.logout="356" verticalCenter.logout="0">
+
+			<mx:LinkButton id="uname" label="{username}" alpha=".8" buttonMode="true"
+						   click="uname_clickHandler(event)" color="#00CCFF" textDecoration="underline"
+						   paddingLeft="0" paddingRight="7"/>
+			
+			<!--<mx:LinkButton id="ulist" label="{resourceManager.getString('global','mgUser.usermanager')}" alpha=".8" buttonMode="true" includeIn="login"
+			click="ulist_clickHandler(event)" color="#00CCFF" textDecoration="underline"
+			paddingLeft="0" paddingRight="7"/>-->
+			
+			<s:Label text="{cuTimeStr}" alpha=".8"/>
+			<s:Image id="setupBtn" source="@Embed('assets/imgs/button_setup.png')" includeIn="login" 
+					 mouseOver="setupBtn.filters = [glow]" mouseOut = "setupBtn.filters = null"
+					 buttonMode="true" click="choseClick(event)" toolTip="options"/>
+			<s:Image id="fullScreen" source="@Embed('assets/imgs/fullscreen.png')" buttonMode="true"
+					 mouseOver="fullScreen.filters = [glow]" mouseOut = "fullScreen.filters = null"
+					 click="SdncUtil.fullScreen()" toolTip="Full Screen"/>
+			<s:Label id="swicth" text="[English]" alpha=".8" buttonMode="true" click="swicth_clickHandler(event)"/>
+			<s:Label text="                                             "/>
+			<s:Image id="logoutBtn" source="@Embed('assets/imgs/button_logout.png')" includeIn="login" 
+					 mouseOver="logoutBtn.filters = [glow]" mouseOut = "logoutBtn.filters = null"
+					 click="logoutBtn_clickHandler(event)" buttonMode="true" toolTip="logout"/>
+		</s:HGroup>
+	</mx:Canvas>
+</s:Group>

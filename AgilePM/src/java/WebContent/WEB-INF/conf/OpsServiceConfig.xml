@@ -1,0 +1,24 @@
+<deviceset>
+	<device>
+		<name>default</name>
+		<deviceName>CE5850-A</deviceName>
+		<server>127.0.01</server>
+		<port>8080</port>
+		<userName>sjhltest</userName>
+		<passwd>Huawei123@</passwd>
+		<id>5</id>
+		<version>2.0</version>
+		<productType>NE5000E</productType>
+	</device>
+	<device>
+		<name>testdevice1</name>
+		<deviceName>testdevice1</deviceName>
+		<server>189.32.53.169</server>
+		<port>8080</port>
+		<userName>netconf</userName>
+		<passwd>admin@1234</passwd>
+		<id>4</id>
+		<version>V100R003</version>
+		<productType>CE5800</productType>
+	</device>
+</deviceset>

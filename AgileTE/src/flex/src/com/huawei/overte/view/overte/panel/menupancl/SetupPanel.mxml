@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:menupancl="com.huawei.overte.view.overte.panel.menupancl.*"
+		 width="400" height="300" creationComplete="init()" fontFamily="SimSun" fontSize="12">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.link.MyNewLink;
+			import com.huawei.overte.view.node.StateNode;
+			import com.huawei.overte.view.overte.OverTEView;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.Consts;
+			import twaver.IData;
+			import twaver.network.layout.AutoLayouter;
+			private var __layoutArr1:Array =["default",
+				Consts.LAYOUT_SYMMETRY,
+				Consts.LAYOUT_BOTTOMTOP,
+				Consts.LAYOUT_TOPBOTTOM,
+				Consts.LAYOUT_RIGHTLEFT, 
+				Consts.LAYOUT_LEFTRIGHT];
+			private var __app:overTegui2;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			private var curarea:String;//当前管理域
+			[Bindable]
+			protected function init():void
+			{
+				__app=SdncUtil.app;
+				
+			}
+			/**判断SetupPanel进入状态**/
+			public function judgeState():void
+			{
+				__app=SdncUtil.app;
+				if(__app.overte.topoview.selectedChild.name=="overte"){
+					realForGetwtrs()
+					this.currentState="State_overte";
+				}else{
+					this.currentState="State_general";
+				}
+			}
+			/**保存事件**/
+			protected function save_clickHandler(event:MouseEvent):void
+			{
+				var arr:Array = [wtrTimeV];
+				var resultArr:* = Validator.validateAll(arr);
+				if(resultArr.length != 0){
+					
+				}else{
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/wtrs";
+					var body:String = "<wtrs><wtr><domainId>"+curarea+"</domainId><value>"+Number(hotStandbyWtr.text)+"</value></wtr></wtrs>"; 
+					connUtil.clientQuery(uri,ConnUtil.METHOD_PUT,onQuerywtrsResult,onQuerywtrsFault,body);
+				}
+			}
+			/**修改环网时间连接成功**/
+			private function onQuerywtrsResult(e:HttpDataEvent):void
+			{
+				if(e.bytes.toString()=="true"){
+					Alert.show(resourceManager.getString('global','all.putsuccess'),resourceManager.getString('global','all.prompt'));//"WTR环网时间保存成功"
+				}else{
+					Alert.show(resourceManager.getString('global','all.putfail'),resourceManager.getString('global','all.prompt'));
+				}
+			}
+			/**修改环网时间链接出错**/
+			private function onQuerywtrsFault(e:Event):void
+			{
+				DataHandleTool.showOnConsole(resourceManager.getString('global','all.modify')+resourceManager.getString('global','all.ringnettime')+resourceManager.getString('global','all.error'))
+			}
+			
+			/**请求环网时间方法**/
+			public function realForGetwtrs():void{
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;//当前管理域
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/wtrs?name="+curarea;
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetwtrsResult,onGetwtrsFault);
+			}
+			
+			/**环网时间请求成功方法**/
+			private function onGetwtrsResult(e:HttpResponseEvent,data:String):void{
+				if(e.response.code != "200"){
+					return;
+				}else{
+					// 赋值 
+					var wtrsXml:XML = new XML(data);
+					var i:Number = Number(wtrsXml.wtr.value)
+					hotStandbyWtr.text = i.toString();
+				}
+			}
+			/**环网时间请求失败方法**/
+			private function onGetwtrsFault(e:Event):void{
+				DataHandleTool.showOnConsole(resourceManager.getString('global','all.get')+resourceManager.getString('global','all.ringnettime')+resourceManager.getString('global','all.error')+e.toString())
+			}
+			
+			protected function showinterface_clickHandler(event:MouseEvent):void
+			{
+				SdncUtil.showInterface=(event.target as CheckBox).selected
+				linksetup();
+			}
+			
+			protected function showip_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				SdncUtil.showIp=(event.target as CheckBox).selected
+				linksetup();
+			}
+			
+			protected function showdeviceName_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				SdncUtil.showdeviceName =(event.target as CheckBox).selected
+				nodesetup();
+			}
+			
+			protected function showdeviceIp_showHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				SdncUtil.showdeviceIp =(event.target as CheckBox).selected
+				nodesetup();
+			}
+			public function linksetup():void{
+				SdncUtil.network.elementBox.forEachByBreadthFirst(function(item:IData):void{
+					if(item is MyNewLink){
+						var mylink:MyNewLink = item as MyNewLink;
+						if(SdncUtil.showInterface&&SdncUtil.showIp){
+							mylink._fromName =mylink.getClient("frominterface")+"\n"+mylink.getClient("frominterfaceIP");
+							mylink._toName = mylink.getClient("tointerface")+"\n"+mylink.getClient("tointerfaceIP");
+						}else if(SdncUtil.showInterface&&SdncUtil.showIp==false){
+							mylink._fromName =mylink.getClient("frominterface")
+							mylink._toName = mylink.getClient("tointerface")
+						}else if(SdncUtil.showInterface==false&&SdncUtil.showIp){
+							mylink._fromName =mylink.getClient("frominterfaceIP");
+							mylink._toName = mylink.getClient("tointerfaceIP");
+						}else{
+							mylink._fromName ="";
+							mylink._toName = "";
+						}
+						SdncUtil.network.invalidateElementUI(mylink);
+					}
+				});
+			
+			}
+			
+			public function nodesetup():void{
+				SdncUtil.network.elementBox.forEachByBreadthFirst(function(item:IData):void{
+					if(item is StateNode){
+						var stateNode:StateNode = item as StateNode;
+						if(SdncUtil.showdeviceName&&SdncUtil.showdeviceIp){
+							stateNode.name=stateNode.getClient("devicename")+"\n"+stateNode.getClient("deviceTopoIp");
+						}else if(SdncUtil.showdeviceName&&SdncUtil.showdeviceIp==false){
+							stateNode.name=stateNode.getClient("devicename");
+						}else if(SdncUtil.showdeviceName==false&&SdncUtil.showdeviceIp){
+							stateNode.name=stateNode.getClient("deviceTopoIp");
+						}else{
+							stateNode.name="";
+						}
+						SdncUtil.network.invalidateElementUI(stateNode);
+					}
+				});
+			}
+			private var centerPoint:Point=new Point(Capabilities.screenResolutionX/2,Capabilities.screenResolutionY/3);
+			private function doLayout(e:Event = null):void{
+				var stateNodes:Array=DataHandleTool.stateNodesArr;
+				var num:int=stateNodes.length-1;
+				var rad:Number=2*Math.PI/num;
+				var initRad:Number=Math.PI/2+rad/2;
+				//半径
+				var radii:Number=200;
+				if(layoutChooser.label=="default"){
+					
+					for(var i:int=0;i<stateNodes.length;i++){
+						var stateNode:StateNode=stateNodes[i] as StateNode;
+						if(i==0){
+							stateNode.location=new Point(centerPoint.x,centerPoint.y);
+						}else{
+							var x:Number=centerPoint.x+radii*Math.cos(initRad+i*rad);
+							var y:Number=centerPoint.y+radii*Math.sin(initRad+i*rad);
+							stateNode.location=new Point(x,y);
+						}
+					}
+				}else{
+					(__app.overte.topoview.selectedChild as OverTEView).overteCtrl.autoLayouter.explicitXOffset = Capabilities.screenResolutionX/3;
+					(__app.overte.topoview.selectedChild as OverTEView).overteCtrl.autoLayouter.explicitYOffset = Capabilities.screenResolutionY/3;
+					(__app.overte.topoview.selectedChild as OverTEView).overteCtrl.autoLayouter.doLayout(this.layoutChooser.label)
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:NumberValidator id="wtrTimeV" source="{hotStandbyWtr}" property="text"
+							domain="int" minValue="1"
+							maxValue="12"
+							lowerThanMinError="{resourceManager.getString('global','setup.wtrtime.min')}"
+							exceedsMaxError="{resourceManager.getString('global','setup.wtrtime.max')}"
+							integerError="{resourceManager.getString('global','setup.wtrtime.int')}"
+							requiredFieldError="{resourceManager.getString('global','setup.wtrtime.null')}"
+							trigger="{save}" triggerEvent="click"/>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="State_overte"/>
+		<s:State name="State_general"/>
+	</s:states>
+		<mx:VBox includeIn="State_overte" left="30" width="100%" height="200" color="#000000"
+				 verticalAlign="middle" verticalCenter="0">
+			<mx:HBox width="100%" height="30">
+				<s:Label height="25" color="#FFFFFF" fontWeight="bold" verticalAlign="middle"  
+						 text="{resourceManager.getString('global','menu.setup.layout')}："/>	
+				<mx:PopUpMenuButton id="layoutChooser" width="100" color="#000000" cornerRadius="0"
+									dataProvider="{__layoutArr1}" fillAlphas="[1.0, 1.0]"
+									fillColors="[#0C6C9E, #0C6C9E]" itemClick="doLayout(event)"/>
+			</mx:HBox>
+
+			<s:HGroup width="100%" height="30">
+				<s:Label height="25" color="#FFFFFF" fontWeight="bold" verticalAlign="middle"
+						 text="{resourceManager.getString('global','menu.setup.link')}："/>	
+				<s:CheckBox id="showinterface" color="#FFFFFF" fontWeight="bold" selected="false" click="showinterface_clickHandler(event)"
+							label="{resourceManager.getString('global','menu.setup.showIfm')}"/>
+				<s:CheckBox id="showip" color="#FFFFFF" fontWeight="bold" selected="false" click="showip_clickHandler(event)"
+							label="{resourceManager.getString('global','menu.setup.showIP')}" />
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="30">
+				<s:Label height="25" color="#FFFFFF" fontWeight="bold" verticalAlign="middle"
+						 text="{resourceManager.getString('global','menu.setup.node')}："/>	
+				<s:CheckBox id="showdeviceName" color="#FFFFFF" fontWeight="bold" selected="true" click="showdeviceName_clickHandler(event)"
+							label="{resourceManager.getString('global','menu.setup.showName')}" />
+				<s:CheckBox id="showdeviceIp" color="#FFFFFF" fontWeight="bold" selected="false"  click="showdeviceIp_showHandler(event)"
+							label="{resourceManager.getString('global','menu.setup.showIP')}" />
+			</s:HGroup>
+			<s:HGroup width="100%" height="30">
+				<s:Label height="22" color="#FFFFFF" fontWeight="bold" verticalAlign="middle" 
+						 text="{resourceManager.getString('global','menu.setup.wtrtime')}："/>
+				<s:TextInput id="hotStandbyWtr" width="40" restrict="0-9"/>
+				<s:Label height="22" color="#FFFFFF" fontWeight="bold" verticalAlign="middle"
+						 text="{resourceManager.getString('global','menu.setup.minute')}"/>
+				<mx:Button id="save" width="60"  click="save_clickHandler(event)" fillColors="[#0C6C9E, #0C6C9E]"
+						   color="0xffffff" cornerRadius="0" fillAlphas="[1.0, 1.0]"
+						   label="{resourceManager.getString('global','menu.setup.save')}"/>
+			</s:HGroup>
+		</mx:VBox>
+</s:Group>

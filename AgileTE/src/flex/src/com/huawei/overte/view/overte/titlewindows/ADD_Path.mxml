@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="686" height="270" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','all.add')}Path" 
+			   creationComplete="init()" xmlns:model="com.huawei.overte.model.*" >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.link.MyNewLink;
+			import com.huawei.overte.view.node.StateNode;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+			[Bindable]
+			private var isEnbled:Boolean=true;
+			[Bindable]
+			private var explicitPathHopData:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var explicitPathsData:ArrayCollection;
+			[Bindable]
+			public var pathsDataPri:ArrayCollection;//下一跳地址的数据源
+			[Bindable]
+			public var curDevice:Array=[];//当前设备信息
+			[Bindable]public var startdevice:Object;//源设备对象信息
+			[Bindable]public var desdevice:Object;//目的设备对象信息
+			public var handleFlag:String="add"; //判定是修改还是增加
+			
+			protected function init():void
+			{
+				curDevice.push(startdevice["deviceName"]);
+				curdevice.text = startdevice["deviceName"]
+				srcDevice.text = startdevice["deviceName"]+" ("+ startdevice["deviceTopoIp"]+")";//源设备名称
+				explicitPathHopData.addItem({
+					id:explicitPathHopData.length+1,
+					interfacename:"",//接口名称“ETH。。。。”
+					devicename:startdevice["deviceName"],
+					ip:startdevice["deviceTopoIp"]
+				});
+//				if(handleFlag == "edit"){
+//					for(var i:int=0;i<pathArray.length-1;i++){
+//						explicitPathHopData.addItem({
+//							id:pathArray[i].id,
+//							devicename:pathArray[i].devicename,
+//							interfacename:pathArray[i].interfacename,
+//							ip:pathArray[i].ip
+//						});
+//					}
+//				}
+				desIP.text = desdevice["deviceName"]+" ("+ desdevice["deviceTopoIp"]+")";
+				explicitPathHopData.addItem({
+					id:explicitPathHopData.length+1,
+					devicename:desdevice["deviceName"],
+					interfacename:"",
+					ip:desdevice["deviceTopoIp"]
+				});
+				creatPathsData();
+			}
+			var flag:Boolean = true;
+			protected function creatPathsData():void
+			{
+				pathsDataPri  = new ArrayCollection();
+				var box:ElementBox = SdncUtil.network.elementBox;
+				if(curDevice[curDevice.length-1] == desdevice["deviceName"]){
+					/**"已经跳到目的设备"**/
+					nextIP.text = resourceManager.getString('global','mgtunnel.path.desdevice')
+					upstep.enabled = true;
+					nextstep.enabled = false;
+					save.enabled = true;
+				}else{
+					box.forEachByBreadthFirst(function(item:IData):void{
+						if(item is Node){
+							var node:Node=item as Node;
+							var interfacearray:Array = [];
+//							var nodeNamearray:Array = node.name.split("\n")//节点名数组 {节点名称+IP}
+							if(node.getClient("devicename")==curDevice[curDevice.length-1]){
+								for(var i:int=0;i<node.agentLinks.count;i++){
+									
+									var link:MyNewLink = node.agentLinks.getItemAt(i) as MyNewLink;
+									/*因连线无方向 所以需要分别判断*/
+									if(link!=null){
+										if(link.fromNode.getClient("devicename")==node.getClient("devicename")){
+											flag=true
+											checkNode(link.toNode.getClient("devicename"))
+											if(flag){
+												pathsDataPri.addItem({
+													devicename:link.toNode.getClient("devicename"),
+													ifName:link.getClient("tointerface"),
+													ifIpAddr:link.getClient("tointerfaceIP")
+												});
+												
+											}
+										}
+										if(link.toNode.getClient("devicename")==node.getClient("devicename")){
+											flag=true
+											checkNode(link.fromNode.getClient("devicename"))
+											if(flag){
+												//											interfacearray= link._fromName.split("\n")
+												pathsDataPri.addItem({
+													devicename:link.fromNode.getClient("devicename"),
+													ifName:link.getClient("frominterface"),
+													ifIpAddr:link.getClient("frominterfaceIP")
+												});
+											}
+										}
+									}
+									
+								}
+								
+							}
+						}
+						
+					});
+				}
+			}
+			/*检查下一个节点在数组中是否存在  如果存在则不显示  flag = false;  如果不存在 则显示 flag = true;*/
+			public function  checkNode(nodeName:String):void{
+				for(var j:int=0;j<curDevice.length;j++){
+					if(nodeName == curDevice[j]){
+						flag = false;
+						break;
+					}
+				}
+			}
+			/* 上一步事件 */
+			protected function upstep_click(event:MouseEvent):void
+			{
+				if(explicitPathHopData.length>0){
+					explicitPathHopData.removeItemAt(explicitPathHopData.length-1);
+					curDevice.pop();
+					creatPathsData();
+					curdevice.text = explicitPathHopData[explicitPathHopData.length-1]["devicename"]
+				}
+				if(explicitPathHopData.length==0){
+					
+					upstep.enabled = false;
+					save.enabled = true;
+				}
+				nextstep.enabled = true;
+				
+			}
+			
+//			public function FindstartinterFace(interfaceName:String):String{
+//				var box:ElementBox = SdncUtil.network.elementBox;
+//				box.forEachByBreadthFirst(function(item:IData):void{
+//					if(item is Link){
+//						var link:Link=item as MyNewLink;
+//						if(link.name==curDevice[curDevice.length-1]){
+//							
+//							
+//						}
+//					}
+//					
+//				});
+//			}
+			/*下一步事件 */
+			protected function nextstep_clickHandler(event:MouseEvent):void
+			{
+					explicitPathHopData.addItemAt(({
+						id:explicitPathHopData.length,
+						devicename:nextIP.selectedItem.devicename,
+						interfacename:nextIP.selectedItem.ifName,
+						ip:nextIP.selectedItem.ifIpAddr
+					}),explicitPathHopData.length-1);
+//					explicitPathHopData
+					explicitPathHopData[explicitPathHopData.length-1].id = explicitPathHopData.length
+					if(explicitPathHopData.length>0){ 
+						upstep.enabled = true;
+						save.enabled = true;
+					}
+					curdevice.text = pathsDataPri[nextIP.selectedIndex]["devicename"]
+					curDevice.push(pathsDataPri[nextIP.selectedIndex]["devicename"]);
+					creatPathsData();
+					
+			}
+			public var pathArray:ArrayCollection = new ArrayCollection();
+			protected function save_clickHandler(event:MouseEvent):void
+			{
+				if(pathName.text==""){
+//					Alert.show("路径名称不能为空","提示")
+					Alert.show(resourceManager.getString('global','mgtunnel.path.pathnameNull'),resourceManager.getString('global','all.prompt'))
+					
+					
+				}else{
+					explicitPathHopData[0].ip = DataHandleTool.findinterfaceByNextName(explicitPathHopData[1].ip,SdncUtil.network);
+					pathArray.addItem({
+						name:pathName.text,
+						hoparray:explicitPathHopData
+					})
+					PopUpManager.removePopUp(this);
+//					this.dispatchEvent(new SdncEvt(SdncEvt.SAVE_PATH_EVENT,pathArray))
+				}
+				
+			}
+			private function IpDisplayFunction(data:Object):String      
+			{      
+				var label:String = "";      
+				if(data.hasOwnProperty("devicename")){      
+					label += data.devicename + "-";      
+				}      
+				if(data.hasOwnProperty("ifIpAddr")){      
+					label +=data.ifName+"("+data.ifIpAddr+")";      
+				}      
+				return label;       
+			}   
+			
+			/**
+			 * 删除下一跳
+			 * */
+			public function removeNextHop():void{
+				/**"确定删除？","提示"**/
+				Alert.show(resourceManager.getString('global','all.ifdeleted')+"？",
+					resourceManager.getString('global','all.prompt'),
+					Alert.OK|Alert.CANCEL,this,closeDelete);
+			}
+			/**
+			 * 确定删除下一跳事件
+			 * */
+			public function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.OK){
+					explicitPathHopData.removeItemAt(pathjump.selectedIndex);
+					for(var i:int=0;i<explicitPathHopData.length;i++){
+						explicitPathHopData[i].id = i;
+					}
+				}
+				
+			}
+			
+			protected function pathjump_click(event:MouseEvent):void
+			{
+				var pathobj:Object = pathjump.selectedItem;
+				for(var i:int=0;i<pathsDataPri.length;i++){
+					if(pathobj == pathsDataPri[i]){
+						
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<fx:XML id="project" source="assets/xml/sdn_office_project.xml"/>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="10" bottom="50" width="95%" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn">
+			<s:Group width="100%" height="40">
+				<!--源设备 :-->
+				<s:Label left="51" text="{resourceManager.getString('global','all.srcDevice')} :" verticalCenter="-4"/>
+				<s:Label id="srcDevice" left="101" width="160" 
+							 text="" verticalCenter="-4"/>
+				<!--目的设备 :-->
+				<s:Label right="300" text="{resourceManager.getString('global','all.desDevice')} :" verticalCenter="-4"
+						  width="65"/>
+				<s:Label id="desIP" left="344" width="160" enabled="{isEnbled}"
+						 verticalAlign="middle" verticalCenter="-5"/>
+				<mx:HRule x="0" bottom="6" width="100%"/>
+			</s:Group>
+			<s:VGroup left="0" top="40" width="40%" height="100%" gap="5">
+				<s:Group width="100%" height="20">
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--路径名称 :-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.path.pathname')} :"  verticalCenter="0" left="40"/>
+					<s:TextInput id="pathName"  width="160" verticalCenter="0" left="102" enabled="{isEnbled}"/>
+				</s:Group>
+				<s:Group width="100%" height="5%">
+					<!--当前设备 :-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.path.curdevice')} :"  verticalCenter="0" left="40"/>
+					<s:TextInput id="curdevice"  width="160" verticalCenter="0" left="102" enabled="{false}" editable="false"/>
+				</s:Group>
+				
+				<s:Group width="100%" height="5%">
+					<!--下一跳地址 :-->
+					<s:Label text="{resourceManager.getString('global','mgtunnel.path.nexthop')} :"  verticalCenter="0" left="28"/>
+					<mx:ComboBox id="nextIP" left="102" width="160" cornerRadius="0"
+								 dataProvider="{pathsDataPri}" enabled="{isEnbled}"
+								 labelFunction="IpDisplayFunction" verticalCenter="0"/>
+				</s:Group>
+			</s:VGroup>
+			<s:Group right="0" top="40" width="60%" height="100%">
+				<s:DataGrid id="pathjump" left="20" right="20" bottom="5" height="100%"
+							dataProvider="{explicitPathHopData}" rowHeight="24">
+					<s:columns>
+						<s:ArrayList>
+							<!--Hop索引-->
+							<s:GridColumn dataField="id" width="70" headerText="{resourceManager.getString('global','mgtunnel.path.hopindex')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<!--设备名称-->
+							<s:GridColumn dataField="devicename" width="80" headerText="{resourceManager.getString('global','mgtunnel.path.devicename')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<!--接口名称-->
+							<s:GridColumn dataField="interfacename" headerText="{resourceManager.getString('global','mgtunnel.path.interfacename')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<!--IP地址-->
+							<s:GridColumn dataField="ip" headerText="{resourceManager.getString('global','mgtunnel.path.ip')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+							<!--删除-->
+							<s:GridColumn editable="false" width="80" visible="false"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','all.delete')}">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  label="{resourceManager.getString('global','all.delete')}"  click="outerDocument.removeNextHop()"
+													  horizontalCenter="0" verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+		</s:BorderContainer>
+		<s:HGroup bottom="10" horizontalCenter="0">
+			<!--上一步-->
+			<s:Button id="upstep"  label="{resourceManager.getString('global','mgtunnel.path.upstep')}"  horizontalCenter="25" click="upstep_click(event)" enabled="false"/>
+			<!--下一步-->
+			<s:Button id="nextstep" label="{resourceManager.getString('global','mgtunnel.path.nextstep')}" click="nextstep_clickHandler(event)" horizontalCenter="25"/>
+			<!--完成-->
+			<s:Button id="save" label="{resourceManager.getString('global','all.complete')}" click="save_clickHandler(event)" horizontalCenter="25" enabled="false"/>
+			<!--取消-->
+			<s:Button label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)" horizontalCenter="103"/>
+		</s:HGroup>
+	</mx:Canvas>
+</s:TitleWindow>

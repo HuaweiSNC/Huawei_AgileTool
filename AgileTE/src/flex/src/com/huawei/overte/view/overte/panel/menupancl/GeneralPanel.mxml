@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:panel="com.huawei.overte.view.overte.panel.*"
+		 xmlns:control="com.huawei.overte.control.*" 
+		 width="400" height="300" creationComplete="init()" fontFamily="SimSun" fontSize="12">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.AgileteRefresh;
+			import com.huawei.overte.handle.AutoFindLink;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.handle.SaveTopoLocation;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.titlewindows.Alarm;
+			import com.huawei.overte.view.overte.titlewindows.Console;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerArea;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerDevice;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerDevices;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerLink;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			/**系统主应用程序对象**/
+			private var __app:overTegui2;
+			/**初始化Genelal菜单项**/
+			protected function init():void
+			{
+				__app=SdncUtil.app;
+				DataHandleTool.showOnConsole(resourceManager.getString('global','all.initialize')+"GeneralPanel")
+			}
+			/**判断Genelal菜单项进入状态方法**/
+			public function judgeState():void
+			{
+				__app=SdncUtil.app;
+				//判断当前视图进入相应功能菜单
+				DataHandleTool.showOnConsole(resourceManager.getString('global','all.judgeviewgoto'))
+				if(__app.overte.topoview.selectedChild.name=="overte"){
+					this.currentState="State_general";
+				}else{
+					this.currentState="State_overte";
+				}
+			}
+			/**点击管理域事件  弹出管理域管理界面**/
+			protected function managerArea_click(event:MouseEvent):void
+			{
+				var manager:TW_ManagerArea=TW_ManagerArea(PopUpManager.createPopUp(__app,TW_ManagerArea,true));
+				PopUpManager.centerPopUp(manager);
+			}
+//			/**点击设备管理  弹出设备管理界面**/
+//			protected function managerDevice_clickHandler(event:MouseEvent):void
+//			{
+//				var device:TW_ManagerDevice=TW_ManagerDevice(PopUpManager.createPopUp(__app,TW_ManagerDevice,true));
+//				PopUpManager.centerPopUp(device);
+//			}
+			/**点击设备管理  弹出设备管理界面 rwx202245**/
+			protected function manngerdevices_click(event:MouseEvent):void
+			{
+				var manager:TW_ManagerDevices = TW_ManagerDevices(PopUpManager.createPopUp(__app,TW_ManagerDevices,true));
+				PopUpManager.centerPopUp(manager);
+			}
+			/**点击刷新管理域   管理域页面重新初始化**/
+			protected function refreshManagerArea(event:MouseEvent):void
+			{
+				(__app.overte.topoview.getChildAt(0) as GeneralView).generalctrl.onCreate();
+			}
+			/**点击控制器  弹出控制台界面**/
+			protected function controlview(event:MouseEvent):void
+			{
+				var console:Console = Console(PopUpManager.createPopUp(__app,Console,false));
+				DataHandleTool.console = console
+				DataHandleTool.console.console.text = DataHandleTool.contentstr;
+			}
+			/**点击帮助文档  弹出帮助文档界面**/
+			protected function helpfile(event:MouseEvent):void
+			{
+				navigateToURL(new URLRequest("assets/help/help/help.html"));
+			}
+			/**点击告警信息  弹出告警列表**/
+			protected function alarm(event:MouseEvent):void
+			{
+				var alarm:Alarm = Alarm(PopUpManager.createPopUp((__app.overte.topoview.selectedChild as OverTEView),Alarm,false));
+				PopUpManager.centerPopUp(alarm);
+				DataHandleTool.alarm = alarm
+			}
+			
+			private var autofindlink:AutoFindLink;
+			protected function findlink_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				trace("点击自动发现topo"+new Date().time)
+				autofindlink = new AutoFindLink();
+				autofindlink.init();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="State_overte"/>
+		<s:State name="State_general"/>
+	</s:states>
+	<!--管理域  General Panel-->
+	<s:VGroup horizontalCenter.State_overte="0" verticalCenter.State_overte="0">
+		<s:HGroup includeIn="State_overte" color="#000000" horizontalCenter="0" verticalCenter="0">
+			<!--域管理-->
+			<mx:Button width="105" click="managerArea_click(event)" fontSize="12"  color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]" icon="@Embed('assets/imgs/overte/icon_area.png')"
+					   label="{resourceManager.getString('global','menu.general.mgarea')}"/>
+			<!--设备管理-->
+			<mx:Button width="105" click="manngerdevices_click(event)" color="0xffffff" fontSize="12"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]" icon="@Embed('assets/imgs/overte/icon_device.png')"
+					   label="{resourceManager.getString('global','menu.general.mgdevice')}"/>
+		</s:HGroup>
+		<s:HGroup includeIn="State_overte" color="#000000" horizontalCenter="0" verticalCenter="32">
+			<!--刷新域-->
+			<mx:Button width="105" fontSize="12" click="refreshManagerArea(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]" icon="@Embed('assets/imgs/overte/arearefresh.png')"
+					   label="{resourceManager.getString('global','menu.general.refresharea')}"/>
+			<!--控制台-->
+			<mx:Button width="105"  click="controlview(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/ctrl.png')"
+					   label="{resourceManager.getString('global','menu.general.console')}"/>
+		</s:HGroup>
+		<s:HGroup includeIn="State_overte" color="#000000" horizontalCenter="0" verticalCenter="32">
+			<!--帮助文档-->
+			<mx:Button width="105" click="helpfile(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/help.png')"
+					   label="{resourceManager.getString('global','menu.general.helpfile')}"/>
+		</s:HGroup>
+	</s:VGroup>
+	<!--VLL Over TE View General Panel-->
+	<s:VGroup horizontalCenter.State_general="0" verticalCenter.State_general="0">
+		<s:HGroup includeIn="State_general" color="#000000" horizontalCenter="0" verticalCenter="0">
+			<!--帮助文档-->
+			<mx:Button width="105" click="helpfile(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/help.png')"
+					   label="{resourceManager.getString('global','menu.general.helpfile')}"/>
+			<!--控制台-->
+			<mx:Button width="105"  click="controlview(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/ctrl.png')"
+					   label="{resourceManager.getString('global','menu.general.console')}"/>
+		</s:HGroup>
+		<s:HGroup includeIn="State_general" color="#000000" horizontalCenter="0" verticalCenter="0">
+			<!--告警-->
+			<mx:Button width="105" click="alarm(event)" color="0xffffff" cornerRadius="0"
+					   fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/warn.png')"
+					   label="{resourceManager.getString('global','menu.general.alarm')}"/>
+			<!--链路发现-->
+			<mx:Button id="findlink" visible="true" width="105"
+					   label="{resourceManager.getString('global','menu.general.autofindlink')}"
+					   click="findlink_clickHandler(event)" color="0xffffff" cornerRadius="0"
+					   fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/overte/iconp_findlink.png')"/>
+			
+			<mx:Button width="85" label="{resourceManager.getString('global','all.sysrevert')}" click="SdncUtil.app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_SYSTEM_ROLLBACK_WINDOW))"
+					   color="0xffffff"  visible="false" includeInLayout="false"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"/>
+			
+		</s:HGroup>
+		
+	</s:VGroup>
+</s:Group>

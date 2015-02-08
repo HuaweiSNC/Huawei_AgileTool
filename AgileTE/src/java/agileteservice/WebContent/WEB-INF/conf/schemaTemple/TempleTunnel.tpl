@@ -1,0 +1,25 @@
+<tunnelName>$tunnelName</tunnelName>
+<mplsTunnelIndex>$mplsTunnelIndex</mplsTunnelIndex>
+<interfaceName>$interfaceName</interfaceName>
+<mplsTunnelIngressLSRId>$mplsTunnelIngressLSRId</mplsTunnelIngressLSRId>
+<mplsTunnelEgressLSRId>$mplsTunnelEgressLSRId</mplsTunnelEgressLSRId>
+<tunnelState>UP</tunnelState>
+<hotStandbyWtr>$hotStandbyWtr</hotStandbyWtr>
+<hotStandbyEnable>true</hotStandbyEnable>
+<mplsTunnelRecordRoute>RECORD_LABLE</mplsTunnelRecordRoute>
+<foreach_tunnelPathsList>
+	<tunnelPaths>
+		<foreach_tunnelPath>
+			<tunnelPath>
+				<pathType>$pathType</pathType>
+				<includeAll>0x0</includeAll>
+				<includeAny>0x0</includeAny>
+				<excludeAny>0x0</excludeAny>
+				<hopLimit>32</hopLimit>
+				<lspId>0</lspId>
+				<modifyLspId>0</modifyLspId>
+				<explicitPathName>$explicitPathName</explicitPathName>
+			</tunnelPath>
+		</foreach_tunnelPath>
+	</tunnelPaths>
+</foreach_tunnelPathsList>

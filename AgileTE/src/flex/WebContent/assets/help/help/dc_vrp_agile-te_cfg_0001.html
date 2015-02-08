@@ -1,0 +1,318 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="zh-cn" xml:lang="zh-cn">
+<head>
+      <meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+   
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
+<meta name="copyright" content="(C) 版权 2005">
+<meta name="DC.rights.owner" content="(C) 版权 2005">
+<meta name="DC.Type" content="task">
+<meta name="DC.Title" content="总体配置逻辑">
+<meta name="abstract" content="介绍Agile TE的配置逻辑，包括前置任务和配置步骤。">
+<meta name="description" content="介绍Agile TE的配置逻辑，包括前置任务和配置步骤。">
+<meta name="DC.Relation" scheme="URI" content="../help/dc_vrp_agile-te_cfg_0016.html">
+<meta name="DC.Creator" content="j00178664">
+<meta name="Owner" content="j00178664">
+<meta name="IA" content="l48412">
+<meta name="SE" content="l48412">
+<meta name="TE" content="j00178664">
+<meta name="AuthorInfo_F" content="Author:j00178664;Owner:j00178664;IA:l48412;SE:l48412;TE:j00178664;CreatedDate:2012-04-28">
+<meta name="DC.Format" content="XHTML">
+<meta name="DC.Identifier" content="dc_vrp_agile-te_cfg_0001">
+<meta name="DC.Language" content="zh-cn">
+<link rel="stylesheet" type="text/css" href="../help/public_sys-resources/commonltr.css">
+<title>总体配置逻辑</title>
+</head>
+<body style="clear:both; padding-left:10px; padding-top:5px; padding-right:5px; padding-bottom:5px"><a name="dc_vrp_agile-te_cfg_0001"></a><a name="dc_vrp_agile-te_cfg_0001"></a>
+
+
+<h1 class="topictitle1">总体配置逻辑</h1>
+
+
+
+<div class="taskbody"><p>介绍Agile TE的配置逻辑，包括前置任务和配置步骤。</p>
+
+<div class="prereq" style="margin-left:0"><a name="dc_vrp_agile-te_cfg_0001__1.4.1"></a><a name="1.4.1"></a><h4 class="sectiontitle">前提条件</h4>
+<div class="p"><div class="p">在配置Agile TE前，需要完成如下前提任务：
+<div class="tablenoborder"><a name="dc_vrp_agile-te_cfg_0001__tab_dc_vrp_agile-te_cfg_000101"></a><a name="tab_dc_vrp_agile-te_cfg_000101"></a><table cellpadding="4" cellspacing="0" summary="" id="dc_vrp_agile-te_cfg_0001__tab_dc_vrp_agile-te_cfg_000101" frame="border" border="1" rules="all"><caption><b>表1 </b>前置任务</caption>
+<thead align="left">
+<tr>
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.4.1.1.1.2.3.1.1"><p>序号</p>
+</th>
+
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.4.1.1.1.2.3.1.2"><p>任务说明</p>
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 "><p>网元和SNC之间的网络互通</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 "><p>配置WEB客户端和SNC之间的网络互通</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 "><p>配置WEB客户端和SNC之间的网络互通</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 ">配置VLAN及VLANIF接口实现三层互通，配置VLANIF接口的IP</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 ">配置Loopback接口及其IP</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 "><p>在网元上配置OSPF协议，同时使能OSPF TE</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 "><p>在网元上全局使能MPLS、MPLS TE、MPLS RSVP-TE、CSPF</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 "><p>在网元上全局使能MPLS L2VPN</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 ">&nbsp;&nbsp;</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 ">&nbsp;&nbsp;</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.1 ">&nbsp;&nbsp;</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.1.1.1.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+</tbody>
+
+</table>
+</div>
+</div>
+</div></div>
+
+<div class="context"><a name="dc_vrp_agile-te_cfg_0001__1.4.2"></a><a name="1.4.2"></a>
+<div class="p"><h4 class="sectiontitle">配置任务流程图</h4>
+<div class="tablenoborder"><a name="dc_vrp_agile-te_cfg_0001__tab_dc_vrp_agile-te_cfg_000102"></a><a name="tab_dc_vrp_agile-te_cfg_000102"></a><table cellpadding="4" cellspacing="0" summary="" id="dc_vrp_agile-te_cfg_0001__tab_dc_vrp_agile-te_cfg_000102" frame="border" border="1" rules="all"><caption><b>表2 </b>配置流程</caption>
+<thead align="left">
+<tr>
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.4.2.2.2.3.1.1"><p>序号</p>
+</th>
+
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.4.2.2.2.3.1.2"><p>任务说明</p>
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 "><p>VLANIF或者链路相关配置</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 "><p>配置MPLS TE隧道</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 "><p>包含建立隧道及定义路径</p>
+</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 ">配置可靠性，CR-LSP备份</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 ">可以考虑和下面的合起来</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 "><p>配置BFD for TE LSP</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 "><p>配置VLL</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 "><p>VLAN MAPPING</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 "><p>配置QoS</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.1 ">检查配置结果</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.2.2.2.3.1.2 ">1、检查隧道状态2、检查VLL状态、</td>
+
+</tr>
+
+</tbody>
+
+</table>
+</div>
+</div></div>
+
+<div class="context"><a name="dc_vrp_agile-te_cfg_0001__1.4.3"></a><a name="1.4.3"></a>
+<div class="p"><h4 class="sectiontitle">业务维护</h4>
+<div class="tablenoborder"><a name="dc_vrp_agile-te_cfg_0001__tab_dc_vrp_agile-te_cfg_000103"></a><a name="tab_dc_vrp_agile-te_cfg_000103"></a><table cellpadding="4" cellspacing="0" summary="" id="dc_vrp_agile-te_cfg_0001__tab_dc_vrp_agile-te_cfg_000103" frame="border" border="1" rules="all"><caption><b>表3 </b>配置流程</caption>
+<thead align="left">
+<tr>
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.4.3.2.2.3.1.1"><p>序号</p>
+</th>
+
+<th class="cellrowborder" valign="top" width="50%" id="mcps1.4.3.2.2.3.1.2"><p>任务说明</p>
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 ">流量统计</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 "><p>流量策略切换</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 ">&nbsp;&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 "><p>隧道主备路径切换</p>
+</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 "><p>包含建立隧道及定义路径</p>
+</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 ">网络质量检测</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 ">&nbsp;</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 ">&nbsp;</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 ">&nbsp;</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+<tr>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.1 ">&nbsp;</td>
+
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.4.3.2.2.3.1.2 ">&nbsp;</td>
+
+</tr>
+
+</tbody>
+
+</table>
+</div>
+</div></div>
+
+</div>
+
+<div>
+<div class="familylinks">
+<div class="parentlink"><strong>父主题：</strong> <a href="../help/dc_vrp_agile-te_cfg_0016.html" title="业务部署是指下发管道并将流量引入管道中进行传输。">业务部署</a></div>
+</div>
+</div>
+
+<div class="hrcopyright"><hr size="2"></div><div class="hwcopyright">华为专有和保密信息</div><div class="hwcopyright">版权所有 &copy; 华为技术有限公司</div></body>
+</html>

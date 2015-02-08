@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="60" height="40" color="0xffffff">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			
+			import mx.events.FlexEvent;
+			
+			/**CPU读数,两位小数  */
+			[Bindable]
+			private var __cpuPercent:Number = 0;
+			/**RAM读数,两位小数 */
+			[Bindable]
+			private var __ramPercent:Number = 0;
+			
+			[Bindable]
+			/**内存读数*/
+			public function get ramPercent():Number
+			{
+				return __ramPercent;
+			}
+			/**内存读数*/
+			public function set ramPercent(value:Number):void
+			{
+				__ramPercent = value;
+				if(__ramPercent >= 0.85)
+				{
+					ramWarning.alpha = 1;
+				}else
+				{
+					ramWarning.alpha = 0;
+				}
+//				if(__ramPercent < 0.15)
+//				{
+//					__ramPercent = 0.15;
+//				}
+			}
+
+			[Bindable]
+			/**cpu读数*/
+			public function get cpuPercent():Number
+			{
+				return __cpuPercent;
+			}
+			/**cpu读数*/
+			public function set cpuPercent(value:Number):void
+			{
+				__cpuPercent = value;
+				if(__cpuPercent >= 0.85)
+				{
+					cpuWarning.alpha = 1;
+				}else
+				{
+					cpuWarning.alpha = 0;
+				}
+//				if(__cpuPercent < 0.15)
+//				{
+//					__cpuPercent = 0.15;
+//				}
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:layout>
+		<s:HorizontalLayout gap="2"/>
+	</s:layout>
+	
+	<s:Group id="cpuState">
+		
+		<s:layout>
+			<s:VerticalLayout horizontalAlign="center" gap="2"/>
+		</s:layout>
+		<s:Group>
+			<s:BitmapImage id="cpuImg" source="@Embed('assets/imgs/ctrl/ctrl_state.png')" mask="{cpuImgMask}"/>
+			<s:BitmapImage id="cpuWarning" source="@Embed('assets/imgs/ctrl/ctrl_state_warning.png')" mask="{cpuWarningMask}" alpha="0"/>
+			<s:Group  id="cpuImgMask" width="100%" height="{cpuImg.height*__cpuPercent}" bottom="0">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:SolidColor color="0"/>
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+			<s:Group  id="cpuWarningMask" width="100%" height="{cpuWarning.height*__cpuPercent}" bottom="0">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:SolidColor color="0"/>
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+		</s:Group>
+		<s:Label id="cputateName" textAlign="center" text="CPU" fontSize="10"/>
+	</s:Group>
+	
+	<s:Group id="ramState">
+		
+		<s:layout>
+			<s:VerticalLayout horizontalAlign="center" gap="2"/>
+		</s:layout>
+		<s:Group>
+			<s:BitmapImage id="ramImg" source="@Embed('assets/imgs/ctrl/ctrl_state.png')" mask="{ramImgMask}"/>
+			<s:BitmapImage id="ramWarning" source="@Embed('assets/imgs/ctrl/ctrl_state_warning.png')" mask="{ramWarningMask}" alpha="0"/>
+			<s:Group  id="ramImgMask" width="100%" height="{ramImg.height*__ramPercent}" bottom="0">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:SolidColor color="0"/>
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+			<s:Group  id="ramWarningMask" width="100%" height="{ramWarning.height*__ramPercent}" bottom="0">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:SolidColor color="0"/>
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+		</s:Group>
+		<s:Label id="ramStateName" textAlign="center" text="RAM" fontSize="10"/>
+	</s:Group>
+</s:Group>

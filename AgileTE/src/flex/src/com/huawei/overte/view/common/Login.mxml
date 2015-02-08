@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:view="com.huawei.sdnc.view.*"
+					  creationComplete="init(event)" transitions="{[transition]}" 
+					  xmlns:common="com.huawei.overte.view.common.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.model.Data;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.laiyonghao.Uuid;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.HttpResponse;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.components.Image;
+			import spark.components.Label;
+			
+			[Bindable]
+			[Embed(source="assets/imgs/loginImgs/button_DCentry.png")]
+			private var __DCImg:Class;
+			[Embed(source="assets/imgs/loginImgs/button_ipranEntry.png")]
+			private var __IPRanImg:Class;
+			[Embed(source="assets/imgs/loginImgs/button_ipcoreEntry.png")]
+			private var __IPCoreImg:Class;
+			
+			private var __isRightUser:Boolean;
+			/**存放所有注册用户信息*/
+			private var __userInfos:ArrayCollection;
+			/**系统主应用程序*/
+			private var __app:overTegui2;
+			public var opsIp:String=SdncUtil.opsIp;
+			protected function imgClickHandler(event:MouseEvent):void
+			{
+				this.currentState="login";
+			}
+			/**登录框关闭按钮响应*/
+			protected function login_closeHandler(event:CloseEvent):void
+			{
+				this.currentState="choiceEntry";
+			}
+			/**登录按钮响应*/
+			protected function loginButton_clickHandler(event:MouseEvent):void
+			{
+				if(login.password.text==""||login.username.text==""){
+					Alert.show(resourceManager.getString('global','mgUser.usernameorpasswordconnotnull'));
+				}else{
+				var registerBody:String = "<user>"; 
+				registerBody+= "<userName>"+login.username.text+"</userName>"; 
+				registerBody+= "<userPasswd>"+login.password.text+"</userPasswd>";
+				registerBody+= "<clientBs>"+login.uuid.toString()+"</clientBs>";
+				registerBody+= "<verifyCode>"+login.code.text+"</verifyCode>";
+				registerBody+= "</user>"; 
+				var registerData:Array = new Array();
+				registerData.push(registerBody);
+				//this.dispatchEvent(new SdncEvt(SdncEvt.REGISTER_USER,registerData));
+				var connUtil:ConnUtil = ConnUtil.getInstence();
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/login";
+				//var uri:String="http://10.111.92.248:8088/AgileTeService/agilete/domains/login";
+				trace(uri);
+				connUtil.clientQuery(uri,ConnUtil.METHOD_POST,postReslut,postFault,registerBody);
+				}
+			}
+			
+			
+			
+			//注册按钮点击切换状态
+			protected function Button_clickHandler(event:MouseEvent):void
+			{
+				//this.currentState="register";
+				
+				var register:Register=Register(PopUpManager.createPopUp(this,Register,true));
+				PopUpManager.centerPopUp(register);
+			}
+			
+			//取消按钮点击切换到登陆页面
+			protected function cancleButton_clickHandler(event:MouseEvent):void
+			{
+				this.currentState="login";
+			}
+			
+			//点击注册按钮，进行用户注册
+			protected function registerButton_clickHandler(event:MouseEvent):void
+			{
+				//var uuid:Uuid = new Uuid();//36位UUid
+				/*构建xml报文*/
+			}
+			
+			//判断是否显示验证码和锁定
+//			private function isShowCode(data:String):void{
+//				var dataxml:XML = new XML(data);
+//				if(data.search(""){
+//				}
+//				login.img.visible=true;
+//			}
+			
+			
+			//private function postReslut(e:HttpResponseEvent,data:String):void
+			private function postReslut(e:HttpDataEvent):void
+			{
+				trace(e.bytes.toString());
+				var data:String = e.bytes.toString();
+				//var dataXml:XML = new XML(data);
+				if(e.bytes.toString().search("success")!=-1){
+				
+					__app.currentState = "overte_state";
+					__app.header.currentState = "login";
+					__app.header.username = login.username.text;
+					DataHandleTool.username = login.username.text;
+					initLoginPanel();
+					return;
+				}
+				if(e.bytes.toString().search("verifyCodeFail")!=-1){
+					//验证码错误
+					Alert.show(resourceManager.getString('global','mgUser.verifyCodeFail'),resourceManager.getString('global','all.prompt'));
+					login.password.text="";
+					login.code.text="";
+					//isShowCode(data);
+					login.reloadcode();
+					return;
+				}
+				if(e.bytes.toString().search("fail")!=-1){
+					//用户名或密码错误
+					Alert.show(resourceManager.getString('global','mgUser.usernameorpassword'),resourceManager.getString('global','all.prompt'));
+					login.password.text="";
+					login.code.text="";
+					//isShowCode(data);
+					login.reloadcode();
+					return;
+				}
+				else{
+					//登陆失败
+					Alert.show(resourceManager.getString('global','mgUser.loginfail'),resourceManager.getString('global','all.prompt'));
+					return;
+				}
+			}
+			
+			private function postFault(e:Event):void
+			{
+				Alert.show(resourceManager.getString('global','mgUser.connectfailnowip')+opsIp,resourceManager.getString('global','all.prompt'))
+			}
+			protected function init(event:FlexEvent):void
+			{
+				__app = SdncUtil.app;
+//				var myContextMenu:ContextMenu=new ContextMenu();  
+//				var GoUrl1:ContextMenuItem=new ContextMenuItem("Enter");  	
+//				GoUrl1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,imgClickHandler);  
+//				myContextMenu.customItems.push(GoUrl1);  
+//				myContextMenu.hideBuiltInItems();  
+//				this.contextMenu=myContextMenu; 
+//				
+//				__userInfos = new ArrayCollection();
+//				for each(var user:XML in __app.sdnconf.env.users.user)
+//				{
+//					__userInfos.addItem(user);
+//				}
+				
+			}
+			
+			public function initLoginPanel():void
+			{
+				login.username.text = "";
+				login.password.text = "";
+				login.username.setStyle("fontSize","11");
+				login.password.setStyle("fontSize","11");
+			}
+			
+			protected function loginViewCreated(event:FlexEvent):void
+			{
+				login.loginBtn.addEventListener(MouseEvent.CLICK,loginButton_clickHandler);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Transition id="transition">
+			<s:Fade alphaFrom="0" alphaTo="1" target="{this}" duration="1600"/>
+		</s:Transition>
+		<s:DropShadowFilter id="shadow" angle="150" blurX="16" blurY="16" alpha=".8"/>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="login"/>
+		<!--<s:State name="register"/>-->
+	</s:states>
+	<!--用户登录界面-->
+	<common:LoginPanel id="login" includeIn="login" creationComplete="loginViewCreated(event)"
+					   horizontalCenter="0" verticalCenter="-40"/>
+	<!--
+	<common:RegisterPanel id="register" includeIn="register" creationComplete="registerViewCreated(event)"
+					   horizontalCenter="0" verticalCenter="-40"/>-->
+</s:SkinnableContainer>

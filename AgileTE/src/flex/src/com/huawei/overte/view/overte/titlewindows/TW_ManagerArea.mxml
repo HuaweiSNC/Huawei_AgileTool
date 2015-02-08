@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="654" height="398" close="PopUpManager.removePopUp(this)" color="#000000"
+			   creationComplete="onCreate()" fontFamily="微软雅黑" fontSize="12" initialize="init()"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" title="{resourceManager.getString('global','mgarea.title')}"
+			   height.addsb="450">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.DeviceCtrl;
+			import com.huawei.overte.control.DomainsCtrl;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.model.Data;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			[Bindable]
+			public var deviceList:ArrayCollection;
+			[Bindable]
+			public var mydata:Data = Data.getInstence();
+			private var __app:overTegui2;
+			var nowdoid:String = ""
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var devices:Array=[];
+			
+			private var projectType:String;//项目类型
+			public function init():void
+			{
+				__app = SdncUtil.app;
+				devices=DataHandleTool.devices;
+				projectType = SdncUtil.cuProjectType;//初始化项目类型
+				mydata.areatypes.removeAll();
+				mydata.areatypes.addItem({
+					id:1,
+					name:"Agile TE View"
+				})
+			}
+			
+			/**
+			 * 初始化设备列表
+			 * */
+			public function onCreate():void
+			{
+//				var devices:Array=DataHandleTool.devices;
+//				for each(var o:Object in devices){
+//					o["state"]="uninitialized";
+//				}
+//				deviceList=new ArrayCollection(devices);
+				var getdomainsnames:DomainsCtrl = new DomainsCtrl;
+				getdomainsnames.getDomains();
+				var getdev:DeviceCtrl = new DeviceCtrl;
+				getdev.getAllDevices()
+			}
+			
+//			/**
+//			 * 增加设备
+//			 */	
+//			public function addDevice():void
+//			{
+//				var addDevice:AddDevice=AddDevice(PopUpManager.createPopUp(this.parent,AddDevice,true));
+//				addDevice.addEventListener(SdncEvt.SAVE_NODE,SaveNode);//监听添加节点界面保存 Link事件
+//				PopUpManager.centerPopUp(addDevice);     
+//			}
+//			/*添加节点设备事件*/
+//			
+//			private function SaveNode(e:SdncEvt):void{
+//				
+//				var i:int =0;
+//				var newNode:StateNode = new StateNode;
+//				newNode = (e.params as Array)[1] as StateNode;
+//				(e.params as Array)[2]["id"]=i
+//				//				devices.push((e.params as Array)[2])
+//				DataHandleTool.nodeArray.push(newNode);
+//				
+//				if(projectType=="test"){
+//					deviceList.addItem((e.params as Array)[2])
+//				}else{
+//					//					var opsIp:String=SdncUtil.opsIp;
+//					//					var webname:String = SdncUtil.projectname;
+//					//					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/domains/"+page.ManAreasID+"/devices";
+//					//					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onPostDeviceResult,onPostDeviceFault,(e.params as Array)[0]);
+//					//					PopupManagerUtil.getInstence().popupLoading(page,false);
+//				}
+//				i++;
+//			}
+//			/**
+//			 * 编辑设备
+//			 */
+//			public function editData(obj:Object):void{
+//				var editDevice:AddDevice=AddDevice(PopUpManager.createPopUp(this.parent,AddDevice,true));
+//				/**保存**/
+//				editDevice.saves.label = resourceManager.getString('global','all.save');
+//				//先把EditDevice这个子页面的属性赋给此页面
+//				editDevice.nowid.text = obj["deid"]
+//				editDevice.doid.text = nowdoid
+//				editDevice.devicename.text = obj["devicename"];
+//				editDevice.ip.text = obj["ip"];
+//				editDevice.topoip.text = obj["topoip"];
+//				editDevice.username.text= obj["username"];
+//				editDevice.passwd.text = obj["passwd"];
+//				editDevice.version.text = obj["version"];
+//				editDevice.productType.text = obj["productType"];
+//				PopUpManager.centerPopUp(editDevice);     
+//			}
+			
+			//编辑域
+			public function editDomains(obj:Object):void{
+				currentState="addsb";
+				/**保存**/
+				save.label = resourceManager.getString('global','all.save');
+				nowdoid = obj["doid"];
+				areaName.text = obj["doname"];
+				areaDescr.text = obj["dodescribe"];
+				for (var i:int = 0;i<mydata.areatypes.length;i++)
+				{
+					if(mydata.areatypes[i].name==obj["dotype"])
+					{
+						areaType.selectedIndex=i
+					}
+				}
+
+				
+				for(var y:int = 0;y<mydata.nowdevices.length;y++)
+				{
+					mydata.nowdevices[y].select="false"
+				}
+					
+					
+				for(var a:int = 0;a<mydata.domainsxml.children().length();a++)
+				{
+					if(obj["doid"]==mydata.domainsxml.children()[a].id.children()[0])
+					{
+						var xml:XML = mydata.domainsxml.children()[a];
+						var x:int = xml.topo.toponodes.children().length();
+						for(var j:int = 0;j<x;j++)
+						{
+							for(var t:int = 0;t<mydata.nowdevices.length;t++)
+							{
+								if(xml.topo.toponodes.children()[j].nodeID.children()[0]==mydata.nowdevices[t].deid)
+								{
+									mydata.nowdevices[t].select="true"
+								}
+							}
+						}
+					}
+//					mydata.domainsarr.addItem({
+//						doid:resxml.children()[i].id.children()[0],
+//						doname:resxml.children()[i].name.children()[0],
+//						dotype:resxml.children()[i].type.children()[0],
+//						dodescribe:resxml.children()[i].describe.children()[0]
+//					})
+				}
+			}
+			
+//			/**
+//			 * 删除该条设备
+//			 */	
+//			public function deletedata(e:MouseEvent):void
+//			{
+//				Alert.show(resourceManager.getString('global','all.sure')+resourceManager.getString('global','all.delete')+"？",
+//					resourceManager.getString('global','all.prompt'),
+//					Alert.OK|Alert.CANCEL,__app,closeDelete);
+//			}
+//			
+//			public function closeDelete(e:CloseEvent):void
+//			{
+//				if(e.detail==Alert.OK){
+//					deviceList.removeItemAt(g.selectedIndex);
+//				}
+//				
+//			}
+			
+			protected function addDomains(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var getdevices:DeviceCtrl = new DeviceCtrl;
+				getdevices.getAllDevices()
+				currentState = "addsb"
+				/**添加**/
+				save.label = resourceManager.getString('global','all.append');
+				areaName.text=""
+				areaDescr.text=""
+//				areaType.selectedIndex=-1
+//				var getdevices:DeviceCtrl = new DeviceCtrl;
+//				getdevices.getAllDevices()
+				//mydata.nowdevices.removeAll();
+			}
+			
+			protected function savedomains(event:MouseEvent):void
+			{
+				if(areaName.text==""||areaName.text.length==0){
+					Alert.show(resourceManager.getString('global','mgarea.namenull'))
+					return;
+				}
+				var domain:ArrayCollection = new ArrayCollection;
+				domain.addItem({
+					name:areaName.text,
+					descr:areaDescr.text,
+					type:areaType.selectedItem.name
+				});
+				var domainsctrl:DomainsCtrl = new DomainsCtrl;
+				if(save.label==resourceManager.getString('global','all.append'))
+				{
+					domainsctrl.makebody(domain,"post",nowdoid);
+				}
+				else if(save.label==resourceManager.getString('global','all.save'))
+				{
+					domainsctrl.makebody(domain,"put",nowdoid);
+				}
+				
+				currentState="State1"
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="State1"/>
+		<s:State name="addsb"/>
+	</s:states>
+	<fx:Declarations>
+		<fx:XML id="project" source="assets/xml/sdn_office_project.xml"/>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="10" bottom="50" width="95%" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn">
+			<s:Group includeIn="addsb" x="0" y="6" width="100%" height="30">
+				<!--域名称-->
+				<s:Label x="24" text="{resourceManager.getString('global','mgarea.areaname')}：" textAlign="right" verticalCenter="0"/>
+				<s:TextInput id="areaName" x="79" width="201" verticalCenter="0"/>
+				<!--解决方案-->
+				<s:Label x="304" text="{resourceManager.getString('global','mgarea.scheme')}：" verticalCenter="0"/>
+				<mx:ComboBox id="areaType" x="367" width="210" cornerRadius="0" verticalCenter="0" dataProvider="{mydata.areatypes}" labelField="name">
+				</mx:ComboBox>
+			</s:Group>
+			<s:Group includeIn="addsb" x="0" y="39" width="100%" height="69">
+				<!--描述-->
+				<s:Label x="20" text="{resourceManager.getString('global','mgarea.describe')} ：" textAlign="right" verticalCenter="0"/>
+				<s:TextArea id="areaDescr" x="79" y="10" width="500" height="49"/>
+			</s:Group>
+			
+			<s:VGroup id="content" includeIn="addsb" top="135" bottom="0" width="100%">
+				<s:Group width="100%" height="100%">
+					<s:DataGrid id="g" left="10" right="10" top="5" bottom="5"
+								dataProvider="{mydata.nowdevices}" editable="false"
+								horizontalScrollPolicy="off" requestedRowCount="4"
+								sortableColumns="false" textAlign="center">
+						<s:columns>
+							<s:ArrayList>
+								<!--s:GridColumn  headerText="用户名" dataField="username" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/-->
+								<!--序号-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgarea.number')}" dataField="num" width="40"  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader" />
+								<!--设备名称-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.name')}" dataField="devicename"  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader" />
+								<!--带外IP-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.outIP')}" dataField="ip" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--带内IP-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.inputIP')}" dataField="topoip" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--版本-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.version')}"  dataField="version" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--产品类型-->
+								<s:GridColumn headerText="{resourceManager.getString('global','mgdevice.projectType')}" dataField="productType" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<!--状态-->
+								<s:GridColumn headerText="{resourceManager.getString('global','managerdevice.state')}" visible="false" dataField="state" width="{(g.width-225)/6}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+								<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','mgarea.choice')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+									<s:itemRenderer>
+										<fx:Component>
+											<s:GridItemRenderer>
+												<fx:Script>
+													<![CDATA[
+														import mx.controls.Alert;
+														override public function set data(value:Object):void
+														{
+															super.data = value
+															if(data!=null&&data.select=="true")
+															{
+																issel.selected=true;
+																
+															}
+															else
+															{
+																issel.selected=false;
+															}
+														}
+														protected function checkbox1_changeHandler(event:Event):void
+														{
+															// TODO Auto-generated method stub
+															//Alert.show(issel.selected.toString())
+															if(issel.selected.toString()=="true")
+															{
+																data.select="true"
+															}
+															else if(issel.selected.toString()=="false")
+															{
+																data.select="false"
+															}
+														}
+													]]>
+												</fx:Script>
+												<s:CheckBox id="issel" horizontalCenter="0" verticalCenter="0" change="checkbox1_changeHandler(event)" enabled="{data.productType=='CE12800'?true:false}"/>
+												<!--s:CheckBox id="issel" horizontalCenter="0" verticalCenter="0" change="checkbox1_changeHandler(event)"  click="outerDocument.editData(data)"/-->
+											</s:GridItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+								</s:GridColumn>
+							</s:ArrayList>
+						</s:columns>
+					</s:DataGrid>
+				</s:Group>
+			</s:VGroup>
+			<s:DataGrid id="g0" includeIn="State1" left="10" right="10" top="50" bottom="10"
+						dataProvider="{mydata.domainsarr}" editable="false" horizontalScrollPolicy="off"
+						requestedRowCount="4" sortableColumns="false" textAlign="center">
+				<s:columns>
+					<s:ArrayList>
+						<!--域名称-->
+						<s:GridColumn headerText="{resourceManager.getString('global','mgarea.areaname')}" dataField="doname" width="148" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+						<!--描述-->
+						<s:GridColumn headerText="{resourceManager.getString('global','mgarea.describe')}" dataField="dodescribe" width="148" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader" />
+						<!--解决方案-->
+						<s:GridColumn headerText="{resourceManager.getString('global','mgarea.scheme')}" dataField="dotype" width="148" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+						<!--编辑-->
+						<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','all.edit')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+							<s:itemRenderer>
+								<fx:Component>
+									<s:GridItemRenderer>
+										<mx:LinkButton fontWeight="normal"  label="{resourceManager.getString('global','all.edit')}..." horizontalCenter="0" icon="@Embed('assets/imgs/icons/edit.png')" verticalCenter="0"  click="outerDocument.editDomains(data)"/>
+									</s:GridItemRenderer>
+								</fx:Component>
+							</s:itemRenderer>
+						</s:GridColumn>
+						<!--删除-->
+						<s:GridColumn editable="false" width="75" headerText="{resourceManager.getString('global','all.delete')}" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader">
+							<s:itemRenderer>
+								<fx:Component>
+									<s:GridItemRenderer>
+										
+										<fx:Script>
+											<![CDATA[
+												import com.huawei.overte.control.DomainsCtrl;
+												
+												import mx.controls.Alert;
+												import mx.events.CloseEvent;
+												protected function deldomains(event:MouseEvent):void
+												{
+													/**确定**/
+//													Alert.okLabel = resourceManager.getString('global','all.sure');
+//													/**取消**/
+//													Alert.cancelLabel = resourceManager.getString('global','all.cancel');
+													Alert.show(resourceManager.getString('global','all.ifdeleted')+data.doname+"？",
+														resourceManager.getString('global','all.prompt'),
+														Alert.YES|Alert.NO,this,closeDelete);
+												}
+												
+												public function closeDelete(e:CloseEvent):void
+												{
+													if(e.detail==Alert.YES)
+													{
+														var deldevice:DomainsCtrl = new DomainsCtrl;
+														deldevice.delDomains(data.doid)
+													}
+												}
+											]]>
+										</fx:Script>
+										<!--删除-->
+										<mx:LinkButton fontWeight="normal" label="{resourceManager.getString('global','all.delete')}" horizontalCenter="0" verticalCenter="0" click="deldomains(event)" icon="@Embed('assets/imgs/icons/delete.png')"/>
+									</s:GridItemRenderer>
+								</fx:Component>
+							</s:itemRenderer>
+						</s:GridColumn>
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+			<!--增加…-->
+			<s:Button includeIn="State1" x="537" y="17" label="{resourceManager.getString('global','all.add')}..." click="addDomains(event)"/>
+			<s:Group width="100%" height="30" x.addsb="4" y.addsb="106">
+				<!--测试-->
+				<!--s:Button id="test" verticalCenter="0"  label="{resourceManager.getString('global','managerdevice.test')}" click="testAllDevices()" right="120" visible="false"/-->
+				<!--管理域列表-->
+				<s:Label x="18" y="13" text.addsb="{resourceManager.getString('global','mgdevice.list')}"
+						 text.State1="{resourceManager.getString('global','mgarea.list')}"
+						 y.addsb="5"/>
+			</s:Group>
+		</s:BorderContainer>
+		<!--确定-->
+		<s:Button id="save" includeIn="addsb" right="331" bottom="15" label="{resourceManager.getString('global','all.sure')}"
+				  click="savedomains(event)"/>
+		<!--取消-->
+		<s:Button includeIn="addsb" right="251" bottom="15" label="{resourceManager.getString('global','all.cancel')}" click="currentState='State1'"
+				  color="#000000" fontSize="12"/>
+		<!--退出-->
+		<s:Button includeIn="State1" right="20" bottom="15" label="{resourceManager.getString('global','all.exit')}"
+				  click="PopUpManager.removePopUp(this)"/>
+	</mx:Canvas>
+</s:TitleWindow>

@@ -1,0 +1,9 @@
+<!--  sample for domain 
+ <domains>
+	<domain name ="2">
+			<device name="2">
+					<tunnel name="Tunnel0"  toInterface="GETT/0/0/2"   ifoperspeed="100000000" />
+			</device>
+	</domain>
+ </domains>
+-->

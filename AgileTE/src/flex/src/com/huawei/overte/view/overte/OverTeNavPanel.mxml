@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:common="com.huawei.sdnc.view.common.*"
+		 xmlns:navpanel="com.huawei.sdnc.view.common.navpanel.*"
+		 xmlns:menupancl="com.huawei.overte.view.overte.panel.menupancl.*"
+		 width="450" height="532" color="#FFFFFF" creationComplete="init()" fontFamily="微软雅黑"
+		 fontSize="12">
+	<fx:Style> 
+		Tree { 
+			folderClosedIcon: ClassReference(null); 
+			folderOpenIcon: ClassReference(null); 
+			defaultLeafIcon: ClassReference(null); 
+		} 
+	</fx:Style>
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenMax;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.model.Data;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.RightClickManager;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import com.huawei.overte.vo.TunnelVo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Menu;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.events.MenuEvent;
+			import mx.rpc.xml.SimpleXMLDecoder;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.IData;
+			import twaver.networkx.NetworkX;
+			/**展开状态,true为展开，false为未展开*/
+			private var __isExtended:Boolean;
+			/**系统主应用程序对象*/
+			private var __app:overTegui2;
+			/**OverTEView 对象*/
+			public var page:OverTEView;
+			/**当前进入项目类型*/
+			[Bindable]private var projectType:String;//项目类型
+			/**当前进入管理域ID*/
+			[Bindable]private var curarea:String;//当前管理域
+			public var adg_select:XML
+			public var tunnelstate:String
+			public var flowstate:String
+			public var flowName:String
+			[Bindable]public var tunnelxml:XML;
+			[Bindable]public var swinchvisble:Boolean=false;
+			[Bindable]public var mydata:Data = Data.getInstence();
+				
+			[Bindable]
+			[Embed(source="assets/imgs/icons/tunnel.png")] 
+			public var tunnel:Class; 
+			[Bindable]
+			[Embed(source="assets/imgs/icons/flow.png")] 
+			public var flow:Class; 
+			
+			public var menuItem:ContextMenuItem;
+			/**实例化 数据连接**/
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			/**实例化 数据连接**/
+			protected function init():void
+			{
+				tunnelstatebtn.text = ""
+				__app=SdncUtil.app;	
+				projectType = SdncUtil.cuProjectType;//初始化项目类型
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;
+				
+				//				var contextMenu:ContextMenu=new ContextMenu();
+				//				//隐藏指定的 ContextMenu对象中的所有内置菜单项（“设置”除外）。
+				//				contextMenu.hideBuiltInItems();
+				//				//创建上下文菜单选项
+				//				menuItem=new ContextMenuItem("主备路径切换");
+				//				contextMenu.customItems.push(menuItem);
+				//				menuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,menuItemHandler);
+				//				g.contextMenu=contextMenu;
+				
+			}
+			internal function menuItemHandler(evt:ContextMenuEvent):void{
+				//获取事件源，斌将其转化为ContextMenuItem
+				var item:ContextMenuItem=ContextMenuItem(evt.currentTarget);
+				var caption:String=item.caption;
+				switch(caption)
+				{
+					case resourceManager.getString('global','leftlist.alert.mainbackpath')+resourceManager.getString('global','leftlist.switch'):
+					{
+						Alert.okLabel = "YES";
+						Alert.cancelLabel = "NO";
+						var str:String = ""
+						if(adg_select.@flow=="primary"){
+							str = resourceManager.getString('global','leftlist.alert.mainpath')
+						}else{
+							str = resourceManager.getString('global','leftlist.alert.backpath')
+						}
+						Alert.show(resourceManager.getString('global','leftlist.alert.nowrunat')+str+resourceManager.getString('global','leftlist.alert.ifswitch')+"?",resourceManager.getString('global','all.prompt'),Alert.OK|Alert.CANCEL,this,closeDelete);
+						break;
+					}
+					default:
+					{
+						break;
+					}
+				}
+			}
+			/***
+			 * 真实工程：请求Tunnel与flow关系tree连接成功
+			 * */
+			public var flag:Boolean = true;
+			private function onGetTunnelFlowResult(e:HttpResponseEvent,data:String):void
+			{
+				if(e.response.code=="200"){
+					if(data == ""){
+						PopupManagerUtil.getInstence().closeLoading();	
+						return;
+					}else{
+						var ixml:XML = new XML(data);
+						for(var i:int = 0;i<ixml.children().length();i++)
+						{
+							ixml.children()[i].@icon = "tunnel"
+							if(ixml.children()[i].children().length()!=0)
+							{
+								for(var j:int = 0;j<ixml.children()[i].children().length();j++)
+								{
+									ixml.children()[i].children()[j].@icon = "flow"
+								}
+							}
+						}
+						tunnelxml = ixml;
+						g.expandAll();
+						PopupManagerUtil.getInstence().closeLoading();
+						
+						if(adg_select!=null){
+//							DataHandleTool.drawLineByTunnel(adg_select.@flow,page.overteCtrl.patharray,SdncUtil.network);
+//							if(adg_select.@flow=="primary"){
+//								if(adg_select.@backState!="down"){
+//									tunnelstatebtn.text=adg_select.@name+"运行状态：备份Path"
+//									DataHandleTool.drawLineByTunnel(adg_select.@flow,page.overteCtrl.patharray,SdncUtil.network);
+//								}
+//							}else if(adg_select.@flow=="hot_standby"){
+//								if(adg_select.@priState!="down"){
+//									tunnelstatebtn.text=adg_select.@name+"运行状态：主Path"
+//									DataHandleTool.drawLineByTunnel(adg_select.@flow,page.overteCtrl.patharray,SdncUtil.network);
+//								}
+//							}
+						}
+					}
+				}else if(e.response.code=="501"){
+					PopupManagerUtil.getInstence().closeLoading();
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.systunnelinitialize'))
+					//管道正在初始化
+					Alert.show(resourceManager.getString('global','leftlist.alert.init'),resourceManager.getString('global','all.prompt'));
+				}else{
+					PopupManagerUtil.getInstence().closeLoading();
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.tunnelinf')+resourceManager.getString('global','all.error')+","+resourceManager.getString('global','all.errorcode')+e.response.code)
+					Alert.show(resourceManager.getString('global','leftlist.alert.tunnelinf')+resourceManager.getString('global','all.error')+","+resourceManager.getString('global','all.errorcode')+e.response.code,resourceManager.getString('global','all.prompt'));
+				}
+//				DataHandleTool.initLinkColor(page.networkX);
+			}
+			
+			private  function onGetPathResult(e:HttpResponseEvent,data:String):void
+			{
+				if(e.response.code=="200"){
+					if(data == ""){
+						PopupManagerUtil.getInstence().closeLoading();	
+						Alert.show(resourceManager.getString('global','leftlist.alert.getlistfail'),resourceManager.getString('global','all.prompt'));
+						return;
+					}else{
+						DataHandleTool.showOnConsole(resourceManager.getString('global','mgtunnel.tunnel')+resourceManager.getString('global','leftlist.alert.mainbackpath')+resourceManager.getString('global','all.getsuccess'));
+						var pathxml:XML = new XML(data);
+						var patharray:ArrayCollection = new ArrayCollection();
+						for(var i:int;i<pathxml.path.length();i++){
+							var hotarray:ArrayCollection = new ArrayCollection()
+							for(var j:int=0;j<pathxml.path[i].nextHops.nextHop.length();j++){
+								hotarray.addItem({
+									id:pathxml.path[i].nextHops.nextHop[j].id,
+									nextIp:pathxml.path[i].nextHops.nextHop[j].nextIp
+								})
+							}
+							patharray.addItem({
+								name:pathxml.path[i].name,
+								pathType:pathxml.path[i].pathType,
+								name:pathxml.path[i].name,
+								nextHops:hotarray
+							})
+						}
+						DataHandleTool.drawLineByFlow(tunnelstate,patharray,SdncUtil.network)//(patharray,SdncUtil.network);
+					}
+					PopupManagerUtil.getInstence().closeLoading();
+				}else{
+//					Alert.show(resourceManager.getString('global','leftlist.alert.getlistfail'),resourceManager.getString('global','all.prompt'));
+					DataHandleTool.showOnConsole(resourceManager.getString('global','all.errorcode')+e.response.code+"\n"+e.toString())
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+			}
+//			/**真实工程：请求路径信息连接出错方法**/
+//			private  function onGetPathFault(e:Event):void
+//			{
+//				PopupManagerUtil.getInstence().closeLoading();
+//				Alert.show(resourceManager.getString('global','leftlist.alert.getlisterror'),resourceManager.getString('global','all.prompt'));
+//			}
+			
+//			/**
+//			 * 创建右键菜单选项
+//			 * @return 返回选项组成的Array
+//			 *
+//			 */
+//			private function createMenuItems():Array
+//			{
+//				trace("createMenuItems");
+//				var menuItems:Array=new Array();
+//				var menuItem:Object=new Object;
+//				menuItem.label='路径切换'; //菜单项名称
+//				menuItems.push(menuItem);
+//				return menuItems;
+//			}
+			/***
+			 * 真实工程：请求Tunnel与flow关系tree连接失败
+			 * */
+			private function onGetTunnelFlowFault(e:Event):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				Alert.show(resourceManager.getString('global','leftlist.alert.getlisterror'),resourceManager.getString('global','all.prompt'));
+			}
+			/**
+			 * 点击左侧列表 展开列表
+			 * */
+			protected function doClickHandler(event:MouseEvent):void
+			{
+				if(__isExtended)
+				{
+					__isExtended = false;
+//					this.x = -this.width + 25
+					TweenMax.to(this,0.6,{x:-this.width + 25});
+					openBtn.rotation = 180;
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_TUNNEL_EVENT))
+					
+				}else
+				{
+					__isExtended = true;
+//					this.x = 0
+					TweenMax.to(this,0.6,{x:0});
+					openBtn.rotation = 0; 
+					if(projectType=="test"){
+						
+					}else{
+						flag = true;
+						PopupManagerUtil.getInstence().closeLoading();
+						PopupManagerUtil.getInstence().popupLoading(__app);
+						var opsIp:String=SdncUtil.opsIp;
+						var webname:String = SdncUtil.projectname;
+						var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/tfs";
+						connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelFlowResult,onGetTunnelFlowFault);
+					}
+				}
+			}
+			protected function g_changeHandler(event:ListEvent):void
+			{
+				flag = false;
+				adg_select=g.selectedItem as XML;
+				tunnelstate = adg_select.@flow
+				flowstate = adg_select.@flow
+				if(DataHandleTool.timer!=null){
+					DataHandleTool.timer.reset();
+				}
+				DataHandleTool.timer.addEventListener(TimerEvent.TIMER,DataHandleTool.onTimer);
+				if(adg_select.hasComplexContent()||tunnelstate.length>0){
+					swinchvisble=true
+					flowName = ""
+					if(flowstate=="primary"){
+						tunnelstatebtn.text=adg_select.@name+" "+resourceManager.getString('global','leftlist.alert.tnlstate')+" : "+resourceManager.getString('global','leftlist.alert.mainpath')
+					}else{
+						tunnelstatebtn.text=adg_select.@name+" "+resourceManager.getString('global','leftlist.alert.tnlstate')+" : "+resourceManager.getString('global','leftlist.alert.backpath')
+					}
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLICK_ADG_PANCEL,adg_select));
+				}else{
+					swinchvisble=false;
+					flowName = adg_select.@name
+					__app.dispatchEvent(new SdncEvt(SdncEvt.CLICK_ADGFLOW_PANCEL,adg_select.parent()))
+				}
+			}
+			protected function switchbtn_clickHandler(event:MouseEvent):void
+			{
+				var str:String = ""
+				if(adg_select.@flow=="primary"){
+					str = resourceManager.getString('global','leftlist.alert.mainpath')
+				}else{
+					str = resourceManager.getString('global','leftlist.alert.backpath')
+				}
+				Alert.show(resourceManager.getString('global','leftlist.alert.tnlstate')+str+"，"+resourceManager.getString('global','leftlist.alert.ifswitch'),resourceManager.getString('global','all.prompt'),Alert.YES|Alert.NO,this,closeDelete);
+				
+			}
+			public function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.YES)
+				{
+//					DataHandleTool.timer.stop();
+					var devicetunnelname:String = adg_select.@name;
+					var tunnelname:Array =devicetunnelname.split("-")
+					var deviceid:String = adg_select.@deviceId
+//					var devices:Array = DataHandleTool.devices;
+//					for(var i:int=0;devices.length;i++){
+//						if(devices[i].deviceName.toString()==tunnelname[1]){
+//							deviceid = devices[i].id;
+//							break;
+//						}
+//					}
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var putBody:String="";
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceid+"/mainStandby";
+					if(adg_select.@flow=="primary"){
+						putBody="<mainStandby> <tunnelName>"+tunnelname[0]+"</tunnelName><status>hot_standby</status></mainStandby>"
+						connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onPutstateResult,onPutstateFault,putBody);
+					}else{
+						putBody="<mainStandby><tunnelName>"+tunnelname[0]+"</tunnelName><status>primary</status></mainStandby>"
+						connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onPutstateResult,onPutstateFault,putBody);
+					}
+					//手工切换主备路径请求
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.handcraft')+resourceManager.getString('global','leftlist.switch')+resourceManager.getString('global','leftlist.alert.mainbackpath')+resourceManager.getString('global','leftlist.alert.request'));
+				}
+				
+			}
+			
+			/**获取设备详细信息连接成功方法**/
+			private function onPutstateResult(e:HttpDataEvent):void
+			{
+//				DataHandleTool.timer.start()
+				if(e.bytes.toString().search("ok")!=-1){
+					
+					var tunnelname:String = adg_select.@name
+					var arr:Array = tunnelname.split("-")
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/tfs?name="+adg_select.@deviceId+"_"+arr[0];
+					connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelFlowResult,onGetTunnelFlowFault);
+					Alert.show(resourceManager.getString('global','leftlist.alert.switchpathsuccess'),resourceManager.getString('global','all.prompt'));
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.handcraft')+resourceManager.getString('global','leftlist.switch')+resourceManager.getString('global','leftlist.alert.mainbackpath')+resourceManager.getString('global','all.success'));
+				}else{
+					Alert.show(resourceManager.getString('global','leftlist.alert.switchpathfail'),resourceManager.getString('global','all.prompt'));
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.handcraft')+resourceManager.getString('global','leftlist.switch')+resourceManager.getString('global','leftlist.alert.mainbackpath')+resourceManager.getString('global','all.fail'));
+				}
+				
+			}
+			/**获取设备详细信息连接成功方法**/
+			private function onPutstateFault(e:Event):void
+			{
+				Alert.show(resourceManager.getString('global','leftlist.alert.switchpatherror'),resourceManager.getString('global','all.prompt'));
+				DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.handcraft')+resourceManager.getString('global','leftlist.switch')+resourceManager.getString('global','leftlist.alert.mainbackpath')+resourceManager.getString('global','all.error'));
+			}
+			/**强制刷新左侧列表**/
+			protected function refreshbtn_clickHandler(event:MouseEvent):void
+			{
+				
+				DataHandleTool.initLinkColor(page.networkX);
+				if(DataHandleTool.timer!=null){
+					DataHandleTool.timer.stop();
+					DataHandleTool.timer.reset();
+				}
+				trace(DataHandleTool.timer+"time")
+				adg_select = null
+				tunnelstatebtn.text
+				swinchvisble=false;
+				
+				PopupManagerUtil.getInstence().closeLoading();
+				PopupManagerUtil.getInstence().popupLoading(__app);
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/tfs?name=refurbish";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelFlowResult,onGetTunnelFlowFault);
+			}
+			//告警时调用
+			public function openservicerefresh():void
+			{
+				DataHandleTool.initLinkColor(page.networkX);
+				DataHandleTool.timer.stop();
+				adg_select = null
+				tunnelstatebtn.text
+				swinchvisble=false;
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/tfs?name=refurbish";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,reonGetTunnelFlowResult,reonGetTunnelFlowFault);
+			}
+			
+			private function reonGetTunnelFlowResult(e:HttpResponseEvent,data:String):void
+			{
+				if(e.response.code=="200"){
+					if(data == ""){
+						return;
+					}else{
+						var ixml:XML = new XML(data);
+						for(var i:int = 0;i<ixml.children().length();i++)
+						{
+							ixml.children()[i].@icon = "tunnel"
+							if(ixml.children()[i].children().length()!=0)
+							{
+								for(var j:int = 0;j<ixml.children()[i].children().length();j++)
+								{
+									ixml.children()[i].children()[j].@icon = "flow"
+								}
+							}
+						}
+						tunnelxml = ixml;
+						g.expandAll();
+						if(adg_select!=null){
+						}
+					}
+				}else if(e.response.code=="501"){
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.systunnelinitialize'))
+				}else{
+					DataHandleTool.showOnConsole(resourceManager.getString('global','leftlist.alert.tunnelinf')+resourceManager.getString('global','all.error')+","+resourceManager.getString('global','all.errorcode')+e.response.code)
+				}
+			}
+			
+			private function reonGetTunnelFlowFault(e:Event):void
+			{
+			}
+			
+			
+			
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:Move id="Moveout"  xBy="0"  xFrom="1"  xTo="100"  yTo="100"  duration="1000"  />
+	</fx:Declarations>
+	<s:Image id="bk" width="450" height="532" scaleMode="stretch"
+			 source="@Embed('assets/imgs/navpanel/nav_panel_bg.png')"/>
+	<s:Group id="content" left="0" right="30" top="2" bottom="2">
+		<s:Rect left="2" right="2" height="100%">
+			<s:fill>
+				<s:SolidColor color="0x283855" alpha="0"/>
+			</s:fill>
+		</s:Rect>
+		<s:Label id="tunnelstatebtn" right="180" top="5" height="21" fontWeight="bold"
+				 verticalAlign="middle" visible="{swinchvisble}"/>
+		<mx:LinkButton fontWeight="bold" icon="@Embed('assets/imgs/icons/refreshTOPO.png')" id="refreshbtn" right="10" top="2" label="{resourceManager.getString('global','leftlist.refresh')}" color="#FFFFFF"  click="refreshbtn_clickHandler(event)"/>
+		<mx:LinkButton fontWeight="bold" icon="@Embed('assets/imgs/icons/qiehuan.png')" id="switchbtn" right="92" top="3" label="{resourceManager.getString('global','leftlist.switch')}" color="#FFFFFF" visible="{swinchvisble}" click="switchbtn_clickHandler(event)"/>
+		
+		<mx:AdvancedDataGrid id="g" left="10" right="10" top="30" bottom="10"
+							 change="g_changeHandler(event)" color="0x000000" 
+							 iconField="@icon" draggableColumns="false"
+							 folderClosedIcon="@Embed('assets/imgs/icons/tunnel.png')"
+							 folderOpenIcon="@Embed('assets/imgs/icons/tunnel_open.png')" 
+							 headerSortSeparatorSkin="mx.skins.ProgrammaticSkin"
+							 sortExpertMode="true" styleName="Tree" textAlign="left">
+			<mx:dataProvider>  
+				<mx:HierarchicalData id="hd" source="{tunnelxml.tunnel}"  />  
+			</mx:dataProvider> 
+			<mx:columns>  
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','leftlist.name')}" dataField="@name" width="130"/>
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','all.srcIP')}" dataField="@ingressIp" />  
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','all.desIP')}" dataField="@egressIp"/>
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','leftlist.mainstate')}" dataField="@priState"/>
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','leftlist.backupstate')}" dataField="@backState"/>
+				<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','leftlist.alert.tnlstate')}" dataField="@runMode"/>
+			</mx:columns> 
+		</mx:AdvancedDataGrid>
+	</s:Group>
+	<s:Image id="openBtn" right="8" buttonMode="true" click="doClickHandler(event)" rotation="180"
+			 source="@Embed('assets/imgs/navpanel/button_trangle.png')" verticalCenter="0"/>
+</s:Group>

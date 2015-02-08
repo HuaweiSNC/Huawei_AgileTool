@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="376" height="254" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12" initialize="init(event)"  creationComplete="onCreat(event)" 
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" title="{resourceManager.getString('global','all.add')}Link">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.link.MyNewLink;
+			import com.huawei.overte.view.node.StateNode;
+			import com.laiyonghao.Uuid;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpResponseEvent;
+			[Bindable]public var _app:overTegui2;
+			[Bindable]private var isEnbled:Boolean=true;
+			[Bindable]public var fromNode:StateNode;
+			[Bindable]public var frominterfaceArray:ArrayCollection = new ArrayCollection();
+			
+			[Bindable]public var toNode:StateNode;
+			[Bindable]public var tointerfaceArray:ArrayCollection = new ArrayCollection();
+			
+			public var newlink:MyNewLink
+			[Bindable]public var curArea:Object;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var handleflag:String="add";
+			protected function save_click(event:MouseEvent):void
+			{
+				var uuid:Uuid = new Uuid();//36位UUid
+				
+				/*构建xml报文*/
+				var addLinlBody:String = "<topoLinks><topoLink>"; 
+				addLinlBody+= "<name>"+uuid.toString().slice(0,31)+"</name>"; 
+				addLinlBody+= "<headNodeConnector><Connectorid>"+frominterface.selectedItem.ifmName+"</Connectorid>"; 
+				addLinlBody+="<Connectorip>"+frominterface.selectedItem.ipAddress+"</Connectorip>"
+				addLinlBody+= "<toponode><nodeID>"+newlink.fromNode.getClient("id")+"</nodeID>"; 
+				addLinlBody+= "<nodeType>"+newlink.fromNode.getClient("deviceTopoIp")+"</nodeType>"; 
+				addLinlBody+= "</toponode></headNodeConnector><tailNodeConnector>"; 
+				addLinlBody+= "<Connectorid>"+tointerface.selectedItem.ifmName+"</Connectorid>"; 
+				addLinlBody+="<Connectorip>"+tointerface.selectedItem.ipAddress+"</Connectorip>"
+				addLinlBody+= "<toponode><nodeID>"+newlink.toNode.getClient("id")+"</nodeID>"; 
+				addLinlBody+= "<nodeType>"+newlink.toNode.getClient("deviceTopoIp")+"</nodeType>";
+				addLinlBody+= "</toponode></tailNodeConnector>"; 
+				addLinlBody+= "<cost>1</cost><bandwidth>10</bandwidth></topoLink></topoLinks>"; 
+				
+				var LinkData:Array = new Array();
+				LinkData.push(uuid);
+				LinkData.push(fromDeviceName.text);
+				LinkData.push(toDeviceName.text);
+//				var mynewlink:MyNewLink = new MyNewLink(fromNode,toNode)
+				if(SdncUtil.showInterface&&SdncUtil.showIp){
+//					mynewlink._fromName = frominterface.selectedItem.ifmName+"\n"+frominterface.selectedItem.ipAddress
+					LinkData.push(frominterface.selectedItem.ifmName+"\n"+frominterface.selectedItem.ipAddress);
+					LinkData.push(tointerface.selectedItem.ifmName+"\n"+tointerface.selectedItem.ipAddress);
+				}else if(SdncUtil.showInterface&&SdncUtil.showIp==false){
+					LinkData.push(frominterface.selectedItem.ifmName);
+					LinkData.push(tointerface.selectedItem.ifmName);
+				}else if(SdncUtil.showInterface==false&&SdncUtil.showIp){
+					LinkData.push(frominterface.selectedItem.ipAddress);
+					LinkData.push(tointerface.selectedItem.ipAddress);
+				}else{
+					LinkData.push("");
+					LinkData.push("");
+				}
+				
+				newlink.setClient("fromDeviceID",newlink.fromNode.getClient("id"))
+				newlink.setClient("fromDevice",newlink.fromNode.getClient("deviceTopoIp"))
+				newlink.setClient("frominterface",frominterface.selectedItem.ifmName)
+				newlink.setClient("frominterfaceIP",frominterface.selectedItem.ipAddress)
+					
+				newlink.setClient("toDeviceID",newlink.toNode.getClient("id"))
+				newlink.setClient("toDevice",newlink.toNode.getClient("deviceTopoIp"))
+				newlink.setClient("tointerface",tointerface.selectedItem.ifmName)
+				newlink.setClient("tointerfaceIP",tointerface.selectedItem.ipAddress)
+				LinkData.push(addLinlBody);
+				LinkData.push(newlink);
+				this.dispatchEvent(new SdncEvt(SdncEvt.SAVE_LINK,LinkData))
+				PopUpManager.removePopUp(this)
+			}
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				_app=SdncUtil.app;
+				curArea = SdncUtil.cuArea
+				
+			}
+			protected function onCreat(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+//				PopupManagerUtil.getInstence().popupLoading(_app,false);
+				fromDeviceName.text=newlink.fromNode.getClient("devicename");
+				toDeviceName.text = newlink.toNode.getClient("devicename");
+				
+				frominterfaceArray = newlink.fromNode.getClient("ifm");
+				tointerfaceArray = newlink.toNode.getClient("ifm")
+//				var opsIp:String=SdncUtil.opsIp;
+//				var webname:String = SdncUtil.projectname;
+//				var fromuri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curArea["id"]+"/devices/"+ fromNode.getClient("id") + "/ifms?type=Ethernet";
+//				connUtil.clientQuery(fromuri,ConnUtil.METHOD_GET,onGetFromIfmResult,onGetIfmFault);
+//				
+//				var touri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curArea["id"]+"/devices/"+ toNode.getClient("id") + "/ifms?type=Ethernet";
+//				connUtil.clientQuery(touri,ConnUtil.METHOD_GET,onGetToIfmResult,onGetToIfmResult);
+			}
+			
+			
+//			public function onGetFromIfmResult(e:HttpResponseEvent,data:String):void
+//			{
+//				frominterfaceArray.removeAll()
+//				if(data == ""){
+//					return;
+//				}else{
+//					var ifmsXml:XML = new XML(data);
+//					for(var i:int=0;i<ifmsXml.ifm.length();i++){
+//						frominterfaceArray.addItem({
+//							ifmName:ifmsXml.ifm[i].name,
+//							phyType:ifmsXml.ifm[i].phyType,
+//							ipAddress:ifmsXml.ifm[i].ips.ip.ipAddress,
+//							subnetMask:ifmsXml.ifm[i].ips.ip.subnetMask
+//						});
+//					}
+//					DataHandleTool.nodeClintIfm(fromNode,frominterfaceArray)
+//					PopupManagerUtil.getInstence().closeLoading();
+//				}
+//			}
+//			public function onGetToIfmResult(e:HttpResponseEvent,data:String):void
+//			{
+//				tointerfaceArray.removeAll()
+//				if(data == ""){
+//					return;
+//				}else{
+//					var ifmsXml:XML = new XML(data);
+//					for(var i:int=0;i<ifmsXml.ifm.length();i++){
+//						tointerfaceArray.addItem({
+//							ifmName:ifmsXml.ifm[i].name,
+//							phyType:ifmsXml.ifm[i].phyType,
+//							ipAddress:ifmsXml.ifm[i].ips.ip.ipAddress,
+//							subnetMask:ifmsXml.ifm[i].ips.ip.subnetMask
+//						});
+//					}
+//					DataHandleTool.nodeClintIfm(toNode,tointerfaceArray)
+//					PopupManagerUtil.getInstence().closeLoading();
+//				}
+//			}
+//			private function onGetIfmFault(e:Event):void
+//			{
+//				PopupManagerUtil.getInstence().closeLoading();
+//				Alert.show("数据连接出错","提示");
+//			}
+//			
+			
+			private function IpDisplayFunction(data:Object):String      
+			{      
+				return data.ifmName+"("+data.ipAddress+")";       
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!--fx:XML id="project" source="assets/xml/sdn_office_project.xml"/-->
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations> 
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		
+	
+	<s:BorderContainer id="bcc" top="10" bottom="50" width="95%" borderColor="#696969"
+					   hideEffect="fadeout" horizontalCenter="0" showEffect="fadeIn">
+		<s:VGroup width="100%" height="150" gap="5">
+			<s:Group width="100%" height="10">
+				
+			</s:Group>
+			
+			<s:Group width="100%" height="30">
+				<!--源设备 :-->
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','all.srcDevice')} :"
+						 verticalCenter="0"/>
+				<s:TextInput id="fromDeviceName"  width="167" verticalCenter="0" left="148" editable="false" enabled="false"/>
+			</s:Group>
+			<s:Group width="100%" height="30">
+				<!--源接口 :-->
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','all.srcinterface')} :"
+						 verticalCenter="0"/>
+				<mx:ComboBox id="frominterface" left="148" width="167" cornerRadius="0" 
+							 enabled="{isEnbled}" verticalCenter="0" dataProvider="{frominterfaceArray}"  labelFunction="IpDisplayFunction">
+				</mx:ComboBox>
+			</s:Group>
+			
+			<s:Group width="100%" height="30">
+				<!--目的设备 :-->
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','all.desDevice')} :"
+						 verticalCenter="0"/>
+				<s:TextInput id="toDeviceName"  width="167" verticalCenter="0" left="148" editable="false" enabled="false"/>
+			</s:Group>
+			
+			
+			<s:Group width="100%" height="30">
+				<!--目的接口 :-->
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','all.desinterface')} :"
+						 verticalCenter="0"/>
+				<mx:ComboBox id="tointerface" left="148" width="167" cornerRadius="0" dataProvider="{tointerfaceArray}"
+							 enabled="{isEnbled}" verticalCenter="0"  labelFunction="IpDisplayFunction">
+				</mx:ComboBox>
+			</s:Group>
+			
+		
+		</s:VGroup>
+	</s:BorderContainer>
+	<s:Group bottom="10" horizontalCenter="0">
+		<!--确定-->
+		<s:Button id="save"  label="{resourceManager.getString('global','all.sure')}"  horizontalCenter="-40" click="save_click(event)" />
+		<!--取消-->
+		<s:Button label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)" horizontalCenter="40"/>
+	</s:Group>
+	</mx:Canvas>
+</s:TitleWindow>

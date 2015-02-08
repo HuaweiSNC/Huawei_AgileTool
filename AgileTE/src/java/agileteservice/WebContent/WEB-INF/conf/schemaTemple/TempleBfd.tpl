@@ -1,0 +1,11 @@
+<sessName>$sessName</sessName>
+<createType>SESS_STATIC</createType>
+<localDiscr>$localDiscr</localDiscr>
+<remoteDiscr>$remoteDiscr</remoteDiscr>
+<linkType>TE_LSP</linkType>
+<tunnelName>$tunnelName</tunnelName>
+<detectMulti>3</detectMulti>
+<minTxInt>$minTxInt</minTxInt>
+<minRxInt>$minRxInt</minRxInt>
+<teBackup>$teBackup</teBackup>
+<adminDown>$adminDown</adminDown>

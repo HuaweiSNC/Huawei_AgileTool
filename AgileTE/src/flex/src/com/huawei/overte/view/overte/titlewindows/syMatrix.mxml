@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="400" height="300" alpha="1" creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.view.overte.titlewindows.TableCell;
+			
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			public var ilabel:XML = new XML;
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.setStyle("backgroundAlpha","0")
+				xiexian.setStyle("backgroundColor","#023573")
+				var labels:XML = datas[0];
+				
+				for(var i:int = 0;i<labels.children().length();i++)
+				{
+					var hlabel:TableCell = new TableCell;
+					hlabel.ilabel.text = labels.children()[i].children()[0];
+					hlabel.ibackground.setStyle("backgroundColor","#023573")
+					hlabel.ilabel.buttonMode = false;
+					hlabel.ibackground.setStyle("alpha","0.6")
+					htit.addElement(hlabel);
+					var vlabel:TableCell = new TableCell;
+					vlabel.ilabel.text = labels.children()[i].children()[0];
+					vlabel.ibackground.setStyle("backgroundColor","#023573")
+					vlabel.ilabel.buttonMode = false;
+					vlabel.ibackground.setStyle("alpha","0.6")
+					vtit.addElement(vlabel);
+				}
+				var dnums:XML = datas[1];
+				nums.requestedColumnCount=labels.children().length()
+				nums.requestedRowCount=labels.children().length()
+				if(labels.children().length()%2==0)
+				{
+					for(var i:int = 0;i<dnums.children().length();i++)
+					{
+						var x:int = i/labels.children().length()
+						if(x%2==0)
+						{
+							if(i%2==0)
+							{
+								var hlabel:TableCell = new TableCell;
+								hlabel.ilabel.text = dnums.children()[i].children()[0];
+								hlabel.ibackground.setStyle("backgroundColor","#62a8ea")
+								nums.addElement(hlabel);
+							}
+							else
+							{
+								var hlabel:TableCell = new TableCell;
+								hlabel.ilabel.text = dnums.children()[i].children()[0];
+								hlabel.ibackground.setStyle("backgroundColor","#FFFFFF")
+								nums.addElement(hlabel);
+							}
+						}
+						else
+						{
+							if(i%2==0)
+							{
+								var hlabel:TableCell = new TableCell;
+								hlabel.ilabel.text = dnums.children()[i].children()[0];
+								hlabel.ibackground.setStyle("backgroundColor","#FFFFFF")
+								nums.addElement(hlabel);
+							}
+							else
+							{
+								var hlabel:TableCell = new TableCell;
+								hlabel.ilabel.text = dnums.children()[i].children()[0];
+								hlabel.ibackground.setStyle("backgroundColor","#62a8ea")
+								nums.addElement(hlabel);
+							}
+						}
+					}	
+				}
+				else
+				{
+					for(var i:int = 0;i<dnums.children().length();i++)
+					{
+						if(i%2==0)
+						{
+							var hlabel:TableCell = new TableCell;
+							hlabel.ilabel.text = dnums.children()[i].children()[0];
+							hlabel.ibackground.setStyle("backgroundColor","#62a8ea")
+							nums.addElement(hlabel);
+						}
+						else
+						{
+							var hlabel:TableCell = new TableCell;
+							hlabel.ilabel.text = dnums.children()[i].children()[0];
+							hlabel.ibackground.setStyle("backgroundColor","#FFFFFF")
+							nums.addElement(hlabel);
+						}	
+					}
+				}
+				ilabel = labels;
+				setmodel();
+				
+			}
+			
+			public function setmodel():void
+			{
+				var labels:XML = ilabel;
+				databox.width = (labels.children().length()+1)*50
+				databox.height = (labels.children().length()+1)*30	
+				if((labels.children().length()+1)*30>ibox.height)
+				{
+					ibox.right = 20
+					vsli.minimum = 0;
+					vsli.maximum = (labels.children().length()*30-(ibox.height-30))/50;
+					vsli.visible = true;
+					databox.verticalCenter = undefined;
+					databox.top = 0
+					
+				}
+				else
+				{
+					vsli.visible = false;
+					databox.verticalCenter = 0;
+					databox.top = undefined
+				}
+				
+				if((labels.children().length()+1)*50>ibox.width)
+				{
+					ibox.bottom = 20
+					hsli.minimum = 0;
+					hsli.maximum = (labels.children().length()*50-(ibox.width-50))/50;
+					hsli.visible = true;
+					databox.horizontalCenter = undefined;
+					databox.right = 0
+				}
+				else
+				{
+					hsli.visible = false;
+					databox.horizontalCenter = 0;
+					databox.right = undefined
+				}	
+			}
+			
+			protected function hsli_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				htit.x = (0-hsli.value)*50;
+				nums.x = (0-hsli.value)*50;
+			}
+			
+			protected function vsli_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				vtit.y = (0-vsli.value)*50;
+				nums.y = (0-vsli.value)*50;
+			}
+			
+			protected function back_resizeHandler(event:ResizeEvent):void
+			{
+				// TODO Auto-generated method stub
+				setmodel()
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<fx:XMLList id="datas">
+			<labels>
+				<label>
+					北京
+				</label>
+				<label>
+					上海
+				</label>
+				<label>
+					广州
+				</label>
+				<label>
+					南京
+				</label>
+				<label>
+					深圳
+				</label>
+				<label>
+					天津
+				</label>
+				<label>
+					重庆
+				</label>
+				<label>
+					河北
+				</label>
+			</labels>
+			<nums>
+				<num>
+					-
+				</num>
+				<num>
+					2
+				</num>
+				<num>
+					3
+				</num>
+				<num>
+					4
+				</num>
+				<num>
+					5
+				</num>
+				<num>
+					6
+				</num>
+				<num>
+					7
+				</num>
+				<num>
+					8
+				</num>
+				<num>
+					11
+				</num>
+				<num>
+					-
+				</num>
+				<num>
+					13
+				</num>
+				<num>
+					14
+				</num>
+				<num>
+					15
+				</num>
+				<num>
+					16
+				</num>
+				<num>
+					17
+				</num>
+				<num>
+					18
+				</num>
+				<num>
+					21
+				</num>
+				<num>
+					22
+				</num>
+				<num>
+					-
+				</num>
+				<num>
+					24
+				</num>
+				<num>
+					25
+				</num>
+				<num>
+					26
+				</num>
+				<num>
+					27
+				</num>
+				<num>
+					28
+				</num>
+				<num>
+					31
+				</num>
+				<num>
+					32
+				</num>
+				<num>
+					33
+				</num>
+				<num>
+					-
+				</num>
+				<num>
+					35
+				</num>
+				<num>
+					36
+				</num>
+				<num>
+					37
+				</num>
+				<num>
+					38
+				</num>
+				<num>
+					41
+				</num>
+				<num>
+					42
+				</num>
+				<num>
+					43
+				</num>
+				<num>
+					44
+				</num>
+				<num>
+					-
+				</num>
+				<num>
+					46
+				</num>
+				<num>
+					47
+				</num>
+				<num>
+					48
+				</num>
+				<num>
+					51
+				</num>
+				<num>
+					52
+				</num>
+				<num>
+					53
+				</num>
+				<num>
+					54
+				</num>
+				<num>
+					55
+				</num>
+				<num>
+					-
+				</num>
+				<num>
+					57
+				</num>
+				<num>
+					58
+				</num>
+				<num>
+					61
+				</num>
+				<num>
+					62
+				</num>
+				<num>
+					63
+				</num>
+				<num>
+					64
+				</num>
+				<num>
+					65
+				</num>
+				<num>
+					66
+				</num>
+				<num>
+					-
+				</num>
+				<num>
+					68
+				</num>
+				<num>
+					71
+				</num>
+				<num>
+					72
+				</num>
+				<num>
+					73
+				</num>
+				<num>
+					74
+				</num>
+				<num>
+					75
+				</num>
+				<num>
+					76
+				</num>
+				<num>
+					77
+				</num>
+				<num>
+					-
+				</num>
+			</nums>
+		</fx:XMLList>
+	</fx:Declarations>
+	<s:BorderContainer x="0" y="0" width="100%" height="100%" borderAlpha="0.5" backgroundImage="assets/imgs/background.png"
+					   borderVisible="true">
+		<s:Image x="0" y="0" width="100%" height="100%" scaleMode="stretch"
+				 source="assets/imgs/background.png">
+			
+		</s:Image>
+		<s:Group id="ibox" left="10" right="10" top="10" bottom="10" clipAndEnableScrolling="true" alpha="1">
+			<s:Group id="databox" width="100%" height="100%" left="0" top="0">
+				<s:Group left="50" right="0" top="30" bottom="0" alpha="1.0"
+						 clipAndEnableScrolling="true">
+					<s:TileGroup id="nums" x="0" y="0" columnWidth="50" horizontalAlign="justify"
+								 horizontalGap="0" 
+								 rowHeight="30" verticalAlign="justify" verticalGap="0">
+					</s:TileGroup>
+				</s:Group>
+				<s:BorderContainer id="xiexian" x="0" y="0" width="50" height="30" alpha="0.35"
+								   borderAlpha="0.5" >
+					<s:Line left="0" right="0" top="0" bottom="0" xFrom="0" xTo="50" yFrom="0"
+							yTo="30">
+						<s:stroke>
+							<s:SolidColorStroke color="0xffffff"/>
+						</s:stroke>
+					</s:Line>	
+				</s:BorderContainer>
+				<s:Group id="hbox" x="50" y="0" width="100%" height="30" clipAndEnableScrolling="true">
+					<s:HGroup id="htit" x="0" y="0" width="100%" height="30" gap="0">
+					</s:HGroup>
+				</s:Group>
+				<s:Group id="vbox" x="0" y="30" width="50" height="100%" clipAndEnableScrolling="true">
+					<s:VGroup id="vtit" x="0" y="0" width="50" height="100%" gap="0">
+					</s:VGroup>
+				</s:Group>
+			</s:Group>
+		</s:Group>
+		<s:HScrollBar id="hsli" visible="false" left="10" right="10" bottom="0" height="15"
+					  change="hsli_changeHandler(event)" stepSize="0.05"/>
+		<s:VScrollBar id="vsli" right="0" top="10" bottom="10" width="15" visible="false" 
+					  change="vsli_changeHandler(event)" stepSize="0.05"/>
+	</s:BorderContainer>
+</s:Group>

@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="750" height="400" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" creationComplete="init()" >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.MrtgCtrl;
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.model.Data;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import com.huawei.overte.view.overte.titlewindows.MRTG_Sets;
+			import com.huawei.overte.view.overte.titlewindows.NQAchart;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.treeClasses.TreeItemRenderer;
+			import mx.controls.treeClasses.TreeListData;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+			[Bindable]private var isEnbled:Boolean=true;
+			[Bindable]private var __app:overTegui2;
+			[Bindable]private var curarea:String;//项目类型
+			
+			[Bindable]
+			[Embed(source="assets/imgs/icons/tunnel.png")] 
+			public var tunnel:Class; 
+			[Bindable]
+			[Embed(source="assets/imgs/icons/flow.png")] 
+			public var flow:Class; 
+			
+			public var handleFlag:String="add"; //判定是修改还是增加
+			public var devId:String = "";
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			private var opsIp:String=SdncUtil.opsIp;
+			private var webname:String = SdncUtil.projectname;
+			public var vlangroup:VlanGroup;
+			[Bindable]
+			public var mydata:Data = Data.getInstence();
+			private var _vlanXML:XML;
+			private var sdnService:SdnUIService = new SdnUIService();
+			
+			/**
+			 * 页面初始化 rwx202245
+			 **/
+			protected function init():void{
+				__app=SdncUtil.app;
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;
+				
+//				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/tasks";
+//				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetVlanResult,onGetVlanFault);
+				
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/tfs";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelFlowResult,onGetTunnelFlowFault);
+				timei.text = mydata.NqaTime.toString()
+				g.expandAll()
+			}
+			private function onGetTunnelFlowResult(e:HttpResponseEvent,data:String):void
+			{
+				if(e.response.code=="200"){
+					if(data == ""){
+						PopupManagerUtil.getInstence().closeLoading();	
+						return;
+					}else{
+						var ixml:XML = new XML(data);
+						for(var i:int = 0;i<ixml.children().length();i++)
+						{
+							//ixml.children()[i].attributes.icon = "tunnel"
+							ixml.children()[i].@icon = "tunnel"
+								if(ixml.children()[i].children().length()!=0)
+								{
+									for(var j:int = 0;j<ixml.children()[i].children().length();j++)
+									{
+//										ixml.children()[i].children[j].attributes.icon = "flow"
+										ixml.children()[i].children()[j].@icon = "flow"
+									}
+								}
+						}
+						mydata.nqaTunnelxml = ixml;
+						g.expandAll();
+					}
+				}else{
+					trace(e.type.toString())
+				}
+			}
+			private function onGetTunnelFlowFault(e:Event):void
+			{
+				trace("获取管道信息连接出错"+e.toString(),"提示");
+			}
+			private function onGetVlanResult(e:HttpResponseEvent,data:String):void{
+				
+				if(e.response.code != "200"){
+					trace("获取状态信息出错！")
+					return;
+				}
+				else
+				{
+					var xml:XML = new XML(data);
+					var tesXML:XMLList = xml.task.sc;
+					for(var i:int = 0;i<tesXML.length();i++)
+					{
+						if(tesXML[i].name.children()[0]=="nqa_tunnel"&&tesXML[i].state.children()[0]=="true")
+						{
+							//opedte.label="关闭TE统计"
+							tectrl.selected=true;
+						}
+						else if(tesXML[i].name.children()[0]=="nqa_flow"&&tesXML[i].state.children()[0]=="true")
+						{
+							//openac.label="关闭AC统计"
+							acctrl.selected=true;
+						}
+						else if(tesXML[i].name.children()[0]=="nqa_flow"&&tesXML[i].state.children()[0]=="true")
+						{
+							//openll.label="关闭流量统计"
+							llctrl.selected=true;
+						}
+					}
+					
+				}
+			}
+			
+			/**
+			 * 查询Vlan失败
+			 * */
+			private function onGetVlanFault(e:Event):void{
+				DataHandleTool.showOnConsole("获取开关状态连接出错"+e.toString())
+//				Alert.show("获取开关状态连接出错"+e.toString(),"提示");
+				
+			}
+			
+			
+			public function realtime(data:Object):void
+			{
+				mydata.sychartdata.removeAll();
+				mydata.llchartdata.removeAll();
+				var chart:NQAchart = NQAchart(PopUpManager.createPopUp(__app,NQAchart,true));
+				/**网络质量趋势图**/
+				chart.title=data.@name+"  "+resourceManager.getString('global','nqlflux.chart')
+				var type:String = "";
+				var name:String = data.@name;
+				name = name.split("-")[0]
+				if(name.search("Tunne")!=-1)
+				{
+					type = "tunnel"
+					chart.deviceId = data.@deviceId;
+				}
+				else
+				{
+					type = "flow"
+					chart.deviceId = data.@deviceId;
+				}
+				
+				chart.type = type;
+				chart.iname = name;
+				PopUpManager.centerPopUp(chart);
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+			
+			public function history(data:Object):void
+			{
+				//保险版本处理方法，勿删！！
+//				var url:String="http://10.111.68.205:8082/ceshi/my.html";  
+//				var request:URLRequest=new URLRequest(url);  
+//				navigateToURL(request,"_blank");
+				var historys:MRTG_Sets = MRTG_Sets(PopUpManager.createPopUp(__app,MRTG_Sets,true));
+				historys.jobname.text = "history_perf_statistic_"+data.@name+"-"+data.@deviceId
+				var name:String = data.@name;
+				name = name.split("-")[0]
+				historys.xpathObject.text = name
+				historys.iurl.text =  data.@deviceId
+				PopUpManager.centerPopUp(historys);
+				PopUpManager.removePopUp(this);
+				//var mrtgctrl:MrtgCtrl = new MrtgCtrl;
+				
+			}
+			
+			private function onpostResult(e:HttpDataEvent):void{
+				if(e.bytes.toString()=="true"){
+					/**"开启连接成功","提示"**/
+					Alert.show(resourceManager.getString('global','all.open')
+						+resourceManager.getString('global','all.success'),
+						resourceManager.getString('global','all.prompt'));
+				}else{
+					/**"开启连接失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.open')
+						+resourceManager.getString('global','all.failed'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			private function onpostFault(e:Event):void{
+				//trace("获取Vlan信息连接出错"+e.toString(),"提示");
+				//	PopupManagerUtil.getInstence().closeLoading();
+				/**"开启连接错误！错误信息："+e.toString(),"提示"**/
+				Alert.show(resourceManager.getString('global','all.open')
+					+resourceManager.getString('global','all.error'),
+					resourceManager.getString('global','all.prompt'));
+			}
+			private function ondelResult(e:HttpDataEvent):void{
+				if(e.bytes.toString()=="true"){
+					/**"关闭成功","提示"**/
+					Alert.show(resourceManager.getString('global','all.close')
+						+resourceManager.getString('global','all.success'),
+						resourceManager.getString('global','all.prompt'));
+				}else{
+					/**"关闭失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.close')
+						+resourceManager.getString('global','all.failed'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			private function ondelFault(e:Event):void{
+				//trace("获取Vlan信息连接出错"+e.toString(),"提示");
+				//	PopupManagerUtil.getInstence().closeLoading();
+				/**"关闭失败！错误信息："+e.toString(),"提示"**/
+				Alert.show("关闭失败！错误信息："+e.toString(),"提示");
+				Alert.show(resourceManager.getString('global','all.close')
+					+resourceManager.getString('global','all.error')+e.toString(),
+					resourceManager.getString('global','all.prompt'));
+			}
+			/**
+			 * 流量统计控制
+			 * */
+			protected function LLctrl(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(llctrl.selected==true)//开启
+				{
+					var str:String = "<tasks><task><sc><name>flux_tunnel</name><time></time><type>flux_tunnel</type></sc><request></request></task></tasks>"
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/tasks";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onpostResult,onpostFault,str);
+					//openll.label="关闭流量统计"
+				}
+				else if(llctrl.label==false)//关闭
+				{
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/tasks?name=flux_tunnel";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,ondelResult,ondelFault);
+					//openll.label="开启流量统计"
+				}
+			}
+			/**
+			 * TE时延统计控制
+			 * */
+			protected function TEctrl(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(tectrl.selected==true)//开启
+				{
+					var str:String = "<tasks><task><sc><name>nqa_tunnel</name><time></time><type>nqa_tunnel</type></sc><request></request></task></tasks>"
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/tasks";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onpostResult,onpostFault,str);
+				}
+				else if(tectrl.selected==true)//关闭
+				{
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/tasks?name=nqa_tunnel";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,ondelResult,ondelFault);
+				}
+			}
+			/**
+			 * AC时延统计控制
+			 * */
+			protected function ACctrl(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(acctrl.selected==true)//开启
+				{
+					var str:String = "<tasks><task><sc><name>nqa_flow</name><time></time><type>nqa_flow</type></sc><request></request></task></tasks>"
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/tasks";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onpostResult,onpostFault,str);
+				}
+				else if(acctrl.selected==true)//关闭
+				{
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/tasks?name=nqa_flow";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,ondelResult,ondelFault);
+				}
+			}
+			
+			protected function settime(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var settime:NqaSetTime = NqaSetTime(PopUpManager.createPopUp(this,NqaSetTime,false));
+				PopUpManager.centerPopUp(settime);
+			}
+			/**
+			 * 获取数据的时间间隔设置的保存（前台暂存，关闭浏览器后失去）
+			 * */
+			protected function savetime(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				mydata.NqaTime = int(timei.text)
+			}
+			/**
+			 * 获取数据的时间间隔设置的时间输入框获取焦点样式变化
+			 * */
+			protected function timei_focusInHandler(event:FocusEvent):void
+			{
+				// TODO Auto-generated method stub
+				timei.alpha = 1;
+				timei.setStyle("fontWeight","normal");
+				timei.setStyle("fontStyle","normal")
+			}
+			/**
+			 *  获取数据的时间间隔设置的时间输入框失去焦点样式变化
+			 * */
+			protected function timei_focusOutHandler(event:FocusEvent):void
+			{
+				// TODO Auto-generated method stub
+				timei.alpha = 0.6;
+				timei.setStyle("fontWeight","bold");
+				timei.setStyle("fontStyle","italic")
+			}
+			
+			protected function allnet(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var history:NQAhistory = NQAhistory(PopUpManager.createPopUp(__app,NQAhistory,false));
+				PopUpManager.centerPopUp(history);
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+		<fx:XMLList id="datatest" xmlns="">
+			<massage type='nqa_tunnel'>
+				<domains id='2' time=''>
+					<tunnel name='Tunnel12_t2' ingressIp='2.2.2.2' egressIp='4.4.4.4'
+							state='DOWN' priState='DOWN' backState='DOWN' flow='main' backPath='main'
+							priPath='back' rtt='10' loss='1' flux='10'>
+						<flow name='flow204' ingressIp='2.2.2.2' egressIp='1.1.1.1' rtt='11' loss='2'/>
+						<flow name='flow405' ingressIp='2.2.2.2' egressIp='4.4.4.4' rtt='12' loss='3'/>
+					</tunnel>
+					<tunnel name='Tunnel45-t2' ingressIp='2.2.2.2' egressIp='4.4.4.4'
+							state='DOWN' priState='DOWN' backState='DOWN' flow='main' backPath='main1'
+							priPath='back2' rtt='10' loss='1'  flux=''></tunnel>
+					<tunnel name='Tunnel34-t2' ingressIp='2.2.2.2' egressIp='4.4.4.4'
+							state='DOWN' priState='DOWN' backState='DOWN' flow='main' backPath='Primary_6BD29103'
+							priPath='Backup_6BD29103' rtt='10' loss='1'  flux=''></tunnel>
+					<tunnel name='Tunnel12-t4' ingressIp='4.4.4.4' egressIp='2.2.2.2'
+							state='DOWN' priState='DOWN' backState='DOWN' flow='main' backPath='main'
+							priPath='back' rtt='10' loss='1'  flux=''></tunnel>
+					<tunnel name='Tunnel45-t4' ingressIp='4.4.4.4' egressIp='2.2.2.2'
+							state='DOWN' priState='DOWN' backState='DOWN' flow='main' backPath='main1'
+							priPath='back2' rtt='10' loss='1'  flux=''></tunnel>
+					<tunnel name='Tunnel34-t4' ingressIp='4.4.4.4' egressIp='2.2.2.2'
+							state='DOWN' priState='DOWN' backState='DOWN' flow='main' backPath='Primary_6BD29103'
+							priPath='Backup_6BD29103' rtt='10' loss='1' flux=''></tunnel>
+				</domains>
+			</massage>
+		</fx:XMLList>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="40" bottom="40" width="95%" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn">
+			<mx:AdvancedDataGrid id="g" left="10" right="10" top="10" bottom="10"
+								 color="0x000000"  iconField="@icon"
+								  draggableColumns="false"
+								 folderClosedIcon="@Embed('assets/imgs/icons/tunnel.png')"
+								 folderOpenIcon="@Embed('assets/imgs/icons/tunnel_open.png')" 
+								 headerSortSeparatorSkin="mx.skins.ProgrammaticSkin"
+								 sortExpertMode="true" textAlign="left"> 
+				<mx:dataProvider>  
+					<mx:HierarchicalData id="hd" source="{mydata.nqaTunnelxml.children()}"  />  
+				</mx:dataProvider>
+				<mx:columns>  
+					<!--名称-->
+					<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','nqlflux.name')}" dataField="@name" width="200"/>  
+					<!--mx:AdvancedDataGridColumn headerText="时延统计/ms" dataField="@rtt" />  
+					<mx:AdvancedDataGridColumn headerText="丢包率/%" dataField="@loss" /-->  
+					<!--流量统计/%-->
+					<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','nqlflux.flux')}/bits/s" dataField="@flux"/>
+					<!--实时监控-->
+					<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','nqlflux.ontime')}" width="100">
+						<mx:itemRenderer>
+							<fx:Component>
+								<mx:LinkButton fontWeight="normal" icon="@Embed('assets/imgs/overte/iconp_ontime.png')" 
+											   label="{resourceManager.getString('global','nqlflux.ontime')}" 
+											   click="outerDocument.realtime(data)"/>
+								<!--mx:Button width="60" label="{resourceManager.getString('global','nqlflux.ontime')}"
+										   click="outerDocument.realtime(data)" cornerRadius="0"
+										   fontSize="12"/-->
+							</fx:Component>
+						</mx:itemRenderer>
+					</mx:AdvancedDataGridColumn>
+					<!--历史监控-->
+					<mx:AdvancedDataGridColumn headerText="{resourceManager.getString('global','nqlflux.history')}" width="100">
+						<mx:itemRenderer>
+							<fx:Component>
+								<mx:LinkButton fontWeight="normal" icon="@Embed('assets/imgs/overte/iconp_history.png')" 
+											   label="{resourceManager.getString('global','nqlflux.history')}" 
+											   click="outerDocument.history(data)"/>
+								<!--mx:Button label="{resourceManager.getString('global','nqlflux.history')}"  width="60" fontSize="12"
+										   enabled="true" cornerRadius="0" click="outerDocument.history(data)"/-->
+
+							</fx:Component>						</mx:itemRenderer>
+					</mx:AdvancedDataGridColumn>
+				</mx:columns> 
+			</mx:AdvancedDataGrid>
+		</s:BorderContainer>
+		<s:HGroup right="20" bottom="10">
+			<!--关闭-->
+			<s:Button label="{resourceManager.getString('global','all.closed')}" horizontalCenter="103" click="PopUpManager.removePopUp(this)"/>
+		</s:HGroup>
+		<!--s:Button id="openac" y="11" right="328" label="开启AC统计" click="openAC(event)"/>
+		<s:Button id="opedte" x="231" y="9" label="开启TE统计" click="opedTE(event)"/>
+		<s:Button id="openll" x="119" y="9" label="开启流量统计" click="openLL(event)" />
+		<s:Button x="19" y="16" label="时间间隔设置" click="settime(event)"/-->
+ 
+		<!--AC时延统计-->
+		<s:CheckBox id="acctrl" right="24" top="16" label="AC{resourceManager.getString('global','nqlflux.nqaload')}" change="ACctrl(event)" enabled="false"/>
+		<!--TE时延统计-->
+		<s:CheckBox id="tectrl" right="114" top="16" label="TE{resourceManager.getString('global','nqlflux.nqaload')}" change="TEctrl(event)" enabled="false"/>
+		<!--流量统计-->
+		<s:CheckBox id="llctrl" right="205" top="16" label="{resourceManager.getString('global','nqlflux.fluxload')}" change="LLctrl(event)" enabled="false"/>
+		<!--数据监测时间间隔:-->
+		<s:Label x="21" y="20" text="{resourceManager.getString('global','nqlflux.datatime')}:"/>
+		<s:TextInput id="timei" width="50" alpha="0.6" horizontalCenter="-220" restrict="0-9" focusOut="timei_focusOutHandler(event)"
+					 verticalCenter="-158" focusIn="timei_focusInHandler(event)" fontWeight="normal" fontStyle="normal"/>
+		<s:Label  fontSize="16" horizontalCenter="-185" text="/s" verticalCenter="-158"/>
+		<!--保存-->
+		<s:Button x="204" y="15" width="50" label="{resourceManager.getString('global','all.save')}" click="savetime(event)"/>
+		<s:Button x="285" y="15" label="全网流量统计" click="allnet(event)" enabled="false"/>
+
+	</mx:Canvas>
+</s:TitleWindow>

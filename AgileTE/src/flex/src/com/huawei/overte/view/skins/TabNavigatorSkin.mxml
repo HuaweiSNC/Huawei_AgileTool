@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin 
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	minWidth="21" minHeight="21">
+
+	<!-- states -->
+	<s:states>
+        <s:State name="up" />
+        <s:State name="over" stateGroups="overStates" />
+        <s:State name="down" stateGroups="downStates" />
+        <s:State name="disabled" stateGroups="disabledStates" />
+        <s:State name="selectedUp" stateGroups="selectedStates, selectedUpStates" />
+        <s:State name="selectedOver" stateGroups="overStates, selectedStates" />
+        <s:State name="selectedDown" stateGroups="downStates, selectedStates" />
+        <s:State name="selectedDisabled" stateGroups="selectedUpStates, disabledStates, selectedStates" />
+	</s:states>
+	<!-- background --> 
+	<s:Rect left="1" right="1" top="0" bottom="0" 
+		topLeftRadiusX="3" topRightRadiusX="3">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry ratio=".5" color="0xd1d4db"/>
+				<s:GradientEntry ratio=".51" color="0xc7c9d5"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	<s:Rect id="btnBack" width="100%" height="100%" includeIn="downStates,selectedStates">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry ratio="0" color="0x228bbb"/>
+				<s:GradientEntry ratio=".5" color="0x2382ae"/>
+				<s:GradientEntry ratio=".51" color="0x0c6c9e"/>
+				<s:GradientEntry color="0x0c6698"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	
+</s:SparkSkin>

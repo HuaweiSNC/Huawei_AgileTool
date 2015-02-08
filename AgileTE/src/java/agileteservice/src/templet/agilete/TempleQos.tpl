@@ -1,0 +1,53 @@
+#if("0"!="${t_qos.size}")
+<dsName>$!{t_qos.name}</dsName>
+<qosBas>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>0</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>1</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>2</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>3</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>4</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>5</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>6</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+	<qosBa>
+		<baType>8021p</baType>
+		<baValue>7</baValue>
+		<serviceClass>$!{t_qos.serviceClass}</serviceClass>
+		<color>green</color>
+	</qosBa>
+</qosBas>
+#end

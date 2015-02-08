@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<project name="AgileTe Builder" basedir="."  default="releasebuild">
+
+   <property file="build.properties" />
+   <property name="wardir" value="wardir" />
+   <property name="builddir" value="wardir/build" />
+   
+   <target name="releasebuild"> 
+	   <delete dir="${wardir}" />
+	   <mkdir dir="${wardir}" />
+	   <delete dir="${builddir}" />
+	   <mkdir dir="${builddir}" />
+	   <fb.exportReleaseBuild project="overTegui2" destdir="${builddir}" application="src/overTegui2.mxml" publishsource="false"/> 
+	   <move file="${builddir}/overTegui2.html" tofile="${builddir}/index.html"/>
+	   <copy todir="${builddir}/assets/xml" file="src/assets/xml/sdn_office_project.xml" />
+   </target> 
+	 
+   <target name="antwar" depends="releasebuild" description="begin war">
+
+	<war warfile="${wardir}/${ops.war}" needxmlfile="false">
+	    <fileset dir="${builddir}"> </fileset>
+	</war>
+</target>
+</project>

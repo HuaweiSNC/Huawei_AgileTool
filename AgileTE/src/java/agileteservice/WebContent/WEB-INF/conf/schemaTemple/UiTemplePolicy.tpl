@@ -1,0 +1,17 @@
+<policys>
+	<foreach_policysList>
+		<policy>
+			<name>$tnlPolicyName</name>
+			<tpNexthops>
+				<tpNexthop>
+					<nexthopIPaddr>$nexthopIPaddr</nexthopIPaddr>
+					<tpTunnels>
+						<tpTunnel>
+							<tunnelName>$tunnelName</tunnelName>
+						</tpTunnel>
+					</tpTunnels>
+				</tpNexthop>
+			</tpNexthops>
+		</policy>
+	</foreach_policysList>
+</policys>

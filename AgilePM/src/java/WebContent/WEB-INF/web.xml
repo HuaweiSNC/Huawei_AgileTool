@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+  <display-name>Wink SDK demo</display-name>
+  <description>Demonstration of SDK features</description>
+  <servlet>
+    <servlet-name>restSdkService</servlet-name>
+    <servlet-class>org.apache.wink.server.internal.servlet.RestServlet</servlet-class>
+    <init-param>
+      <param-name>applicationConfigLocation</param-name>
+      <param-value>/WEB-INF/application</param-value>
+    </init-param>
+    <init-param>
+      <param-name>propertiesLocation</param-name>
+      <param-value>/WEB-INF/ops.properties</param-value>
+    </init-param>
+    <init-param>
+      <param-name>agileTeConfig</param-name>
+      <param-value>/WEB-INF/conf</param-value>
+    </init-param>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>restSdkService</servlet-name>
+    <url-pattern>/agilepm/*</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <servlet-name>restSdkAdmin</servlet-name>
+    <servlet-class>org.apache.wink.server.internal.servlet.AdminServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>restSdkAdmin</servlet-name>
+    <url-pattern>/admin</url-pattern>
+  </servlet-mapping>
+<!--  <servlet>-->
+<!--    <description>OverTELoad</description>-->
+<!--    <servlet-name>OverTELoad</servlet-name>-->
+<!--    <servlet-class>com.huawei.agilete.load.OverTELoad</servlet-class>-->
+<!--    <load-on-startup>2</load-on-startup>-->
+<!--  </servlet>-->
+
+<filter>
+	<filter-name>WhiteListFilter</filter-name>
+	<filter-class>com.huawei.agilete.northinterface.web.OTWebServiceFilter</filter-class>
+</filter>
+<filter-mapping>
+	<filter-name>WhiteListFilter</filter-name>
+	<url-pattern>/*</url-pattern>
+</filter-mapping>
+
+</web-app>

@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+	<entry key='CassandraServer'>192.168.11.102</entry>
+	<entry key='CassandraPort'>9160</entry>
+	<entry key='CassandraKeyspace'>overtedb</entry>
+	<entry key='CassandraName'>root</entry>
+	<entry key='CassandraPw'>Root123</entry>
+	<entry key='OpsServerIp'>192.168.11.102</entry>
+	<entry key='OpsServerPort'>8080</entry>
+	<entry key='OpsUserName'>admin</entry>
+	<entry key='OpsPw'>admin</entry>
+	<entry key='OpsProtocol'>HTTP</entry>
+	<entry key='AgileSysMIp'>https://192.168.11.102</entry>
+	<entry key='AgileSysMPort'>8099</entry>
+	<entry key='ServerSocketPort'></entry>
+	<entry key='SimulantData'>-1</entry>
+</properties>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark" close="PopUpManager.removePopUp(this)"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"  fontFamily="微软雅黑"
+			   width="298" height="206"  skinClass="com.huawei.overte.view.skins.TitleWindowSkin" title="{resourceManager.getString('global','all.newjob')}">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.MrtgCtrl;
+			import com.huawei.overte.model.MrtgDatas;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.view.overte.titlewindows.NewJob;
+			import com.huawei.overte.view.skins.TitleWindowSkin;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.httpclient.events.HttpDataEvent;
+			
+			import spark.events.IndexChangeEvent;
+			public var languages:ArrayCollection = new ArrayCollection;
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			public var sdnproject:XML;
+			public var mydata:MrtgDatas = MrtgDatas.getInstence();
+			public var mrtgctrl:MrtgCtrl = new MrtgCtrl
+			protected function save(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var str:String = "<listenerData><id>"+jobname.text+"</id></listenerData>"
+				mrtgctrl.newtask(str)
+				PopUpManager.removePopUp(this)
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<mx:Canvas left="0" right="0" top="0" bottom="0" backgroundColor="0xcccccc">
+		<s:BorderContainer left="10" right="10" top="10" bottom="40">
+			<mx:Form left="10" right="10" top="41" bottom="38" paddingBottom="5" paddingLeft="5"
+					 paddingRight="5" paddingTop="5">
+				<mx:FormItem width="100%" label="{resourceManager.getString('global','all.jobname')}" horizontalAlign="right" paddingLeft="0"
+							 paddingRight="5" id="names">
+					<mx:TextInput id="jobname" width="100%"/>
+				</mx:FormItem>
+			</mx:Form>
+		</s:BorderContainer>
+		<s:Button bottom="10" label="{resourceManager.getString('global','all.sure')}" horizontalCenter="-49" click="save(event)"/>
+		<s:Button bottom="10" label="{resourceManager.getString('global','all.cancel')}" horizontalCenter="52" click="PopUpManager.removePopUp(this)"/>
+		
+	</mx:Canvas>
+</s:TitleWindow>

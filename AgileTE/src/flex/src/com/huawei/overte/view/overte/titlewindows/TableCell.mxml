@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="50" height="30" alpha="1" creationComplete="init(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			protected function ilabel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(ilabel.text!="-")
+				{
+					//Alert.show("暂无数据！","提示")
+					var url:String="http://10.111.68.205:8082/ceshi/my.html";  
+					var request:URLRequest=new URLRequest(url);  
+					navigateToURL(request,"_blank");
+				}
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(ilabel.text=="-")
+				{
+					ilabel.buttonMode = false;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer id="ibackground" width="100%" height="100%"  alpha="0.35">
+		
+	</s:BorderContainer>
+	<s:Label id="ilabel" alpha="1" buttonMode="true" color="#FFFFFF" fontSize="14" fontWeight="bold"
+			 horizontalCenter="0" text="" textDecoration="none" verticalCenter="0" click="ilabel_clickHandler(event)"/>
+	
+</s:Group>

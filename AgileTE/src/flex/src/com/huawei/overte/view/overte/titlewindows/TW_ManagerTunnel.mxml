@@ -1,0 +1,896 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   xmlns:menupancl="com.huawei.overte.view.overte.panel.menupancl.*"
+			   width="734" height="406"  color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   creationComplete="init()" close="PopUpManager.removePopUp(this)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.ErrorCodeUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			
+			import flashx.textLayout.tlf_internal;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.states.State;
+			
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			import twaver.IElement;
+			import twaver.Node;
+			import twaver.core.util.h._ED;
+			/**选择源设备数据源**/
+			[Bindable]public  var srcDevicesList:ArrayCollection = new ArrayCollection(); 
+			/**系统主应用程序**/
+			[Bindable]private var __app:overTegui2;//主应用程序
+			/**当前管理域下设备数组**/
+			[Bindable]private var devices:Array=[];//当前管理域下所有设备数组
+			/**当前项目类型**/
+			[Bindable]private var projectType:String;//项目类型
+			/**当前选择管理域ID**/
+			[Bindable]private var curarea:String;//当前选择管理域
+			/**当前选择管理域ID**/
+			[Bindable]public var tunnelarray:ArrayCollection;//当前所有Tunnel列表
+			/**当前设备Tunnel数据源  未有bfd信息**/
+			public var tunneldevices:ArrayCollection;
+			/**当前设备Tunnel数据源  有bfd信息**/
+			[Bindable]public var tunneldevice:ArrayCollection;//当前设备Tunnel列表
+			
+			public var connUtil:ConnUtil = ConnUtil.getInstence();//连接java单例
+			public var element:IElement;
+			public var bfdstate:String="OFF";//bfd初始化状态
+			
+			public var patharray:ArrayCollection ;//当前path  数组
+			public var bindpatharray:ArrayCollection ;//当前管道绑定path数组
+			
+			public var tunnelindex:ArrayCollection;//当前设备Tunnel列表
+			/** 重写方法--弹出窗口不能移出当前浏览器*/
+			override protected function moveArea_mouseDownHandler(event:MouseEvent):void
+			{
+				startDrag(false, new Rectangle(0, 0, this.parentApplication.width - this.width, this.parentApplication.height - this.height));
+				super.moveArea_mouseDownHandler(event);
+			}
+			
+			override protected function moveArea_mouseUpHandler(event:Event):void
+			{
+				stopDrag();
+				super.moveArea_mouseUpHandler(event);
+			}
+			/**管道管理界面初始化**/
+			protected function init():void
+			{
+				__app=SdncUtil.app;//初始化当前主应用程序
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;;//初始化当前进入管理域ID
+				projectType = SdncUtil.cuProjectType;//初始化项目类型
+				devices= DataHandleTool.devices;//初始化当前设备
+				srcDevicesList=new ArrayCollection(devices);//初始化当前设备作为源设备数据源
+				
+				if(projectType=="test"&&DataHandleTool.tunnelFlag){
+					initForTest()
+				}
+				else{
+					//真实工程初始化发送管道详细信息请求
+					if(devices.length!=0){
+						PopupManagerUtil.getInstence().popupLoading(__app);
+						var opsIp:String=SdncUtil.opsIp;
+						var webname:String = SdncUtil.projectname;
+						var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+devices[0].id+"/tunnels";
+						connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelResult,onGetTunnelFault);
+					}
+				}
+			}
+			/**测试工程：初始化管道信息**/
+			private function initForTest():void{
+				var tunneltest:String = "<tunnels>	<tunnel><name>Tunnel1</name>		<interfaceName>Tunnel1</interfaceName>		<identifyIndex>502</identifyIndex>		<ingressIp>4.4.4.4</ingressIp>		<egressIp>2.2.2.2</egressIp>		<hotStandbyTime>15</hotStandbyTime>		<isDouleConfig>false</isDouleConfig>		<desDeviceName>123</desDeviceName>		<state>123</state>		<tunnelPaths>			<tunnelPath>				<pathType>hot_standby</pathType>				<pathName>back</pathName>				<lspState>down</lspState>			</tunnelPath>			<tunnelPath>				<pathType>hot_standby</pathType>				<pathName>main</pathName>				<lspState>down</lspState>			</tunnelPath>		</tunnelPaths>		<paths>			<path>				<name>main</name>				<nextHops>					<nextHop>						<id>1</id>						<nextIp>10.1.1.1</nextIp>					</nextHop>					<nextHop>						<id>2</id>						<nextIp>10.1.1.2</nextIp>					</nextHop>					<nextHop>						<id>3</id>						<nextIp>10.1.1.3</nextIp>					</nextHop>					<nextHop>						<id>4</id>						<nextIp>10.1.1.4</nextIp>					</nextHop>				</nextHops>			</path>			<path>				<name>back</name>				<nextHops>					<nextHop>						<id>1</id>						<nextIp>10.1.1.1</nextIp>					</nextHop>					<nextHop>						<id>2</id>						<nextIp>10.1.1.4</nextIp>					</nextHop>				</nextHops>			</path>		</paths>	</tunnel></tunnels>"
+				var tunnelxml:XML = new XML(tunneltest);
+				for(var i:int=0;i<tunnelxml.tunnel.length();i++){
+					for(var j:int=0;j<tunnelxml.tunnel[i].tunnelPaths.length();j++){
+						for(var m:int=0;m<tunnelxml.tunnel.paths.path.length();m++){
+							if(tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName.toString()==tunnelxml.tunnel.paths.path[m].name){
+								//当前设备上path配置信息
+								patharray.addItem({
+									name:tunnelxml.tunnel.paths.path[m].name,
+									nexthop:tunnelxml.tunnel.paths.path[m].nextHop
+								})
+							}
+						}
+						//当前Tunnel上绑定path配置信息
+						bindpatharray.addItem({
+							pathType:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathType,
+							pathName:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName,
+							lspState:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].lspState
+						})
+					}
+					//当前Tunnel配置信息
+					tunnelarray.addItem({
+						device:devices[0].devicename,
+						name:tunnelxml.tunnel[i].name,
+						identifyIndex:tunnelxml.tunnel[i].identifyIndex,
+						ingressIp:tunnelxml.tunnel[i].ingressIp,
+						egressIp:tunnelxml.tunnel[i].egressIp,
+						hotStandbyTime:tunnelxml.tunnel[i].hotStandbyTime,
+						isDouleConfig:tunnelxml.tunnel[i].isDouleConfig,
+						desDeviceName:tunnelxml.tunnel[i].desDeviceName,
+						bindpath:bindpatharray,
+						allpath:patharray
+					})	
+				}
+				DataHandleTool.tunnelFlag=false
+				searchTunnelBydevice(devices[0].devicename,tunnelarray)	
+			}
+			/**真实工程：请求Tunnel信息成功**/
+			private function onGetTunnelResult(e:HttpResponseEvent,data:String):void
+			{
+				tunneldevices=new ArrayCollection()
+				tunneldevice = new ArrayCollection();
+				tunnelindex = new ArrayCollection();
+				if(e.response.code=="200"){
+					if(data == ""){
+						PopupManagerUtil.getInstence().closeLoading();	
+						return;
+					}else{
+						var tunnelxml:XML = new XML(data);
+						for(var i:int=0;i<tunnelxml.tunnel.length();i++){
+							patharray= new ArrayCollection();
+							bindpatharray = new ArrayCollection();
+							for(var j:int=0;j<tunnelxml.tunnel[i].tunnelPaths.tunnelPath.length();j++){
+								for(var m:int=0;m<tunnelxml.tunnel[i].paths.path.length();m++){
+									if(tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName.toString()==tunnelxml.tunnel[i].paths.path[m].name){
+										patharray.addItem({
+											name:tunnelxml.tunnel[i].paths.path[m].name,
+											nexthop:tunnelxml.tunnel[i].paths.path[m].nextHop
+										})
+									}
+								}
+								bindpatharray.addItem({
+									pathType:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathType,
+									pathName:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName,
+									lspState:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].lspState
+								})
+							}
+							/**state:"已关闭"**/
+							tunneldevices.addItem({
+								device:ddl.selectedItem.deviceName,
+								name:tunnelxml.tunnel[i].name,
+								identifyIndex:tunnelxml.tunnel[i].identifyIndex,
+								ingressIp:tunnelxml.tunnel[i].ingressIp,
+								egressIp:tunnelxml.tunnel[i].egressIp,
+								hotStandbyTime:tunnelxml.tunnel[i].hotStandbyTime,
+								isDouleConfig:tunnelxml.tunnel[i].isDouleConfig,
+								desDeviceName:tunnelxml.tunnel[i].desDeviceName,
+								bindpath:bindpatharray,
+								allpath:patharray,
+								enble:false,
+								state:resourceManager.getString('global','mgtunnel.closed')
+							})
+							tunnelindex.addItem({
+								tunnelname:tunnelxml.tunnel[i].name,
+								identifyIndex:tunnelxml.tunnel[i].identifyIndex
+							})
+						}
+					}
+					querybfdstate(ddl.selectedItem.id)
+					PopupManagerUtil.getInstence().closeLoading();
+				}else{
+					PopupManagerUtil.getInstence().closeLoading();	
+					trace(e.type.toString())
+				}
+			}
+			/**真实工程：请求Tunnel信息失败**/
+			private function onGetTunnelFault(e:Event):void
+			{
+				DataHandleTool.showOnConsole("当前设备下所有BFD信息  连接出错\n"+e.toString())
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			/**查询当前设备下所有BFD信息**/
+			public function querybfdstate(deviceId:String):void{
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceId+"/bfds";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetBfdResult,onGetBfdFault);
+			}
+			/**查询当前设备下所有BFD信息  连接成功方法**/
+			private function onGetBfdResult(e:HttpResponseEvent,data:String):void
+			{
+				for(var i:int=0;i<tunneldevices.length;i++){
+					/**"已关闭"**/
+					var str:String = resourceManager.getString('global','mgtunnel.closed');
+					if(data == ""){
+						tunneldevices[i].enble=false;
+						/**"已关闭"**/
+						str=resourceManager.getString('global','mgtunnel.closed');
+						continue;
+					}else{
+						var bfdxml:XML = new XML(data);
+						var sign:Boolean = false;
+						for(var j:int=0;j<bfdxml.bfd.length();j++){
+							if(bfdxml.bfd[j].tunnelName.toString()==tunneldevices[i].name.toString()){
+								if(bfdxml.bfd[j].adminDown=="false"){
+									/**"已开启"**/
+									str=resourceManager.getString('global','mgtunnel.opened');
+								}else{
+									tunneldevices[i].enble=false;
+									/**"已关闭"**/
+									str=resourceManager.getString('global','mgtunnel.closed');
+								}
+								sign=true;
+								break;
+							}
+						}
+						tunneldevices[i].enble=sign;
+						
+					}
+					tunneldevices[i].state=str;
+				}
+				tunneldevice = tunneldevices;
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			/**查询当前设备下所有BFD信息  连接出错方法**/
+			private function onGetBfdFault(e:Event):void
+			{
+				DataHandleTool.showOnConsole("当前设备下所有BFD信息  连接出错\n"+e.toString())
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			/**当前所有设备切换事件**/
+			protected function ddl_changeHandler(event:IndexChangeEvent):void
+			{
+				if(projectType=="test"){
+					var devicename:String = (event.target as DropDownList).selectedItem.devicename
+					searchTunnelBydevice(devicename,tunnelarray)
+				}
+				else{
+					//切换不同设备 请求不同设备下的管道信息
+					PopupManagerUtil.getInstence().popupLoading(__app);
+					var deviceid:String = (event.target as DropDownList).selectedItem.id
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+deviceid+"/tunnels";
+					connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelResult,onGetTunnelFault);
+				}
+			}
+			/**
+			 * 查询设备列表
+			 * */
+			public function querytunnel():void{
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+ddl.selectedItem.id+"/tunnels";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelResult,onGetTunnelFault);
+			}
+			
+			/**
+			 * 查询设备列表
+			 * */
+			var handlstate:String = ""
+			public function queryonetunnel(name:String,state:String):void{
+				var opsIp:String=SdncUtil.opsIp;
+				handlstate = state
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+ddl.selectedItem.id+"/tunnels?name="+name;
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetoneTunnelResult,onGetTunnelFault);
+			}
+			
+			/**真实工程：请求Tunnel信息成功**/
+			private function onGetoneTunnelResult(e:HttpResponseEvent,data:String):void
+			{
+				if(e.response.code=="200"){
+					if(data == ""){
+						PopupManagerUtil.getInstence().closeLoading();	
+						return;
+					}else{
+						var tunnelxml:XML = new XML(data);
+						for(var i:int=0;i<tunnelxml.tunnel.length();i++){
+							patharray= new ArrayCollection();
+							bindpatharray = new ArrayCollection();
+							for(var j:int=0;j<tunnelxml.tunnel[i].tunnelPaths.tunnelPath.length();j++){
+								for(var m:int=0;m<tunnelxml.tunnel[i].paths.path.length();m++){
+									if(tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName.toString()==tunnelxml.tunnel[i].paths.path[m].name){
+										patharray.addItem({
+											name:tunnelxml.tunnel[i].paths.path[m].name,
+											nexthop:tunnelxml.tunnel[i].paths.path[m].nextHop
+										})
+									}
+								}
+								bindpatharray.addItem({
+									pathType:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathType,
+									pathName:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName,
+									lspState:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].lspState
+								})
+							}
+							/**state:"已关闭"**/
+							if(handlstate=="edit"){
+								tunneldevices.removeItemAt(g.selectedIndex)
+							}
+							tunneldevices.addItem({
+								device:ddl.selectedItem.deviceName,
+								name:tunnelxml.tunnel[i].name,
+								identifyIndex:tunnelxml.tunnel[i].identifyIndex,
+								ingressIp:tunnelxml.tunnel[i].ingressIp,
+								egressIp:tunnelxml.tunnel[i].egressIp,
+								hotStandbyTime:tunnelxml.tunnel[i].hotStandbyTime,
+								isDouleConfig:tunnelxml.tunnel[i].isDouleConfig,
+								desDeviceName:tunnelxml.tunnel[i].desDeviceName,
+								bindpath:bindpatharray,
+								allpath:patharray,
+								enble:false,
+								state:resourceManager.getString('global','mgtunnel.closed')
+							})
+							tunnelindex.addItem({
+								tunnelname:tunnelxml.tunnel[i].name,
+								identifyIndex:tunnelxml.tunnel[i].identifyIndex
+							})
+						}
+					}
+					querybfdstate(ddl.selectedItem.id)
+					PopupManagerUtil.getInstence().closeLoading();
+				}else{
+					PopupManagerUtil.getInstence().closeLoading();	
+					trace(e.type.toString())
+				}
+			}
+			/**点击增加Tunnel事件 增加当前选择的设备上的Tunnel**/
+			public function addTunnel():void
+			{
+				var AddFlow:ADD_ManagerTunnel=ADD_ManagerTunnel(PopUpManager.createPopUp(this,ADD_ManagerTunnel,true));
+				AddFlow.curdevice = devices[ddl.selectedIndex];//当前设备
+				AddFlow.tw_Tunnel = this;
+				AddFlow.hottime = ""; 
+				AddFlow.handleFlag = "add";
+				AddFlow.tunnelindex = tunnelindex;
+				AddFlow.addEventListener(SdncEvt.SAVE_TUNNEL_EVENT,saveTunnel);//监听增加设备界面上保存按钮事件
+				PopUpManager.centerPopUp(AddFlow);
+			}
+			/** 增加Tunnel保存事件的回调方法**/
+			public function saveTunnel(e:SdncEvt):void{
+				var array:ArrayCollection = e.params as ArrayCollection
+				for(var i:int=0;i<array.length;i++)
+				{
+					tunnelarray.addItem({
+						device:array[i].device,
+						name:array[i].name,
+						identifyIndex:array[i].identifyIndex,
+						ingressIp:array[i].ingressIp,
+						egressIp:array[i].egressIp,
+						hotStandbyTime:array[i].hotStandbyTime,
+						isDouleConfig:array[i].isDouleConfig,
+						desDeviceName:array[i].desDeviceName,
+						bindpath:array[i].bindpath,
+						enble:false,
+						allpath:patharray
+					})
+				}
+				searchTunnelBydevice(ddl.selectedItem.devicename,tunnelarray);
+			}
+			/**
+			 * 在所有管道数组中查询当前设备下的Tunnel信息
+			 * @param devicename 当前设备名
+			 * @param allTunnel 所有管道集合
+			 * */
+			public function searchTunnelBydevice(devicename:String,allTunnel:ArrayCollection):void{
+				tunneldevice.removeAll();
+				for(var i:int=0;i<allTunnel.length;i++){
+					if(allTunnel[i].device==devicename){
+						tunneldevice.addItem({
+							device:allTunnel[i].device,
+							name:allTunnel[i].name,
+							identifyIndex:allTunnel[i].identifyIndex,
+							ingressIp:allTunnel[i].ingressIp,
+							egressIp:allTunnel[i].egressIp,
+							hotStandbyTime:allTunnel[i].hotStandbyTime,
+							isDouleConfig:allTunnel[i].isDouleConfig,
+							desDeviceName:allTunnel[i].desDeviceName,
+							bindpath:allTunnel[i].bindpath,
+							allpath:allTunnel[i].allpath
+						})
+					}
+				}
+				
+			}
+			/**删除Tunnel**/
+			public function removeTunnel():void{
+				if(projectType=="test"){
+					
+				}else{
+					/**"确定删除？","提示"**/
+					Alert.show(resourceManager.getString('global','all.ifdeleted')+"？",
+						resourceManager.getString('global','all.prompt'),
+						Alert.OK|Alert.NO,this,closeDelete);
+				}
+				
+			}
+			/**确定删除Tunnel事件**/
+			public function closeDelete(e:CloseEvent):void
+			{
+				if(e.detail==Alert.OK){
+					PopupManagerUtil.getInstence().popupLoading(__app);
+					var tunnelobj:Object=g.selectedItem;
+					var tunnelname:String=tunnelobj["name"];
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+ddl.selectedItem.id+"/tunnels?name="+tunnelname;
+					connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,onDelResult,onDelFault);
+				}
+				
+			}
+			/**删除Tunnel连接成功 返回方法**/
+			private function onDelResult(e:HttpDataEvent):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				DataHandleTool.showOnConsole(e.bytes.toString())
+				if(e.bytes.toString().search("ok")!=-1 ){
+//					querytunnel();
+					/**"删除管道成功","提示"**/
+					tunneldevice.removeItemAt(g.selectedIndex)
+					Alert.show(resourceManager.getString('global','all.deletedsuccess'),
+						resourceManager.getString('global','all.prompt'));
+				}else if(e.bytes.toString().search("pathfail")!=-1){
+					/**"删除管道成功Path失败","提示"**/
+					tunneldevice.removeItemAt(g.selectedIndex)
+					Alert.show("Tunnel"+resourceManager.getString('global','all.deletedsuccess')+"  Path"+resourceManager.getString('global','all.deletedfail'),
+						resourceManager.getString('global','all.prompt'));
+				
+				}else{
+					/**"删除管道失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.deletedfail'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			/**删除Tunnel连接错误 返回方法**/
+			private function onDelFault(e:Event):void
+			{
+				/**"删除管道失败","提示"**/
+				Alert.show(resourceManager.getString('global','all.deletederror'),
+					resourceManager.getString('global','all.prompt'));
+			}
+			/**管道配置bfd监测、弹出配置BFD界面 **/
+			public function addBFD(data:Object,TunnelName:String):void
+			{
+				var AddBFD:ADD_BFD=ADD_BFD(PopUpManager.createPopUp(this,ADD_BFD,true));
+				AddBFD.bfdtunnel.text = TunnelName;
+				AddBFD.deviceid=ddl.selectedItem.id;
+				AddBFD.addEventListener(SdncEvt.SAVE_BFD_EVENT,savebfd)
+				PopUpManager.centerPopUp(AddBFD);
+			}
+			/**管道配置bfd监测、弹出配置BFD界面  保存回调方法**/
+			public function savebfd(e:SdncEvt):void{
+				PopupManagerUtil.getInstence().popupLoading(__app);
+				var tunnelobj:Object=g.selectedItem;
+				var tunnelname:String=tunnelobj["name"];
+//				queryonetunnel(tunnelname);
+				querytunnel();
+			}
+//			/**
+//			 * 测试工程用
+//			 * 将配置的BFD信息添加到TunnelArray上
+//			 * */
+//			public function addbfdToTunnel(bfdarray:ArrayCollection):void{
+//				for(var i:int=0;i<tunnelarray.length;i++){
+//					if(tunnelarray[i].name==bfdarray[0].tunnel){
+//						tunnelarray[i].bfd=bfdarray[0]
+//					}
+//				}
+//				
+//			}
+//			/**
+//			 * 测试工程用
+//			 * 在Tunnel数组中查询该管道是否配置bfd信息
+//			 * */
+//			public function searchbfdInTunnel():Boolean{
+//				var bfdBool:Boolean=false;
+//				for(var i:int=0;i<tunnelarray.length;i++){
+//					if(tunnelarray[i].hasOwnProperty("bfd")){
+//						bfdBool=true;
+//						break;
+//					}
+//				}
+//				return bfdBool;
+//			}
+//			/**
+//			 * 测试工程用
+//			 * 通过管道名称查询配置bfd信息
+//			 * */
+//			public function searchbfdByTunName():ArrayCollection{
+//				var bfdarray:ArrayCollection = new ArrayCollection();
+//				for(var i:int=0;i<tunnelarray.length;i++){
+//					if(tunnelarray[i].hasOwnProperty("bfd")){
+//						bfdarray.addItem({
+//							tunnel:tunnelarray[i].name,
+//							bfdname:tunnelarray[i].bfd.bfdname,
+//							bfdcurFlag:tunnelarray[i].bfd.bfdcurFlag,//本地标识
+//							bfddesFlag:tunnelarray[i].bfd.bfddesFlag,//目的标识
+//							bfdsendTime:tunnelarray[i].bfd.bfdsendTime,
+//							bfdgetTime:tunnelarray[i].bfd.bfdgetTime,
+//							bfdstate:"close"
+//						})
+//					}
+//					
+//				}
+//				return bfdarray;
+//			}
+//			
+			
+//			public function openbfd(tunnelName:String):void{
+				//				if(currentState=="ON"){
+				//					__app.dispatchEvent(new SdncEvt(SdncEvt.OPEN_TUNNEL_EVENT))
+				//				}else{
+				//					__app.dispatchEvent(new SdncEvt(SdncEvt.CLOSE_TUNNEL_EVENT))
+				//				}
+				
+				//				PopupManagerUtil.getInstence().popupLoading(this,false);
+				//				var opsIp:String=SdncUtil.opsIp;
+				//				var webname:String = SdncUtil.projectname;
+				//				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+ddl.selectedItem.id+"/bfds?name="+tunnelName;
+				//				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetBfdResult,onGetBfdFault);
+//			}
+			//			/***
+			//			 * 真实工程：请求Tunnel信息成功
+			//			 * */
+			//			private function onGetBfdResult(e:HttpResponseEvent,data:String):void
+			//			{
+			//				if(data == ""){
+			//					PopupManagerUtil.getInstence().closeLoading();	
+			//					Alert.show("请优先配置BFD","提示")
+			//					return;
+			//				}else{
+			//					
+			//				}
+			//				PopupManagerUtil.getInstence().closeLoading();
+			//			}
+			//			/***
+			//			 * 真实工程：请求Tunnel信息失败
+			//			 * */
+			//			private function onGetBfdFault(e:Event):void
+			//			{
+			//				trace("获取管道BFD信息连接出错","提示");
+			//			}
+			/**修改Tunnel**/
+			public function modfieTunnel(data:Object):void{
+				if(projectType=="test"){
+					var EditTunnel:ADD_ManagerTunnel=ADD_ManagerTunnel(PopUpManager.createPopUp(this,ADD_ManagerTunnel,true));
+					/**"编辑管道"**/
+					EditTunnel.title=resourceManager.getString('global','mgtunnel.edittunnel')
+					for(var i:int=0;i<tunnelarray.length;i++){
+						if(tunnelarray[i].name==data.name&&tunnelarray[i].isDouleConfig){
+							EditTunnel.curdevice= devices[ddl.selectedIndex];
+							EditTunnel.tunnelName.enabled = false;
+							EditTunnel.isEscape.selected = tunnelarray[i].bestEffortEnable//是否使能逃生路径
+							EditTunnel.tunnelName.text = tunnelarray[i].name;//隧道名称
+							EditTunnel.tunnelID.text = tunnelarray[i].identifyIndex;//隧道Id
+							EditTunnel.hotStandbyWtr.text = tunnelarray[i].hotStandbyTime;//等待回切时间
+							EditTunnel.Ordouble.selected = tunnelarray[i].isDouleConfig;//是否双向配置隧道
+							EditTunnel.explicitPathsData =  tunnelarray[i].allpath;//所有Path数据
+							EditTunnel.addEventListener(SdncEvt.SAVE_TUNNEL_EVENT,saveTunnel)
+							PopUpManager.centerPopUp(EditTunnel);
+						}
+					}
+				}else{
+					PopupManagerUtil.getInstence().popupLoading(__app);
+					var tunnelobj:Object=g.selectedItem;
+					var tunnelname:String=data.name;
+					var opsIp:String=SdncUtil.opsIp;
+					var webname:String = SdncUtil.projectname;
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+ddl.selectedItem.id+"/tunnels?name="+tunnelname;
+					connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetEditTunnelResult,onDelFault);
+				}
+			}
+			
+			/**编辑管道  获取单个管道信息 连接成功返回方法**/
+			private function onGetEditTunnelResult(e:HttpResponseEvent,data:String):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();	
+				if(e.response.code=="200"){
+					if(data == ""){
+						//Alert.show("获取管道信息失败","提示");
+						return;
+					}else{
+						var tunnelxml:XML = new XML(data);
+						var tunnelarray:ArrayCollection = new ArrayCollection();
+						for(var i:int=0;i<tunnelxml.tunnel.length();i++){
+							var patharray:ArrayCollection= new ArrayCollection();
+							var bindpatharray:ArrayCollection = new ArrayCollection();
+							for(var j:int=0;j<tunnelxml.tunnel[i].tunnelPaths.tunnelPath.length();j++){
+								for(var m:int=0;m<tunnelxml.tunnel[i].paths.path.length();m++){
+									if(tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName.toString()==tunnelxml.tunnel[i].paths.path[m].name){
+										var hoparray:ArrayCollection = new ArrayCollection();
+										for(var n:int=0;n<tunnelxml.tunnel[i].paths.path[m].nextHops.nextHop.length();n++){
+											var deviceNameInterface:String = DataHandleTool.findNodeByNodeIP(tunnelxml.tunnel[i].paths.path[m].nextHops.nextHop[n].nextIp,SdncUtil.network)
+											hoparray.addItem({
+												id:tunnelxml.tunnel[i].paths.path[m].nextHops.nextHop[n].id,
+												devicename:deviceNameInterface.split("‘")[0],
+												interfacename:deviceNameInterface.split("‘")[1],
+												ip:tunnelxml.tunnel[i].paths.path[m].nextHops.nextHop[n].nextIp
+											})
+										}
+										patharray.addItem({
+											name:tunnelxml.tunnel[i].paths.path[m].name,
+											hoparray:hoparray
+										})
+									}
+								}
+								bindpatharray.addItem({
+									pathType:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathType,
+									pathName:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].pathName,
+									lspState:tunnelxml.tunnel[i].tunnelPaths.tunnelPath[j].lspState
+								})
+							}
+							tunnelarray.addItem({
+								device:ddl.selectedItem.deviceName,
+								name:tunnelxml.tunnel[i].name,
+								identifyIndex:tunnelxml.tunnel[i].identifyIndex,
+								ingressIp:tunnelxml.tunnel[i].ingressIp,
+								bestEffortEnable:tunnelxml.tunnel[i].bestEffortEnable,
+								egressIp:tunnelxml.tunnel[i].egressIp,
+								hotStandbyTime:tunnelxml.tunnel[i].hotStandbyTime,
+								isDouleConfig:tunnelxml.tunnel[i].isDouleConfig,
+								desDeviceName:tunnelxml.tunnel[i].desDeviceName,
+								bindpath:bindpatharray,
+								allpath:patharray,
+								state:tunnelxml.tunnel[i].state
+							})
+						}
+					}
+					PopupManagerUtil.getInstence().closeLoading();
+					var EditTunnel:ADD_ManagerTunnel=ADD_ManagerTunnel(PopUpManager.createPopUp(this,ADD_ManagerTunnel,true));
+					/**"编辑管道"**/
+					EditTunnel.title=resourceManager.getString('global','mgtunnel.edittunnel');
+					EditTunnel.tw_Tunnel = this;
+					EditTunnel.curdevice= devices[ddl.selectedIndex];
+					EditTunnel.name_desDecice = searchDeviceByIp(tunnelarray[0].egressIp,SdncUtil.removeCurDevice(tunnelarray[0].device.toString(),devices)); //目的设备
+					EditTunnel.tunnelName.enabled = false;
+					EditTunnel.autoadd.enabled = false;
+					EditTunnel.addpath.enabled = false;
+					EditTunnel.desDevice.enabled = false;
+					EditTunnel.mainPath.enabled = false;
+					EditTunnel.del.visible = false;
+					EditTunnel.tunnelID.enabled = false;
+					
+					EditTunnel.hg.height = 250
+					EditTunnel.gspeed.visible = true
+					EditTunnel.gspeed.includeInLayout = true
+					EditTunnel.gsize.visible = true
+					EditTunnel.gsize.includeInLayout = true
+						
+					EditTunnel.tunnelName.text = tunnelarray[0].name;//隧道名称
+					EditTunnel.tunnelID.text = tunnelarray[0].identifyIndex;//隧道Id
+					EditTunnel.hotStandbyWtr.text = tunnelarray[0].hotStandbyTime;//等待回切时间
+					EditTunnel.hottime=tunnelarray[0].hotStandbyTime;
+					if(tunnelarray[0].bestEffortEnable.children()[0].toString()=="false")
+					{
+					EditTunnel.isEscape.selected = false//是否使能逃生路径
+					}
+					else if(tunnelarray[0].bestEffortEnable.children()[0].toString()=="true")
+					{EditTunnel.isEscape.selected = true}
+					EditTunnel.Ordouble.selected = tunnelarray[0].isDouleConfig;//是否双向配置隧道
+					EditTunnel.explicitPathsData =  tunnelarray[0].allpath;//所有Path数据
+					EditTunnel.addEventListener(SdncEvt.SAVE_TUNNEL_EVENT,saveTunnel)
+					if(tunnelarray[0].isDouleConfig==""){
+						EditTunnel.Ordouble.selected = false;//是否双向配置隧道
+					}else{
+						EditTunnel.Ordouble.selected = true;
+					}
+					EditTunnel.Ordouble.visible = false;
+					EditTunnel.handleFlag ="edit";
+					for(var i:int=0;i<tunnelarray[0].bindpath.length;i++){
+						if(tunnelarray[0].bindpath[i].pathType == "main"){
+							EditTunnel.name_mainPath = tunnelarray[0].bindpath[i].pathName; //绑定path的path名称
+						}
+					}
+					PopUpManager.centerPopUp(EditTunnel);
+				}else{
+					trace(e.type.toString())
+				}
+			}
+			/**编辑管道  获取单个管道信息 连接错误返回方法**/
+			private function onGetEditTunnelFault(e:Event):void
+			{
+				trace("获取单个管道连接错误"+e.toString());
+			}
+			public function searchDeviceByName(deviceName:String,array:Array):int{
+				var retunrnIndex:int=0;
+				for(var i:int=0;i<devices.length;i++){
+					if(devices[i].deviceName==deviceName){
+						retunrnIndex=i
+					}
+				}
+				return retunrnIndex;
+			} 
+			
+			public function searchDeviceByIp(ip:String,array:Array):String{
+				var name:String="";
+				for(var i:int=0;i<array.length;i++){
+					if(array[i].deviceTopoIp==ip)
+					{
+						name=array[i].deviceName;
+					}
+				}
+				return name;
+			} 
+			public var tunnelstate:Boolean;
+			public function clickswitchbtn(tunnelname:String,state:Boolean){
+				tunnelstate = state
+				var opsIp:String=SdncUtil.opsIp;
+				var webname:String = SdncUtil.projectname;
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+ddl.selectedItem.id+"/bfds";
+				var bfdbody:String = ""
+				
+				if(state==true){
+					bfdbody = "<bfds><bfd><tunnelName>"+tunnelname+"</tunnelName><adminDown>false</adminDown></bfd></bfds>"
+				}else{
+					bfdbody = "<bfds><bfd><tunnelName>"+tunnelname+"</tunnelName><adminDown>true</adminDown></bfd></bfds>"
+				}
+				connUtil.clientQuery(uri,ConnUtil.METHOD_PUT,onPostBfdResult,onPostBfdFault,bfdbody);
+			}
+			/***
+			 * 真实工程：主Path-配置bfd信息成功
+			 * */
+			private function onPostBfdResult(e:HttpDataEvent):void
+			{
+				PopupManagerUtil.getInstence().closeLoading();
+				var o:Object = g.selectedItem
+				if(e.bytes.toString().search("ok")!=-1){
+					if(tunnelstate==false){
+						/**"已关闭"**/
+						o.state=resourceManager.getString('global','all.closed')
+						tunneldevice.setItemAt(g.selectedItem,g.selectedIndex)
+						/**"关闭BFD信息成功\n","提示"**/
+						Alert.show(resourceManager.getString('global','all.closesuccess'),
+							resourceManager.getString('global','all.prompt'));
+					}else{
+						/**"已开启"**/
+						o.state=resourceManager.getString('global','all.opened')
+						tunneldevice.setItemAt(o,g.selectedIndex)
+						/**"开启BFD信息成功\n","提示"**/
+						Alert.show(resourceManager.getString('global','all.opensuccess'),
+							resourceManager.getString('global','all.prompt'));
+					}
+					querytunnel();
+					
+				}else{
+					/**"开启BFD信息失败\n"**/
+					Alert.show(resourceManager.getString('global','all.openfail')
+						+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")),
+						resourceManager.getString('global','all.prompt'));
+					DataHandleTool.showOnConsole("开启BFD信息失败\n"+e.bytes.toString().slice(e.bytes.toString().indexOf("<error-message>")+15,e.bytes.toString().indexOf("</error-message>")))
+				}
+			}
+			/**真实工程：主Path-配置bfd信息连接错误**/
+			private function onPostBfdFault(e:Event):void
+			{
+				DataHandleTool.showOnConsole("开启BFD信息连接错误\n"+e.toString())
+			}
+			
+			
+			protected function limitbtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var Addlimit:ADD_TunnelLimite=ADD_TunnelLimite(PopUpManager.createPopUp(this,ADD_TunnelLimite,true));
+				PopUpManager.centerPopUp(Addlimit);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:VGroup id="content" top="0" bottom="50" width="100%">
+			<s:Group width="100%" height="40">
+				<!--选择源设备-->
+				<s:Label right="{ddl.width+btn.width+60}" text="{resourceManager.getString('global','all.choicesrc')}" verticalCenter="0"/>
+				<s:DropDownList id="ddl" right="{btn.width+40}" width="150"  change="ddl_changeHandler(event)"
+								dataProvider="{srcDevicesList}" labelField="deviceName"
+								requireSelection="true" verticalCenter="0" selectedIndex="0"/>
+				<!--增加...-->
+				<s:Button id="btn" right="{g.x}" label="{resourceManager.getString('global','all.add')}..."  click="addTunnel()"
+						  verticalCenter="0"/>
+			</s:Group>
+			<s:Group width="100%" height="85%">
+				<s:DataGrid id="g" left="20" right="20" top="0" bottom="0"  dataProvider="{tunneldevice}"
+							requestedRowCount="4" textAlign="center" sortableColumns="false">
+					<s:columns>
+						<s:ArrayList>
+							<!--隧道名称-->
+							<s:GridColumn dataField="name" showDataTips="true" width="100"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.tnlname')}"></s:GridColumn>
+							<!--隧道标识-->
+							<s:GridColumn dataField="identifyIndex" showDataTips="true" width="100"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.tnlflag')}"></s:GridColumn>
+							<!--源IP地址-->
+							<s:GridColumn dataField="ingressIp"  showDataTips="true"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','all.srcIP')}"></s:GridColumn>
+							<!--目的IP地址-->
+							<s:GridColumn dataField="egressIp" width="100"  showDataTips="true"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','all.desIP')}"></s:GridColumn>
+							
+							<!--启动BFD监测-->
+							<s:GridColumn  dataField="state"  showDataTips="true"
+										   headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										   headerText="{resourceManager.getString('global','mgtunnel.tnlopenbfd')}" width="120" editable="true">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:CheckBox id="switchbtn" selected="{data.state==resourceManager.getString('global','mgtunnel.closed')?false:true}" label="{data.state}"  enabled="{data.enble}"
+														 horizontalCenter="0" verticalCenter="0" click="outerDocument.clickswitchbtn(data.name,switchbtn.selected)"/>
+											<!--menupancl:SwitchBtn id="switchbtn" currentState="{data.state}" enabled="{data.enble}"
+											horizontalCenter="0" verticalCenter="0" click="outerDocument.clickswitchbtn(data.name,switchbtn.currentState)"/-->
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<!--配置BFD-->
+							<s:GridColumn editable="false" 
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','mgtunnel.tnldeploybfd')}">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal" icon="@Embed('assets/imgs/icons/peizhi.png')" 
+														   label="{resourceManager.getString('global','mgtunnel.deploy')}..." click="outerDocument.addBFD(data,data.name)"  
+														   horizontalCenter="0" verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<!--编辑-->
+							<s:GridColumn editable="false"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','all.edit')}">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/edit.png')" 
+														   label="{resourceManager.getString('global','all.edit')}..."  
+														   horizontalCenter="0" verticalCenter="0" click="outerDocument.modfieTunnel(data)"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+							<!--删除-->
+							<s:GridColumn editable="false"
+										  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+										  headerText="{resourceManager.getString('global','all.delete')}">
+								<s:itemRenderer>
+									<fx:Component>
+										<s:GridItemRenderer>
+											<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  
+														   label="{resourceManager.getString('global','all.delete')}"  
+														   click="outerDocument.removeTunnel()"  
+														   horizontalCenter="0" verticalCenter="0"/>
+										</s:GridItemRenderer>
+									</fx:Component>
+								</s:itemRenderer>
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+				</s:DataGrid>
+			</s:Group>
+		</s:VGroup>
+		<!--Tunnel限速-->
+		<s:Button id="limitbtn" bottom="14" label="{resourceManager.getString('global','mgtunnel.limited')}"
+				  horizontalCenter="0" click="limitbtn_clickHandler(event)" visible="false"/>	
+		<!--退出-->
+		<s:Button id="quitbtn" right="{g.x}" bottom="14" label="{resourceManager.getString('global','all.exit')}" 
+				  click="PopUpManager.removePopUp(this)"/>	
+	</mx:Canvas>
+</s:TitleWindow>

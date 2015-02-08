@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<project basedir="." default="antwar" name="AgileFM">
+	<echo message="pulling in property files" />
+	<property file="build.properties" />
+
+	<property name="src" value="src" />
+	<property name="build" value="build" />
+	<property name="utsrc" value="utsrc" />
+	<property name="utbuild" value="utbuild" />
+	<property name="lib" value="WebContent/WEB-INF/lib" />
+	<property name="dist" value="dist" />
+	<property name="data" value="data" />
+	<property name="images" value="images" />
+	<property name="classpath" location="${build}" />
+	<property name="utclasspath" location="${utbuild}" />
+	<property name="WebContent" value="build\WebContent" />
+
+	<!-- basedir表示当前项目基路径，default表示启动ant之后运行目标（必须的）,name表示项目发布后名称 -->
+	<!-- target表示运行目标，可以有多个target标签 ，也可以通过depends依赖其他目标  -->
+	<target name="init" description="初始化ant打包环境">
+		<delete dir="${build}" />
+		<delete dir="${utbuild}" />
+		<delete dir="${report}" />
+		<delete dir="${dist}" />
+		<delete dir="${WebContent}" />
+		<mkdir dir="${build}" />
+		<mkdir dir="${build}/classes" />
+		<mkdir dir="${utbuild}" />
+		<mkdir dir="${utbuild}/classes" />
+		<mkdir dir="${WebContent}" />
+		<property name="packages" value="ant.*" />
+		<property name="build.classes" value="${build}/classes" />
+		<path id="classpath">
+			<fileset dir="${lib}">
+				<include name="**/*.jar" />
+			</fileset>
+			<!-- tomcat安装路径lib表示jar存放路径  -->
+			<fileset dir="${tomcatlib}">
+				<include name="**/*.jar" />
+			</fileset>
+			<fileset dir="${WebContent}/WEB-INF/classes">
+				<include name="**/*.class" />
+			</fileset>
+		</path>
+	</target>
+
+	<!-- 编译选项（我这里要编译工程下所有类似这样格式的文件）  -->
+	<patternset id="compiler.resources">
+		<include name="**/*.properties" />
+		<include name="**/*.script" />
+		<include name="**/*.xml" />
+		<include name="**/*.html" />
+		<include name="**/*.dtd" />
+		<include name="**/*.tld" />
+		<include name="**/*.gif" />
+		<include name="**/*.png" />
+		<include name="**/*.jpeg" />
+		<include name="**/*.jpg" />
+		<include name="**/*.sql" />
+		<include name="**/*.jar" />
+		<include name="**/*.tpl" />
+		<include name="**/*.xls" />
+		<include name="**/application" />
+	</patternset>
+
+	<!-- 补充target执行的顺序是prepare->compile->run -->
+	<target name="prepare" depends="init" description="拷贝所有文件到源文件到打包路径下">
+		<delete dir="${build.classes}/com" />
+		<mkdir dir="${WebContent}\META-INF" />
+		<mkdir dir="${WebContent}\WEB-INF" />
+		<mkdir dir="${WebContent}\WEB-INF\classes" />
+		<mkdir dir="${WebContent}\conf" />
+		<mkdir dir="${WebContent}\excel" />
+		<copy todir="${WebContent}\WEB-INF">
+			<fileset dir="WebContent\WEB-INF">
+				<patternset refid="compiler.resources" />
+			</fileset>
+		</copy>
+
+		<copy todir="${WebContent}\META-INF">
+			<fileset dir="WebContent\META-INF">
+			</fileset>
+		</copy>
+		
+		<copy todir="${WebContent}\conf">
+			<fileset dir="WebContent\conf">
+			</fileset>
+		</copy>
+		<copy todir="${WebContent}\excel">
+			<fileset dir="WebContent\excel">
+			</fileset>
+		</copy>
+		<copy todir="${WebContent}\help">
+			<fileset dir="WebContent\help">
+			</fileset>
+		</copy>
+		<copy todir="${WebContent}" file="WebContent\index.jsp" /> 
+		
+	</target>
+
+	<target name="compile" depends="prepare" description="编译Java文件并复制资源文件">
+		<javac destdir="${WebContent}/WEB-INF/classes" fork="true" debug="on" source="1.5" encoding="UTF-8">
+			<classpath refid="classpath" />
+			<src path="${basedir}/src" />
+		</javac>
+ 
+		<copy todir="${WebContent}/WEB-INF/classes">
+			<fileset dir="${basedir}/src">
+				<patternset refid="compiler.resources" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="antwar" depends="compile" description="开始工作了（打war包）">
+		<war warfile="${build}/${ops.war}">
+			<fileset dir="${WebContent}">
+				<exclude name="**/AntBuild/**" />
+				<exclude name="**/doc/**" />
+				<exclude name="**/src/**" />
+				<exclude name="**/build/**" />
+				<exclude name="**/utsrc**" />
+			</fileset>
+		</war>
+	</target>
+
+</project>

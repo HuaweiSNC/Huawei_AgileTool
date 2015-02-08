@@ -1,0 +1,15 @@
+#if("0"!="${t_bfd.size}")
+<sessName>$!{t_bfd.name}</sessName>
+#if(""!="${t_bfd.tunnelName}")
+<createType>SESS_STATIC</createType>
+<localDiscr>$!{t_bfd.discLocal}</localDiscr>
+<remoteDiscr>$!{t_bfd.discRemote}</remoteDiscr>
+<linkType>TE_LSP</linkType>
+<tunnelName>$!{t_bfd.tunnelName}</tunnelName>
+<processPst>true</processPst>
+<minTxInt>$!{t_bfd.minTxInterval}</minTxInt>
+<minRxInt>$!{t_bfd.minRxInterval}</minRxInt>
+<teBackup>$!{t_bfd.teBackup}</teBackup>
+#end
+<adminDown>$!{t_bfd.shutdown}</adminDown>
+#end

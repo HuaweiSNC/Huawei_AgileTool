@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="400" height="300" currentState="overte" fontFamily="SimSun" fontSize="12"
+		 initialize="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.handle.SaveTopoLocation;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.titlewindows.ADD_TunnelPolicy;
+			import com.huawei.overte.view.overte.titlewindows.ADD_VlanMapping;
+			import com.huawei.overte.view.overte.titlewindows.Console;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerArea;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerFlow;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerMapping;
+			import com.huawei.overte.view.overte.titlewindows.TW_ManagerTunnel;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import twaver.networkx.NetworkX;
+			private var _app:overTegui2;
+			
+			
+			protected function init(event:FlexEvent):void
+			{
+				_app=SdncUtil.app;
+				this.currentState="overte";
+			}
+			public function judgeState():void
+			{
+				try
+				{
+					if(SdncUtil.app.overte.topoview.selectedChild.name=="overte"){
+						this.currentState="overte";
+					}else{
+						this.currentState="general";
+					}
+				} 
+				catch(error:Error) 
+				{
+					
+				}
+			}
+			protected function Tunnel_click(event:MouseEvent):void
+			{
+				if(DataHandleTool.devices.length!=0){
+					var manager:TW_ManagerTunnel=TW_ManagerTunnel(PopUpManager.createPopUp(_app,TW_ManagerTunnel,true));
+					/**"管道定义"**/
+					manager.title=resourceManager.getString('global','menu.service.tnl')
+					PopUpManager.centerPopUp(manager);
+				}else{
+					/**"请先创建基础Topo信息"**/
+					Alert.show(resourceManager.getString('global','mgtunnel.path.creatTopo'))
+				}
+				
+			}
+			
+			protected function Flow_click(event:MouseEvent):void
+			{
+				if(DataHandleTool.devices.length!=0){
+					var manager:TW_ManagerFlow=TW_ManagerFlow(PopUpManager.createPopUp(_app,TW_ManagerFlow,true));
+					/**"流定义"**/
+					manager.title=resourceManager.getString('global','menu.service.vll')
+					PopUpManager.centerPopUp(manager);
+				}else{
+					/**"请先创建基础Topo信息"**/
+					Alert.show(resourceManager.getString('global','mgtunnel.path.creatTopo'))
+				}
+				
+			}
+			
+			protected function TunnelPolicy(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var tunnelPolicy:ADD_TunnelPolicy=ADD_TunnelPolicy(PopUpManager.createPopUp(_app,ADD_TunnelPolicy,true));
+				/**"定义隧道策略"**/
+				tunnelPolicy.title=resourceManager.getString('global','mgflow.mgpolicy')
+				PopUpManager.centerPopUp(tunnelPolicy);
+			}
+			
+			protected function VlanMapping(event:MouseEvent):void
+			{
+				var VlanMapping:TW_ManagerMapping = TW_ManagerMapping(PopUpManager.createPopUp(_app,TW_ManagerMapping,true));
+				/**"Vlan管理"**/
+				VlanMapping.title=resourceManager.getString('global','mgflow.mgvlan.mgvlan')
+				PopUpManager.centerPopUp(VlanMapping);
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="overte"/>
+		<s:State name="general"/>
+	</s:states>
+	<s:VGroup includeIn="overte" horizontalCenter="0" verticalCenter="0">
+		
+		<s:HGroup width="100%" horizontalCenter="0" verticalCenter="0">
+			<!--定义管道-->
+			<mx:Button width="105" click="Tunnel_click(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/def_tunnel.png')"
+					   label="{resourceManager.getString('global','menu.service.tnl')}"/>
+			<!--定义流-->
+			<mx:Button width="105" click="Flow_click(event)" color="0xffffff"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"
+					   icon="@Embed('assets/imgs/icons/def_flow.png')"
+					   label="{resourceManager.getString('global','menu.service.vll')}" />
+		</s:HGroup>
+		<s:HGroup width="100%" horizontalCenter="0" verticalCenter="0" >
+			<mx:Button width="90" label="{resourceManager.getString('global','menu.service.define')}Vlan" click="VlanMapping(event)" color="0xffffff" visible="false"
+					   cornerRadius="0" fillAlphas="[1.0, 1.0]" fillColors="[#0C6C9E, #0C6C9E]"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+</s:Group>

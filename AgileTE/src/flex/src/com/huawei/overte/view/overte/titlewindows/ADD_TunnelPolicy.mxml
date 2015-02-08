@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="596" height="432" close="PopUpManager.removePopUp(this)" color="#000000"
+			   fontFamily="微软雅黑" fontSize="12"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" 
+			   title="{resourceManager.getString('global','mgflow.mgpolicy.deploy')}" 
+			   creationComplete="init()" >
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.TestProjectCtrl;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.service.SdnUIService;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.GeneralView;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.com.OverTEData;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			import spark.events.IndexChangeEvent;
+			import twaver.ElementBox;
+			import twaver.IData;
+			import twaver.Link;
+			import twaver.Node;
+			
+			/**是否是可用状态**/
+			[Bindable]private var isEnbled:Boolean=true;
+			/**设备对象**/
+			[Bindable]public var device:Object;
+			/**所有设备**/
+			[Bindable]public var devices:Array=[];
+			/**所有源设备列表**/
+			[Bindable]public  var srcDevicesList:ArrayCollection = new ArrayCollection();
+			/**根据设备获得所有隧道信息**/
+			[Bindable]private var tunneldevice:ArrayCollection = new ArrayCollection();
+			/**所有策略信息**/
+			[Bindable]private var AllTunnelPolicy:ArrayCollection = new ArrayCollection();
+			/**当前主应用程序**/
+			[Bindable]private var __app:overTegui2;
+			/**项目类型**/
+			[Bindable]public var curarea:Object;
+			/**ops的IP地址**/
+			public var opsIp:String=SdncUtil.opsIp;
+			/**web名称**/
+			public static var webname:String = SdncUtil.projectname;
+			/**设备ID**/
+			public var devId:String = "";
+			/**连接java单例**/
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			/**测试时vlan数据**/
+			private var _vlanXML:XML;
+			
+			/**配置策略隧道页面初始化 cwx200285**/
+			protected function init():void{
+				__app=SdncUtil.app;
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;
+				tunneldevice = DataHandleTool.tunneldevice;
+				AllTunnelPolicy = DataHandleTool.AllTunnelPolicy;
+				devices = DataHandleTool.devices;
+				srcDevicesList = new ArrayCollection(devices);
+				devId = device['id'];
+				try{
+					if(SdncUtil.cuProjectType == "test"){
+						testForInitPolicy();
+					}else{
+						/**查询所有隧道策略和隧道**/
+						realForInitPolicy();
+					}
+				} 
+				catch(error:Error) {}
+			}
+			
+			/**真实项目中 初始化 查询所有隧道策略和隧道 cwx200285**/
+			private function realForInitPolicy():void{
+				PopupManagerUtil.getInstence().popupLoading(this,false)
+				/**查询所有隧道信息**/
+				queryTunnel();
+				queryTunnelPolicy();
+			}
+			
+			/**真实项目中 查询所有隧道信息 cwx200285**/
+			public function queryTunnel():void{
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/devices/" + devId + "/tunnels";
+				DataHandleTool.showOnConsole("初始化管道信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetTunnelResult,onGetTunnelFault);
+			}
+			
+			/**查询隧道连接成功，返回所有设备隧道 cwx200285**/
+			private function onGetTunnelResult(e:HttpResponseEvent,data:String):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				DataHandleTool.showOnConsole("初始化管道信息连接成功返回："+data);
+				/**清空管道列表**/
+				tunneldevice.removeAll();
+				/**判断查询管道连接成功的返回值**/
+				if(e.response.code != "200"){
+					DataHandleTool.showOnConsole("查询当前设备管道失败，错误代码："+e.response.code);
+					PopupManagerUtil.getInstence().closeLoading();
+					return;
+				}else{
+					DataHandleTool.showOnConsole("查询当前设备管道成功");
+					var tunnelXml:XML = new XML(data);
+					/**管道列表重新赋值**/
+					for(var i:int;i<tunnelXml.tunnel.length();i++){
+						tunneldevice.addItem({
+							name:tunnelXml.tunnel[i].name,
+							egressIp:tunnelXml.tunnel[i].egressIp
+						});
+					}
+				}
+				
+			}
+			
+			/**查询隧道连接失败 cwx200285**/
+			private function onGetTunnelFault(e:Event):void{
+				DataHandleTool.showOnConsole("查询管道信息连接出错");
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**真实项目中 查询隧道策略 cwx200285**/
+			public function queryTunnelPolicy():void{
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/devices/" + devId + "/policys";
+				DataHandleTool.showOnConsole("初始化隧道策略信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetPolicyResult,onGetPolicyFault);
+			}
+			
+			/**查询隧道策略连接成功，返回所有隧道策略**/
+			private function onGetPolicyResult(e:HttpResponseEvent,data:String):void{
+				DataHandleTool.showOnConsole("初始化隧道策略信息连接成功返回：");
+				PopupManagerUtil.getInstence().closeLoading();
+				/**清空隧道策略列表**/
+				AllTunnelPolicy.removeAll();
+				/**判断查询隧道策略连接成功的返回值**/
+				if(e.response.code != "200"){
+					DataHandleTool.showOnConsole("查询当前设备隧道策略失败，错误代码："+e.response.code);
+					PopupManagerUtil.getInstence().closeLoading();
+					return;
+				}else{
+					DataHandleTool.showOnConsole("查询当前设备隧道策略成功");
+					var policyXml:XML = new XML(data);
+					/**隧道策略列表重新赋值**/
+					for(var i:int;i<policyXml.policy.length();i++){
+						AllTunnelPolicy.addItem({
+							policyName:policyXml.policy[i].name,
+							tunnelname:policyXml.policy[i].tpNexthops.tpNexthop.tpTunnels.tpTunnel.tunnelName,
+							tunnelegressIp:policyXml.policy[i].tpNexthops.tpNexthop.nexthopIPaddr
+						});
+					}
+				}
+			}
+			
+			/**查询隧道策略连接失败 cwx200285**/
+			private function onGetPolicyFault(e:Event):void{
+				DataHandleTool.showOnConsole("查询隧道策略信息连接出错");
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**增加隧道策略按钮点击事件 cwx200285**/
+			protected function save_clickHandler(event:MouseEvent):void{
+				if(SdncUtil.cuProjectType=="test"){
+					testForSavePolicy();
+				}else{
+					/**保存隧道策略**/
+					realForAddPolicy();
+				}
+			}
+			
+			/**真实项目中 增加隧道策略 cwx200285**/
+			private function realForAddPolicy():void{
+				PopupManagerUtil.getInstence().popupLoading(this,false);
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/devices/" + devId + "/policys";
+				var param:String = "<policys><policy>" +
+					"<name>" + policyName.text + "</name><tpNexthops><tpNexthop>" +
+					"<nexthopIPaddr>" + tunnelName.selectedLabel.split('-')[1] + "</nexthopIPaddr>" +
+					"<tpTunnels><tpTunnel><tunnelName>" + tunnelName.selectedLabel.split('-')[0] + "</tunnelName></tpTunnel></tpTunnels>" +
+					"</tpNexthop></tpNexthops></policy></policys>";
+				DataHandleTool.showOnConsole("增加隧道策略信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+				connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onQueryPolicyResult,onAddPolicyFault,param);
+			}
+			
+			/**增加隧道策略连接成功 cwx200285**/
+			public function onQueryPolicyResult(e:HttpDataEvent):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				if(e.bytes.toString().search("ok")!=-1){
+					DataHandleTool.showOnConsole("隧道策略增加成功");
+					/**"隧道策略增加成功","提示"**/
+					Alert.show(resourceManager.getString('global','all.postsuccess'),
+						resourceManager.getString('global','all.prompt'));
+					/**策略名称置空**/
+					policyName.text = "";
+					PopupManagerUtil.getInstence().closeLoading();
+					/**重新查询隧道策略**/
+					queryTunnelPolicy();
+				}else{
+					DataHandleTool.showOnConsole("隧道策略增加失败！错误信息："+e.bytes.toString());
+					/**"隧道策略增加失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.postfail'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			
+			/**增加隧道策略连接失败 cwx200285**/
+			private function onAddPolicyFault(e:Event):void{
+				DataHandleTool.showOnConsole("增加隧道策略信息连接失败！错误信息："+e.toString());
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**删除隧道策略 cwx200285**/
+			public function deletePolicy():void{
+				/**"确定删除？","提示"**/
+				Alert.show(resourceManager.getString('global','all.ifdeleted')+"？",
+					resourceManager.getString('global','all.prompt'),
+					Alert.YES|Alert.NO,this,closeDelete);
+			}
+			
+			public function closeDelete(e:CloseEvent):void{
+				if(e.detail==Alert.YES){
+					if(SdncUtil.cuProjectType=="test"){
+						testForDeletePolicy();
+					}else{
+						PopupManagerUtil.getInstence().popupLoading(this,false);
+						var policy:Object=g.selectedItem;
+						var name:String=policy["policyName"];
+						var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea +"/devices/"+devId +"/policys?name="+name;
+						DataHandleTool.showOnConsole("删除隧道策略信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+						connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,onDelPolicyResult,onDelPolicyFault); 
+					}
+				}
+			}
+			
+			/**删除隧道策略连接成功 返回方法 cwx200285**/
+			private function onDelPolicyResult(e:HttpDataEvent):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				if(e.bytes.toString().search("ok")!=-1 ){
+					queryTunnelPolicy();
+					DataHandleTool.showOnConsole("删除隧道策略成功");
+					/**"删除隧道策略成功","提示"**/
+					Alert.show(resourceManager.getString('global','all.deletedsuccess'),
+						resourceManager.getString('global','all.prompt'));
+				}else{
+					DataHandleTool.showOnConsole("删除隧道策略失败！错误信息："+e.bytes.toString());
+					/**"删除隧道策略失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.deletedfail'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			
+			/**删除隧道策略连接失败 返回方法 cwx200285**/
+			private function onDelPolicyFault(e:Event):void{
+				DataHandleTool.showOnConsole("删除隧道策略连接失败！错误信息："+e.toString());
+			}
+			
+			/**测试数据时 删除隧道策略 cwx200285**/
+			private function testForDeletePolicy():void{
+				for(var i:int;i<AllTunnelPolicy.length;i++){
+					if(AllTunnelPolicy.getItemAt(i)["name"]==policyName){
+						AllTunnelPolicy.removeItemAt(i);
+					}
+				}
+			}
+			
+			/**测试数据时 初始化 查询所有隧道策略 cwx200285**/
+			private function testForInitPolicy():void{
+				var data:String = "<policys><policy><name>PolicyTunnel1</name>" +
+					"<tpNexthops><tpNexthop><nexthopIPaddr>4.4.4.4</nexthopIPaddr>" +
+					"<tpTunnels><tpTunnel><tunnelName>Tunnel1</tunnelName></tpTunnel></tpTunnels>" +
+					"</tpNexthop></tpNexthops></policy></policys>";
+				var policyXml:XML = new XML(data);
+			}
+			
+			
+			/**测试数据时 保存隧道策略 cwx200285**/
+			private function testForSavePolicy():void{
+				AllTunnelPolicy.addItem({
+					policyName:policyName.text,
+					tunnelname:tunnelName.selectedLabel.split('-')[0],
+					tunnelegressIp:tunnelName.selectedLabel.split('-')[1]
+				});
+			}
+			
+			/**显示隧道名称的内容 cwx200285**/
+			private function IpDisplayFunction(data:Object):String{      
+				var label:String = "";      
+				if(data.hasOwnProperty("name")){      
+					label += data.name + "-";      
+				}      
+				if(data.hasOwnProperty("egressIp")){      
+					label += data.egressIp;      
+				}      
+				return label;      
+			}   
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:GlowFilter id="glow" blurX="8" blurY="8" color="0xff0000"/>
+	</fx:Declarations>
+	
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="10" bottom="40" width="95%" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn">
+			<s:VGroup width="100%" height="100%" gap="5" left="0">
+				
+				<mx:Canvas width="100%" height="120">
+					<s:BorderContainer top="10" width="95%" height="110" horizontalCenter="0">
+						<s:Group width="100%" height="30">
+							<!--新增策略隧道-->
+							<s:Label x="7" y="0" height="100%" text="{resourceManager.getString('global','mgflow.mgpolicy.addpolicy')}" verticalAlign="middle"/>
+						</s:Group>
+						<s:Group width="100%" height="30" top="35">
+							<!--源设备 :-->
+							<s:Label right="470"
+									 text="{resourceManager.getString('global','all.srcDevice')} :"
+									 verticalCenter="0"/>
+							<s:TextInput id="curDevice" x="80" width="130" verticalCenter="0"/>
+						</s:Group>
+						<s:Group width="100%" height="30" top="70">
+							<!--隧道名称 :-->
+							<s:Label right="470"
+									 text="{resourceManager.getString('global','mgflow.mgpolicy.tunnelname')} :"
+									 verticalCenter="0"/>
+							<mx:ComboBox id="tunnelName" left="80" width="130" cornerRadius="0"
+										 dataProvider="{tunneldevice}" enabled="{isEnbled}"
+										 labelFunction="IpDisplayFunction" verticalCenter="0"/>
+							<!--策略名称 :-->
+							<s:Label right="260"
+									 text="{resourceManager.getString('global','mgflow.mgpolicy.policyname')} :"
+									 verticalCenter="0"/>
+							<s:TextInput id="policyName" left="299" width="130" enabled="{isEnbled}"
+										 fontStyle="normal" prompt="{resourceManager.getString('global','mgflow.mgpolicy.inputpolicyname')}" verticalCenter="0"/>
+							<!--添加 ↓-->
+							<s:Button id="save" right="10" label="{resourceManager.getString('global','all.append')} ↓" click="save_clickHandler(event)"
+									  enabled="true" verticalCenter="0"/>
+						</s:Group>
+					</s:BorderContainer>
+				</mx:Canvas>
+				
+				<s:Group width="100%" height="100%">
+					<s:DataGrid id="g" top="30" width="95%" height="95%"
+								dataProvider="{AllTunnelPolicy}" horizontalCenter="0"
+								requestedRowCount="4" textAlign="center">
+						<s:columns>
+							<s:ArrayList>
+								<!--隧道策略名称-->
+								<s:GridColumn dataField="policyName"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','mgflow.mgpolicy.policyname')}"></s:GridColumn>
+								<!--绑定隧道-->
+								<s:GridColumn dataField="tunnelname"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','mgflow.mgpolicy.tunnelname')}"></s:GridColumn>
+								<!--目的IP地址-->
+								<s:GridColumn dataField="tunnelegressIp" 
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','all.desIP')}"></s:GridColumn>
+								<!--删除-->
+								<s:GridColumn editable="false"
+											  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+											  headerText="{resourceManager.getString('global','all.delete')}" width="80">
+									<s:itemRenderer>
+										<fx:Component>
+											<s:GridItemRenderer>
+												<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  
+															   label="{resourceManager.getString('global','all.delete')}"  horizontalCenter="0" verticalCenter="0"
+														  click="outerDocument.deletePolicy()"/>
+											</s:GridItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+								</s:GridColumn>
+							</s:ArrayList>
+						</s:columns>
+					</s:DataGrid>
+					<s:Group width="100%" height="30">
+						<!--策略隧道列表-->
+						<s:Label y="0" left="19" height="100%" text="{resourceManager.getString('global','mgflow.mgpolicy.policylist')}" verticalAlign="middle"/>
+					</s:Group>
+				</s:Group>
+				
+			</s:VGroup>
+		</s:BorderContainer>
+		
+		<s:Group bottom="3" width="95%" height="26" horizontalCenter="0">
+			<s:Group verticalCenter="0" height="50%" horizontalCenter="0">
+				<!--确定-->
+				<s:Button id="savebtn" bottom="19" label="{resourceManager.getString('global','all.sure')}" click="PopUpManager.removePopUp(this)"
+						  verticalCenter="0" horizontalCenter="-50"/>
+				<!--取消-->
+				<s:Button id="cancelbtn"  bottom="19" label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)"  verticalCenter="0" horizontalCenter="50" />
+			</s:Group>
+		</s:Group>
+		
+	</mx:Canvas>
+</s:TitleWindow>

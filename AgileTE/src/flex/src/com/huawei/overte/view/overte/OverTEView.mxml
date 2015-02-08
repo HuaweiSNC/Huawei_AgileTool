@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   xmlns:ns="http://www.servasoftware.com/2009/twaver/flex"
+		   xmlns:control="com.huawei.overte.control.*"
+		   xmlns:overte="com.huawei.overte.view.overte.*"
+		   xmlns:panel="com.huawei.overte.view.overte.panel.*"
+		   width="100%" height="100%" creationComplete="overteCtrl.onCreate()"
+		   currentState="widthoutMap" initialize="overteCtrl.onInit()">
+	<mx:states>
+		<s:State name="widthoutMap"/>
+		<s:State name="withMap"/>
+	</mx:states>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<control:OverTECtrl id="overteCtrl" page="{this}" />
+		<!--<control:OpenService id="openservice" page="{this}" />-->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.panel.menupancl.GeneralPanel;
+			/**管理域ID**/	
+			public var ManAreasID:String="";
+			/**管理域名称**/	
+			public var ManAreasName:String="";
+			/**管理域下Topo数据**/	
+			public var TopoXML:XMLList = new XMLList();
+			public var time:Timer;
+		]]>
+	</fx:Script>
+	<s:Group left="0" right="0" top="0" bottom="0">
+		<s:BitmapImage id="mapbackground" source="@Embed('assets/imgs/map1.png')" smooth="true" left="0" right="0" top="0" bottom="0" visible="false"/>
+	</s:Group>
+	<!--Topo组件-->
+	<ns:Network id="networkX" width="100%" height="100%"/>
+	<s:Group right="33" top="2"
+			 right.withMap="120" top.withMap="2"
+			 right.widthoutMap="120" top.widthoutMap="2">
+		<s:Group horizontalCenter="0">
+			<s:Image source.withMap="@Embed('assets/imgs/ipran/closemap_eye.png')" source.widthoutMap="@Embed('assets/imgs/ipran/openmap_eye.png')" verticalCenter="0" horizontalCenter="0" buttonMode="true" 
+					 click="overteCtrl.switchState()" mouseOut="tipGroup.visible=false" mouseOver="tipGroup.visible=true"/>
+		</s:Group>
+		<s:Group id="tipGroup" visible="false" left="0" top="41">
+			<s:Image id="tip" source.withMap="@Embed('assets/imgs/ipran/closemap_tip.png')" source.widthoutMap="@Embed('assets/imgs/ipran/openmap_tip.png')"/>
+		</s:Group>
+	</s:Group>
+	<!--管道与流状态监听界面-->
+	<overte:OverTeNavPanel id="navPanel" x="{- navPanel.width + 25}" page="{this}"
+						   verticalCenter="0"/>
+</mx:Canvas>

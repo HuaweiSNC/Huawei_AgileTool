@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="380" height="392"
+			   close="PopUpManager.removePopUp(this)" color="#000000"
+			   creationComplete="init(event)" fontFamily="微软雅黑" fontSize="12" keyUp="onKeyUp(event)"
+			   skinClass="com.huawei.overte.view.skins.TitleWindowSkin" title="{resourceManager.getString('global','mgdevice.title.adddevice')}">
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.control.DeviceCtrl;
+			import com.huawei.overte.control.OverTECtrl;
+			import com.huawei.overte.event.SdncEvt;
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.model.Data;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.node.StateNode;
+			
+			import flashx.textLayout.elements.BreakElement;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.httpclient.events.HttpDataEvent;
+			
+			import twaver.IElement;
+			import twaver.Node;
+			public var  addDeviceBody:String;
+			public var overtectrl:OverTECtrl;
+			
+			[Bindable]public var mydata:Data = Data.getInstence();
+			public var flag:String="";
+			public var subdeviceId:String = "";
+			/**保存设备 rwx202245**/
+			private function saveAddDevice(e:MouseEvent):void{
+				trace("增加设备点击确定"+new Date().time)
+				var userName:String=username.text;
+				var devices:Array=DataHandleTool.devices;
+				for each(var o:Object in devices){
+					var dname:String = o["devicename"];
+					if(devicename.text == dname){
+						Alert.show(resourceManager.getString('global','mgdevice.vail.exist'),resourceManager.getString('global','all.prompt'));
+						return;
+					}
+				}
+				if(devicename.text.match("^\w+$")){
+					Alert.show(resourceManager.getString('global','mgdevice.vail.nameerror'),resourceManager.getString('global','all.prompt'));
+//					Alert.show("设备名称格式不正确","格式错误");
+					return;
+				}
+				if(!ip.text.match("^[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}$")||!topoip.text.match("^[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}[.]{1}[0-9]{1,3}$"))
+				{
+					Alert.show(resourceManager.getString('global','mgdevice.vail.iperror'),resourceManager.getString('global','all.prompt'));
+//					Alert.show("ip格式不正确","格式错误");
+					return;
+				}
+				if(passwd.text.length == 0){
+					Alert.show(resourceManager.getString('global','mgdevice.vail.pwdnull'),resourceManager.getString('global','all.prompt'));
+//					Alert.show("密码不能为空","提示");
+					return;
+				}
+				//如果存在SNC控制器则可以添加设备  如果不存在SNC则用户必须添加SNC
+				if(flag=="twadd"){
+					if(!Vcontrol()){
+						if(flag!="edit"&&productType.selectedIndex==0){
+							Alert.show(resourceManager.getString('global','mgdevice.vail.existControl'),resourceManager.getString('global','all.prompt'));	
+							return;
+						}
+						
+					}
+				}
+				var devicei:ArrayCollection = new ArrayCollection;
+				devicei.addItem({
+					id:nowid.text,
+					username:username.text,
+					devicename:devicename.text,
+					passwd:passwd.text,
+					ip:ip.text,
+					topoip:topoip.text,
+					version:version.text,
+					productType:productType.selectedLabel
+				})
+				var editdevice:DeviceCtrl = new DeviceCtrl
+				if(flag=="twadd")
+				{
+					var devicei:ArrayCollection = new ArrayCollection;
+					devicei.addItem({
+						username:username.text,
+						devicename:devicename.text,
+						passwd:passwd.text,
+						ip:ip.text,
+						topoip:topoip.text,
+						version:version.text,
+						productType:productType.selectedLabel
+					})
+					editdevice.AddDevices(devicei)	
+				}
+				else if(flag=="edit")
+				{
+					var devicei:ArrayCollection = new ArrayCollection;
+					devicei.addItem({
+						id:nowid.text,
+						username:username.text,
+						devicename:devicename.text,
+						passwd:passwd.text,
+						ip:ip.text,
+						topoip:topoip.text,
+						version:version.text,
+						subdeviceid:subdeviceId,
+						productType:productType.selectedLabel
+					})
+					editdevice.EditDevices(devicei)	
+						
+				}
+				else if(flag=="add")
+				{
+					var devicei:ArrayCollection = new ArrayCollection;
+					devicei.addItem({
+						id:nowid.text,
+						username:username.text,
+						devicename:devicename.text,
+						passwd:passwd.text,
+						ip:ip.text,
+						topoip:topoip.text,
+						version:version.text,
+						productType:productType.selectedLabel
+					})
+						mydata.newdevices.removeAll()
+						mydata.newdevices.addItem(devicei[0])
+					overtectrl.SaveNode(devicei)	
+					
+				}
+				//this.dispatchEvent(new SdncEvt(SdncEvt.SAVE_NODE,DeviceArray))
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function Vcontrol():Boolean{
+				var existcontrol:Boolean=false;
+					for(var i:int;i<mydata.nowdevices.length;i++){
+						if(mydata.nowdevices[i].productType!="CE12800"){
+							existcontrol =true;
+							break;
+						}
+					}
+				
+				return existcontrol;
+			}
+			/**
+			 * 关闭编辑窗口
+			 * */
+			private function closeFunction(e:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			
+			protected function init(event:FlexEvent):void
+			{
+				focusManager.setFocus(devicename);
+			}
+			
+			protected function onKeyUp(event:KeyboardEvent):void
+			{
+				if(event.keyCode==Keyboard.ESCAPE){
+					PopUpManager.removePopUp(this);
+				}
+			}
+			
+			protected function productType_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(productType.selectedIndex==0){
+					version.text = "V100R003"
+				}else{
+					version.text = "1.0"
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!--fx:XML id="project" source="assets/xml/sdn_office_project.xml"/-->
+	</fx:Declarations>
+	<mx:Canvas backgroundColor="0xcccccc" width="100%" height="100%">
+		<s:BorderContainer id="bcc" top="10" bottom="50" width="95%" hideEffect="fadeout"
+						   horizontalCenter="0" showEffect="fadeIn">
+			<!--设备名称-->
+			<s:Group width="100%" height="30" x="0" y="13">
+				<s:Label right="230" text="{resourceManager.getString('global','mgdevice.name')} ："
+						 textAlign="right" verticalCenter="0"/>
+				<!--设备名称由数字、26个英文字母或者下划线组成的字符串-->
+				<s:TextInput id="devicename" x="148" width="130" verticalCenter="0"
+							 toolTip="{resourceManager.getString('global','mgdevice.name')}{resourceManager.getString('global','myflow.promty.namenumber')}"/>
+			</s:Group>
+			<!--带外IP-->
+			<s:Group width="100%" height="30" x="0" y="53">
+				<s:Label right="230" text="{resourceManager.getString('global','mgdevice.outIP')} ："
+						 textAlign="right" verticalCenter="0"/>
+				<s:TextInput id="ip" x="148" width="130" text="" verticalCenter="0"/>
+			</s:Group>
+			<!--带内IP-->
+			<s:Group width="100%" height="30" x="0" y="93">
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','mgdevice.inputIP')} ："
+						 textAlign="right" verticalCenter="0"/>
+				<s:TextInput id="topoip" x="148" width="130" fontStyle="normal" text=""
+							 verticalCenter="0"/>
+			</s:Group>
+			<!--用户名-->
+			<s:Group width="100%" height="30" x="0" y="133">
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','mgdevice.username')} ："
+						 verticalCenter="0"/>
+				<s:TextInput id="username" x="148" width="130" prompt="{resourceManager.getString('global','mgdevice.prompt.username')}"
+							 text="" verticalCenter="0"/>
+				<!--<s:Label id="usernamepanduan"  text="用户名格式不正确" visible="false" x="255" y="10"/>-->
+			</s:Group>
+			<!--密码-->
+			<s:Group width="100%" height="30" x="0" y="173">
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','mgdevice.password')} ："
+						 textAlign="right" verticalCenter="0"/>
+				<s:TextInput id="passwd" x="148" width="130" displayAsPassword="true"
+							 text="" verticalCenter="0"/>
+			</s:Group>
+			<!--版本-->
+			<s:Group  width="100%" height="30" x="0" y="213">
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','mgdevice.version')} ："
+						 textAlign="right" verticalCenter="0"/>
+				<s:TextInput id="version" x="148" width="130" verticalCenter="0" text="V100R003" editable="false"/>
+			</s:Group>
+			<!--产品类型-->
+			<s:Group width="100%" height="30" x="0" y="253">
+				<s:Label right="230"
+						 text="{resourceManager.getString('global','mgdevice.projectType')} ："
+						 textAlign="right" verticalCenter="0"/>
+				<mx:ComboBox id="productType" x="148" width="130" cornerRadius="0" verticalCenter="0" change="productType_changeHandler(event)">
+					<fx:Array>
+						<fx:Object>CE12800</fx:Object>
+						<fx:Object>AgileController</fx:Object>
+					</fx:Array>
+				</mx:ComboBox>
+			</s:Group>
+
+		</s:BorderContainer>
+		<!--确定-->
+		<s:Button id="saves" right="194" bottom="15" label="{resourceManager.getString('global','all.sure')}" click="saveAddDevice(event)"/>
+		<!--取消-->
+		<s:Button right="113" bottom="15" label="{resourceManager.getString('global','all.cancel')}" click="PopUpManager.removePopUp(this)"/>
+	</mx:Canvas>
+	<s:Label id="nowid" x="82" y="-18" text="标签" visible="false"/>
+	<s:Label id="doid" x="82" y="-18" text="标签" visible="false"/>
+</s:TitleWindow>

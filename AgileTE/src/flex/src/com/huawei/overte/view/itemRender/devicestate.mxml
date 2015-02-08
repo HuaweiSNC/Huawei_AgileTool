@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx" clipAndEnableScrolling="true">
+	
+	<fx:Script>
+		<![CDATA[
+//			override public function prepare(hasBeenRecycled:Boolean):void {
+//				lblData.text =  data[column.dataField]
+////				if(data[column.dataField]!="normal"){
+////					lblData.setStyle("backgroundColor",0xff0000)
+////				}
+//				
+//			}
+			
+			override public function set data (value:Object):void {
+				super.data = value
+				//				if(data[column.dataField]!="normal"){
+				//					lblData.setStyle("backgroundColor",0xff0000)
+				//				}
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Label id="lblData" top="9" left="7"/>
+	
+</s:GridItemRenderer>

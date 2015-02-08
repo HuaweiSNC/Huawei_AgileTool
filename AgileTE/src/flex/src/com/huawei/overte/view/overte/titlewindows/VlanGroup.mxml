@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" color="#000000" 
+		 fontSize="12" fontFamily="微软雅黑" creationComplete="init()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.OverTEView;
+			import com.huawei.overte.view.overte.titlewindows.ADD_VlanScope;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.INavigatorContent;
+			import mx.events.CloseEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			import spark.events.IndexChangeEvent;
+			
+			/**所有vlan的信息**/
+			[Bindable]public var vlanArray:ArrayCollection = new ArrayCollection([]);
+			/**所有源设备的信息**/
+			[Bindable]public var fileNameTypeDropDownList:ArrayCollection = new ArrayCollection();
+			/**设备**/
+			[Bindable]private var devices:Array=[];
+			/**所有整网优先级的信息**/
+			[Bindable]public var vlanLevelArray:ArrayCollection = new ArrayCollection();
+			/**当前主应用程序**/
+			[Bindable]private var __app:overTegui2;
+			/**项目类型**/
+			[Bindable]public var curarea:Object;
+			/**ops的IP地址**/
+			public var opsIp:String=SdncUtil.opsIp;
+			/**web名称**/
+			public var webname:String = SdncUtil.projectname;
+			/**判定是编辑还是增加**/
+			public var handleFlag:String="add";
+			/**设备ID**/
+			public var devId:String = "";
+			/**连接java单例**/
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			public var vlanIDtype:ArrayCollection = new ArrayCollection;
+			
+			public var lanssoc:Array = new Array;
+			public var wanssoc:Array = new Array;
+			/**管理vlan页面初始化 cwx200285**/
+			protected function init():void{
+				__app=SdncUtil.app;
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;;//当前管理域
+				devices = DataHandleTool.devices;
+				fileNameTypeDropDownList = new ArrayCollection(devices);
+				vlanIDtype.addItem({name:"All"});
+				vlanIDtype.addItem({name:"LAN"});
+				vlanIDtype.addItem({name:"WAN"});
+				devId = devices[0].id;
+				if(SdncUtil.cuProjectType=="test"){
+					//testForGetVlan();
+				}else{
+					/**查询所有vlan信息**/
+					realForGetVlan();
+				}
+				getranges()
+			}
+			public function getranges():void
+			{
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/vlanranges";
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,GetResult,onGetVlanFault);
+			}
+			private function GetResult(e:HttpResponseEvent,data:String):void{
+				if(e.response.code == "200")
+				{
+					var vlanXml:XML = new XML(data);
+					var lan:String = vlanXml.lan.children()[0];
+					var wan:String = vlanXml.wan.children()[0];
+					if(lan!=null&&wan!=null){
+						lanssoc = lan.split(";")
+						wanssoc = wan.split(";")
+					}
+				}
+				else
+				{
+					Alert.show("获取分段信息出错！","提示")
+					return;
+				}
+			}
+			/**真实项目中 查询所有vlan信息 cwx200285**/
+			public function realForGetVlan():void{
+				PopupManagerUtil.getInstence().closeLoading();
+				PopupManagerUtil.getInstence().popupLoading(__app);
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/devices/" + devId + "/vlans";
+				DataHandleTool.showOnConsole("初始化vlan信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetVlanResult,onGetVlanFault);
+			}
+			
+			/**查询Vlan连接成功 cwx200285**/
+			private function onGetVlanResult(e:HttpResponseEvent,data:String):void{
+				/**清空Vlan列表**/
+				vlanArray.removeAll();
+				/**判断查询Vlan连接成功的返回值**/
+				if(e.response.code != "200"){
+					PopupManagerUtil.getInstence().closeLoading();
+					DataHandleTool.showOnConsole("查询当前设备Vlan失败，错误代码："+e.response.code);
+					return;
+				}else{
+					var vlanXml:XML = new XML(data);
+					DataHandleTool.showOnConsole("查询当前设备Vlan成功");
+					/**Vlan列表重新赋值**/
+					for(var i:int;i<vlanXml.vlan.length();i++){
+						vlanArray.addItem({
+							name:vlanXml.vlan[i].name,
+							index:vlanXml.vlan[i].index,
+							desc:vlanXml.vlan[i].desc,
+							orifm:vlanXml.vlan[i].ifName,
+							level:vlanXml.vlan[i].level
+						});
+					}
+					PopupManagerUtil.getInstence().closeLoading();
+				}
+			}
+			
+			/**查询Vlan连接失败 cwx200285**/
+			private function onGetVlanFault(e:Event):void{
+				DataHandleTool.showOnConsole("查询Vlan信息连接出错");
+				PopupManagerUtil.getInstence().closeLoading();
+			}
+			
+			/**添加Vlan cwx200285**/
+			protected function addvlan_click(event:MouseEvent):void{
+				var AddVlan:ADD_Vlan=ADD_Vlan(PopUpManager.createPopUp(this,ADD_Vlan,true));
+				
+			
+				/**传值设备ID**/
+				AddVlan.devId=ddl.selectedItem.id;
+				AddVlan.vlangroup = this;
+				AddVlan.lanssoc = lanssoc;
+				AddVlan.wanssoc = wanssoc;
+				/**状态是添加**/
+				AddVlan.handleFlag = "add";
+				AddVlan.getpro()
+				PopUpManager.centerPopUp(AddVlan);
+			}
+			
+			/**源设备数据改变时，Vlan列表改变 cwx200285**/
+			protected function ddl_changeHandler(event:IndexChangeEvent):void{
+				if(SdncUtil.cuProjectType=="test"){
+				}else{
+					/**源设备改变时的设备ID值**/
+					devId = (event.target as DropDownList).selectedItem.id
+					/**重新查询vlan**/
+					realForGetVlan();
+				}
+			}
+			
+			/**绑定整网优先级 cwx200285**/
+			public function bingLevel(data:Object):void{
+				var BingVlan:Bing_VlanLevel=Bing_VlanLevel(PopUpManager.createPopUp(this,Bing_VlanLevel,true));
+				/**传值 vlanID**/
+				BingVlan.vlanId = data.index;
+				/**传值 设备ID**/
+				BingVlan.devId = devId;
+				BingVlan.vlangroup = this;
+				if(data.level != ""){
+					/**传值 等级**/
+					BingVlan.name_level = data.level;
+					/**状态是编辑**/
+					BingVlan.handleFlag = "edit";
+				}else{
+					/**状态是添加**/
+					BingVlan.handleFlag = "add";
+				}
+				PopUpManager.centerPopUp(BingVlan);
+			}
+			
+			/**编辑Vlan cwx200285**/
+			public function editVlan(data:Object):void{
+				var AddVlan:ADD_Vlan=ADD_Vlan(PopUpManager.createPopUp(this,ADD_Vlan,true));
+				/**状态是编辑**/
+				AddVlan.handleFlag = "edit";
+				/**传值设备ID**/
+				AddVlan.devId=ddl.selectedItem.id;
+			
+				AddVlan.title = resourceManager.getString('global','all.edit')+"VLAN"
+				AddVlan.vlangroup = this;
+				/**传值等级**/
+				AddVlan.level = data.level;
+				/**传值Vlan名称**/
+				AddVlan.bfdName.text = data.name;
+				/**传值Vlan标识**/
+				AddVlan.bfdcurFlag.text = data.index;
+				/**传值Vlan描述**/
+				AddVlan.bfddesFlag.text = data.desc;
+				/**Vlan标识不可编辑**/
+				AddVlan.bfdcurFlag.editable =false;
+				/**判断是否创建VlanIf接口**/
+				if(data.orifm==""){
+					AddVlan.orVlanIf.selected  =false
+				}else{
+					AddVlan.orVlanIf.selected = true
+				}
+				/**创建VlanIf接口是可用状态**/
+				AddVlan.orVlanIf.enabled = true;
+				AddVlan.lanssoc = lanssoc;
+				AddVlan.wanssoc = wanssoc;
+				/**编辑Vlan**/
+				AddVlan.getpro()
+				PopUpManager.centerPopUp(AddVlan);
+			}
+			
+			/**删除Vlan cwx200285**/
+			var idata:Object = new Object;
+			public function delVlan(data:Object):void{
+				/**"删除Vlan则对应的Vlanif接口也会被删除！是否确认删除？","提示",Alert.YES|Alert.NO,null,isdelet**/
+				Alert.show(resourceManager.getString('global','all.ifdeleted')+"？",
+					resourceManager.getString('global','all.prompt'),Alert.YES|Alert.NO,null,isdelet);
+				idata = data;
+			}
+			
+			private function isdelet(e:CloseEvent):void{
+				if(e.detail == Alert.YES){
+					var body:String = "<vlans><vlan><index>"+idata.index+"</index></vlan></vlans>"
+					var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea + "/devices/" + devId + "/vlans?name="+idata.index;
+					DataHandleTool.showOnConsole("删除vlan信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+					connUtil.clientQuery(uri,ConnUtil.METHOD_DELETE,ondelVlanResult,ondelVlanFault);
+				}
+			}
+			
+			/**删除Vlan连接成功 cwx200285**/
+			private function ondelVlanResult(e:HttpDataEvent):void{
+				if(e.bytes.toString()=="true"){
+					/**查询vlan信息**/
+					realForGetVlan();
+					DataHandleTool.showOnConsole("删除Vlan成功");
+					/**"Vlan删除成功","提示"**/
+					Alert.show(resourceManager.getString('global','all.deletedsuccess'),
+						resourceManager.getString('global','all.prompt'));
+				}else{
+					DataHandleTool.showOnConsole("删除Vlan失败！错误信息："+e.bytes.toString());
+					/**"Vlan删除失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.deletedfail'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			
+			/**删除Vlan连接失败 cwx200285**/
+			private function ondelVlanFault(e:Event):void{
+				DataHandleTool.showOnConsole("删除Vlan连接失败！错误信息："+e.toString());
+				Alert.show(resourceManager.getString('global','all.deletederror'),
+					resourceManager.getString('global','all.prompt'));
+			}
+			
+			protected function showtype_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(showtype.selectedItem.name=="All")
+				{
+					historyRecord.dataProvider = vlanArray
+				}
+				else if(showtype.selectedItem.name=="LAN")
+				{
+					historyRecord.dataProvider = getvlanscope(lanssoc)
+				}
+				else if(showtype.selectedItem.name=="WAN")
+				{
+					historyRecord.dataProvider = getvlanscope(wanssoc)
+				}
+				
+			}
+			
+			public function getvlanscope(scopearr:Array):ArrayCollection
+			{
+				var vlanscopearr:ArrayCollection = new ArrayCollection;
+				for(var i:int = 0;i<vlanArray.length;i++)
+				{
+					for(var j:int = 0;j<scopearr.length;j++)
+					{
+						var scope:Array = scopearr[j].toString().split("-");
+						if(Number(vlanArray[i].index)>=scope[0]&&Number(vlanArray[i].index)<=scope[1])
+						{
+							vlanscopearr.addItem(vlanArray[i])
+						}
+					}
+				}
+				return vlanscopearr
+			}
+			protected function scope_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var VlanScope:ADD_VlanScope = ADD_VlanScope(PopUpManager.createPopUp(__app,ADD_VlanScope,false));
+				VlanScope.vlangroup = this
+				/**网络质量列表**/
+				PopUpManager.centerPopUp(VlanScope);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup id="content" width="100%" height="306">
+		
+		<s:Group width="100%" height="32">
+			<!--源设备-->
+			<s:Label right="225" text="{resourceManager.getString('global','all.srcDevice')} ：" verticalCenter="1"/>
+			<s:DropDownList id="ddl" right="140" width="80"  change="ddl_changeHandler(event)"
+							dataProvider="{fileNameTypeDropDownList}" labelField="deviceName"
+							requireSelection="true" verticalCenter="0" />
+			<!--增加...-->
+			<s:Button id="btn" right="30" label="{resourceManager.getString('global','all.add')}..."  click="addvlan_click(event)" verticalCenter="0"/>
+			<!--配置分段-->
+			<s:Button id="scope" y="5.999999" right="297" label="{resourceManager.getString('global','all.vlanscope')}..." click="scope_clickHandler(event)"/>
+			<s:Label right="509" text="{resourceManager.getString('global','all.scope')} ：" verticalCenter="1"/>
+			<!--选择分段-->
+			<s:DropDownList id="showtype" right="426" width="80"  change="showtype_changeHandler(event)"
+							dataProvider="{vlanIDtype}" labelField="name"
+							requireSelection="true" verticalCenter="0" />
+		</s:Group>
+		
+		<s:Group width="100%" height="85%">
+			<s:DataGrid id="historyRecord" left="30" right="30" top="0" bottom="0"
+						dataProvider="{vlanArray}" horizontalCenter="0" requestedRowCount="4"
+						rowHeight="30" textAlign="center" verticalCenter="0">
+				<s:columns>
+					<s:ArrayList>
+						<!--Vlan名称-->
+						<s:GridColumn dataField="name" headerText="{resourceManager.getString('global','mgflow.mgvlan.vlanname')}" 
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"  width="80"/>
+						<!--Vlan标识-->
+						<s:GridColumn dataField="index" headerText="{resourceManager.getString('global','mgflow.mgvlan.vlanflag')}" 
+									   headerRenderer="com.huawei.overte.view.common.render.dgheaderReader" width="80"/>
+						<!--Vlan描述-->
+						<s:GridColumn dataField="desc" headerText="{resourceManager.getString('global','mgflow.mgvlan.vlandescribe')}" 
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+						<!--整网优先级-->
+						<s:GridColumn dataField="level" headerText="{resourceManager.getString('global','mgflow.mgvlan.vlanqos')}" 
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"/>
+						<!--绑定-->
+						<s:GridColumn editable="false" headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','mgflow.mgvlan.vlanbind')+resourceManager.getString('global','mgflow.mgvlan.vlanqos')}" width="80">
+							<s:itemRenderer>
+								<fx:Component>
+									<s:GridItemRenderer>
+										<mx:LinkButton fontWeight="normal" icon="@Embed('assets/imgs/overte/bangding.png')" 
+													   label="{resourceManager.getString('global','mgflow.mgvlan.vlanbind')}"  horizontalCenter="0" verticalCenter="0" click="outerDocument.bingLevel(data)"/>
+									</s:GridItemRenderer>
+								</fx:Component>
+							</s:itemRenderer>
+						</s:GridColumn>
+						<!--编辑-->
+						<s:GridColumn editable="false" width="80"
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','all.edit')}">
+							<s:itemRenderer>
+								<fx:Component>
+									<s:GridItemRenderer>
+										<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/edit.png')"  
+													   label="{resourceManager.getString('global','all.edit')}..."  horizontalCenter="0" verticalCenter="0" click="outerDocument.editVlan(data)"/>
+									</s:GridItemRenderer>
+								</fx:Component>
+							</s:itemRenderer>
+						</s:GridColumn>
+						<!--删除-->
+						<s:GridColumn editable="false"  width="80"
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','all.delete')}">
+							<s:itemRenderer>
+								<fx:Component>
+									<s:GridItemRenderer>
+										<mx:LinkButton fontWeight="normal"  icon="@Embed('assets/imgs/icons/delete.png')"  
+													   label="{resourceManager.getString('global','all.delete')}"  horizontalCenter="0" verticalCenter="0" click="outerDocument.delVlan(data)"/>
+									</s:GridItemRenderer>
+								</fx:Component>
+							</s:itemRenderer>
+						</s:GridColumn>
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+		</s:Group>
+		
+	</s:VGroup>
+</s:Group>

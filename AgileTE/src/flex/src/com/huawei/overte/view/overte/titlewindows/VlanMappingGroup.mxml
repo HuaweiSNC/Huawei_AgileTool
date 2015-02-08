@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" color="#000000" creationComplete="init()" fontFamily="微软雅黑"
+		 fontSize="12">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.huawei.overte.handle.DataHandleTool;
+			import com.huawei.overte.tools.ConnUtil;
+			import com.huawei.overte.tools.PopupManagerUtil;
+			import com.huawei.overte.tools.SdncUtil;
+			import com.huawei.overte.view.overte.OverTEView;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import org.httpclient.events.HttpDataEvent;
+			import org.httpclient.events.HttpResponseEvent;
+			import spark.events.IndexChangeEvent;
+			
+			/**所有vlanmapping的信息**/
+			[Bindable]public static var vlanmappingArray:ArrayCollection = new ArrayCollection();
+			/**设备对象**/
+			[Bindable]public var device:Object;
+			/**设备**/
+			[Bindable]private var devices:Array=[];
+			/**所有源设备的信息**/
+			[Bindable]public var fileNameTypeDropDownList:ArrayCollection = new ArrayCollection();
+			/**当前主应用程序**/
+			[Bindable]private var __app:overTegui2;
+			/**项目类型**/
+			[Bindable]public var curarea:Object;
+			/**ops的IP地址**/
+			public var opsIp:String=SdncUtil.opsIp;
+			/**web名称**/
+			public static var webname:String = SdncUtil.projectname;
+			/**设备ID**/
+			public var devId:String = "";
+			/**连接java单例**/
+			public var connUtil:ConnUtil = ConnUtil.getInstence();
+			/**流管理界面**/
+			public var tw_flow:TW_ManagerFlow;
+			
+			/**vlanmapping管理页面初始化 cwx200285**/
+			protected function init():void{
+				__app=SdncUtil.app;
+				curarea = (__app.overte.topoview.selectedChild as OverTEView).ManAreasID;
+				devices = DataHandleTool.devices;
+				fileNameTypeDropDownList = new ArrayCollection(devices);
+				devId = devices[0].id;
+				if(SdncUtil.cuProjectType =="test"){
+				}else{
+					/**查询所有vlanmapping信息**/
+					realForGetVlanmapping();
+				}
+			}
+			
+			/**真实项目中 查询所有vlanmapping信息 cwx200285**/
+			public function realForGetVlanmapping():void{
+				PopupManagerUtil.getInstence().popupLoading(__app);
+				var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+devId+"/vlanmappings1To1"; 
+				DataHandleTool.showOnConsole("初始化vlanmapping信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+				connUtil.clientQuery(uri,ConnUtil.METHOD_GET,onGetVlanmappingResult,onGetVlanmappingFault);
+			}
+			
+			/**查询vlanmapping连接成功 cwx200285**/
+			private function onGetVlanmappingResult(e:HttpResponseEvent,data:String):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				DataHandleTool.showOnConsole("初始化vlanMapping信息连接成功返回");
+				/**清空vlanmapping列表**/
+				vlanmappingArray.removeAll();
+				/**判断查询vlanmapping连接成功的返回值**/
+				if(e.response.code != "200"){
+					DataHandleTool.showOnConsole("查询当前设备vlanmapping失败，错误代码："+e.response.code);
+					PopupManagerUtil.getInstence().closeLoading();
+					return;
+				}else{
+					DataHandleTool.showOnConsole("查询当前设备vlanmapping成功");
+					var vlanmappingXml:XML = new XML(data);
+					/**vlanmapping列表重新赋值**/
+					for(var i:int = 0;i<vlanmappingXml.vlanmapping.length();i++){
+						for(var j:int=0;j<vlanmappingXml.vlanmapping[i].mappingPorts.mappingPort.length();j++){
+							vlanmappingArray.addItem({
+								index:vlanmappingArray.length+1,
+								interfaceName:vlanmappingXml.vlanmapping[i].interfaceName,
+								mappingVid:vlanmappingXml.vlanmapping[i].mappingPorts.mappingPort[j].mappingVid,
+								vlansIndex:vlanmappingXml.vlanmapping[i].mappingPorts.mappingPort[j].internalVlansNew.vlansIndex
+							});
+						}
+					}
+				}
+			}
+			
+			/**查询vlanmapping连接失败 cwx200285**/
+			private function onGetVlanmappingFault(e:Event):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				DataHandleTool.showOnConsole("查询vlanmapping信息连接出错");
+			}
+			
+			/**增加Vlanmapping cwx200285**/
+			protected function addVlanmapping(event:MouseEvent):void{
+				var AddVlanMapping:ADD_VlanMapping=ADD_VlanMapping(PopUpManager.createPopUp(this,ADD_VlanMapping,true));
+				AddVlanMapping.mappinggroup = this;
+				AddVlanMapping.enterFlag = "group";
+				/**传值源设备名称**/
+				AddVlanMapping.curDevice.text = devices[ddl.selectedIndex]['deviceName'];
+				/**传值设备ID**/
+				AddVlanMapping.devId = devices[ddl.selectedIndex]['id'];
+				/**传值设备**/
+				AddVlanMapping.device = devices[ddl.selectedIndex];
+				PopUpManager.centerPopUp(AddVlanMapping);
+			}
+			
+			/**编辑Vlanmapping cwx200285**/
+			public function editVlanmapping(data:Object):void{
+				var EditMapping:ADD_VlanMapping=ADD_VlanMapping(PopUpManager.createPopUp(this,ADD_VlanMapping,true));
+				EditMapping.curDevice.text = devices[ddl.selectedIndex]['deviceName'];
+				/**传值设备ID**/
+				EditMapping.devId = devices[ddl.selectedIndex]['id'];
+				/**编辑状态**/
+				EditMapping.handleFlag = "edit";
+				EditMapping.enterFlag = "group";
+				/**标题 "编辑VlanMapping"**/
+				EditMapping.title = resourceManager.getString('global','all.edit')+"VlanMapping";
+				EditMapping.mappinggroup = this; //赋值
+				/**接口名称不可用**/
+				EditMapping.interfaceName.enabled = false;
+				/**传值设备**/
+				EditMapping.device = devices[ddl.selectedIndex];
+				/**传值界面变量目的端vlan**/
+				EditMapping.name_mappingVid = data.mappingVid;
+				/**传值界面变量接口名称**/
+				EditMapping.name_interface = data.interfaceName;
+				/**传值界面变量源端Vlan**/
+				EditMapping.name_vlansIndex = data.vlansIndex;
+				/**接口名称不可编辑**/
+				EditMapping.interfaceName.editable = false;
+				/**传值编辑参数**/
+				EditMapping.paramedit = "<vlanmappings><vlanmapping><interfaceName>"+data.interfaceName+"</interfaceName><mappingPorts><mappingPort><mappingVidOld>"+data.mappingVid+
+					"</mappingVidOld><internalVlansOld><vlansIndex>"+data.vlansIndex+"</vlansIndex></internalVlansOld>"
+				PopUpManager.centerPopUp(EditMapping);
+			}
+			
+			/**源设备数据改变时，vlanmapping列表改变 cwx200285**/
+			protected function ddl_changeHandler(event:IndexChangeEvent):void{
+				if(SdncUtil.cuProjectType=="test"){
+				}else{
+					/**源设备改变时的设备ID值**/
+					devId = (event.target as DropDownList).selectedItem.id
+					/**重新查询vlanmapping**/
+					realForGetVlanmapping();
+				}
+			}
+			
+			/**删除vlanmapping cwx200285**/
+			public function deleteVlanmapping():void{
+				/**"确定删除？","提示"**/
+				Alert.show(resourceManager.getString('global','all.ifdeleted')+"？",
+					resourceManager.getString('global','all.prompt'),
+					Alert.YES|Alert.NO,this,closeDelete);
+			}
+			
+			public function closeDelete(e:CloseEvent):void{
+				if(e.detail==Alert.YES){
+					if(SdncUtil.cuProjectType == "test"){
+					}else{
+						PopupManagerUtil.getInstence().popupLoading(__app);
+						var mappings:Object = g.selectedItem;
+						var name = mappings['interfaceName'];
+						var param:String = "<vlanmappings><vlanmapping><interfaceName>" + mappings['interfaceName'] + "</interfaceName>" +
+							"<mappingPorts><mappingPort><mappingVid>" + mappings['mappingVid'] + "</mappingVid>" +
+							"<internalVlansNew><vlansIndex>" + mappings['vlansIndex'] + "</vlansIndex></internalVlansNew>" +
+							"</mappingPort></mappingPorts></vlanmapping></vlanmappings>";
+						DataHandleTool.showOnConsole("删除vlanmapping信息，当前域ID："+curarea+"当前设备ID："+devId+"\n URL:"+uri);
+						var uri:String=ConnUtil.protocolHeader+opsIp+"/"+webname+"/agilete/domains/"+curarea+"/devices/"+devId +"/vlanmappings1To1?interfaceName=delete"; 
+						connUtil.clientQuery(uri,ConnUtil.METHOD_POST,onDeleteVlanmappingResult,onDeleteVlanmappingFault,param); 
+					}
+				}
+			}
+			
+			/**删除vlanmapping连接成功 cwx200285**/
+			private function onDeleteVlanmappingResult(e:HttpDataEvent):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				if(e.bytes.toString().search("ok")!=-1){
+					DataHandleTool.showOnConsole("删除vlanmapping成功");
+					devId = ddl.selectedItem.id;
+					PopupManagerUtil.getInstence().closeLoading();
+					realForGetVlanmapping();
+					/**"删除vlanmapping成功","提示"**/
+					Alert.show(resourceManager.getString('global','all.deletedsuccess'),
+						resourceManager.getString('global','all.prompt'));
+				}else{
+					DataHandleTool.showOnConsole("删除vlanmapping失败！错误信息："+e.bytes.toString());
+					/**"删除vlanmapping失败","提示"**/
+					Alert.show(resourceManager.getString('global','all.deletedfail'),
+						resourceManager.getString('global','all.prompt'));
+				}
+			}
+			
+			/**删除vlanmapping连接失败 cwx200285**/
+			private function onDeleteVlanmappingFault(e:Event):void{
+				PopupManagerUtil.getInstence().closeLoading();
+				DataHandleTool.showOnConsole("删除vlanmapping连接失败！错误信息："+e.toString());
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup id="content" width="100%" height="306">
+		
+		<s:Group width="100%" height="32">
+			<!--源设备-->
+			<s:Label right="{ddl.width+btn.width+50}" text="{resourceManager.getString('global','all.srcDevice')} ：" verticalCenter="0"/>
+			<s:TextInput id="ddl2" right="{btn.width+40}" width="150" text="{device['deviceName']}"  verticalCenter="0" visible="false"/>
+			<s:DropDownList id="ddl" right="{btn.width+40}" width="150"  change="ddl_changeHandler(event)"
+							dataProvider="{fileNameTypeDropDownList}" labelField="deviceName"
+							requireSelection="true" verticalCenter="0" />
+			<!--增加...-->
+			<s:Button id="btn" right="{g.x}" label="{resourceManager.getString('global','all.add')}..."  click="addVlanmapping(event)" verticalCenter="0"/>
+		</s:Group>
+		
+		<s:Group width="100%" height="85%">
+			<s:DataGrid id="g" width="95%" height="268" dataProvider="{vlanmappingArray}"
+						horizontalCenter="0" requestedRowCount="4" textAlign="center" verticalCenter="0">
+				<s:columns>
+					<s:ArrayList>
+						<!--序号-->
+						<s:GridColumn dataField="index"
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','mgflow.mgvlanmapping.num')}"></s:GridColumn>
+						<!--源端Vlan-->
+						<s:GridColumn dataField="vlansIndex" 
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','mgflow.mgvlanmapping.srcvlan')}"></s:GridColumn>
+						<!--目的端Vlan-->
+						<s:GridColumn dataField="mappingVid" 
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','mgflow.mgvlanmapping.desvlan')}"></s:GridColumn>
+						<!--接口名称-->
+						<s:GridColumn dataField="interfaceName"
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','mgflow.mgvlanmapping.interfacename')}"></s:GridColumn>
+						<!--编辑-->
+						<s:GridColumn editable="false"  width="80"
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','all.edit')}">
+							<s:itemRenderer>
+								<fx:Component>
+									<s:GridItemRenderer>
+										<mx:LinkButton icon="@Embed('assets/imgs/icons/edit.png')"  label="{resourceManager.getString('global','all.edit')}..."  
+													   horizontalCenter="0" verticalCenter="0" fontWeight="normal"
+												  click="outerDocument.editVlanmapping(data)"/>
+									</s:GridItemRenderer>
+								</fx:Component>
+							</s:itemRenderer>
+						</s:GridColumn>
+						<!--删除-->
+						<s:GridColumn editable="false"  width="80"
+									  headerRenderer="com.huawei.overte.view.common.render.dgheaderReader"
+									  headerText="{resourceManager.getString('global','all.delete')}">
+							<s:itemRenderer>
+								<fx:Component>
+									<s:GridItemRenderer>
+										<mx:LinkButton icon="@Embed('assets/imgs/icons/delete.png')"  label="{resourceManager.getString('global','all.delete')}"  horizontalCenter="0" verticalCenter="0" 
+												  click="outerDocument.deleteVlanmapping()" fontWeight="normal"/>
+									</s:GridItemRenderer>
+								</fx:Component>
+							</s:itemRenderer>
+						</s:GridColumn>
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+		</s:Group>
+	</s:VGroup>
+</s:Group>
